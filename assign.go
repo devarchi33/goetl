@@ -6,6 +6,8 @@ import (
 
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
+
+	"github.com/pangpanglabs/goetl"
 )
 
 // ConvertByteResult ...
@@ -25,6 +27,11 @@ func ConvertByteResult(source []map[string][]byte) []map[string]string {
 		result = append(result, item)
 	}
 	return result
+}
+
+func buildETL() *goetl.ETL {
+	etl := goetl.New(AssignETL{})
+	return etl
 }
 
 // AssignETL 分配
@@ -63,10 +70,10 @@ func (etl AssignETL) Transform(ctx context.Context, source interface{}) (interfa
 }
 
 // ReadyToLoad ...
-func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) (interface{}, error) {
+func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) error {
 	masters, ok := source.([]models.TransactionMaster)
 	if !ok {
-		return nil, errors.New("Convert Failed")
+		return errors.New("Convert Failed")
 	}
 	savedMasters := make([]models.TransactionMaster, 0)
 	for _, mst := range masters {
@@ -78,7 +85,7 @@ func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) (inter
 		engine := factory.GetINVEngine()
 		result, err := engine.Query(sql, mst.OrderNo)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if len(result) == 0 {
@@ -86,7 +93,7 @@ func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) (inter
 		}
 	}
 
-	return savedMasters, nil
+	return nil
 }
 
 // Load ...
