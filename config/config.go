@@ -51,3 +51,13 @@ func GetINVConnString() string {
 	readConfig(*congfigEnv)
 	return viper.Get("invConnString").(string)
 }
+
+// GetClrConnString Clearance 数据库连接字符串
+func GetClrConnString() string {
+	if *congfigEnv == "" {
+		defaultAppEnv := "dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("clrConnString").(string)
+}

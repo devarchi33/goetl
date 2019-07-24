@@ -2,3 +2,5 @@
 cslConnString: "server=localhost;user id=SA;password=yourStrong(!)Password;database=CSL;connection timeout=30"
 
 invConnString: "root:1111@tcp(localhost:3306)/inventories?charset=utf8&parseTime=True&loc=UTC"
+
+clrConnString: "root:1111@tcp(localhost:3306)/clearance?charset=utf8&parseTime=True&loc=UTC"

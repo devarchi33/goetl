@@ -17,6 +17,8 @@ var (
 	cslEngine *xorm.Engine
 	// invEngine MSL v1.0 数据库
 	invEngine *xorm.Engine
+	// clrEngine Clearance 数据库
+	clrEngine *xorm.Engine
 	once      sync.Once
 )
 
@@ -27,6 +29,14 @@ func Init() {
 
 	invEngine = CreateMySQLEngine(config.GetINVConnString())
 	SetINVEngine(invEngine)
+
+	clrEngine = CreateMySQLEngine(config.GetClrConnString())
+	SetClrEngine(clrEngine)
+}
+
+// GetCSLEngine 获取CSL数据库引擎
+func GetCSLEngine() *xorm.Engine {
+	return cslEngine
 }
 
 // SetCSLEngine 设置CSL数据库引擎
@@ -36,6 +46,11 @@ func SetCSLEngine(engine *xorm.Engine) {
 	})
 }
 
+// GetINVEngine 获取MSL v1.0数据库引擎
+func GetINVEngine() *xorm.Engine {
+	return invEngine
+}
+
 // SetINVEngine 设置INV数据库引擎
 func SetINVEngine(engine *xorm.Engine) {
 	once.Do(func() {
@@ -43,11 +58,23 @@ func SetINVEngine(engine *xorm.Engine) {
 	})
 }
 
+// GetClrEngine 获取Clearance数据库引擎
+func GetClrEngine() *xorm.Engine {
+	return clrEngine
+}
+
+// SetClrEngine 设置Clearance数据库引擎
+func SetClrEngine(engine *xorm.Engine) {
+	once.Do(func() {
+		clrEngine = engine
+	})
+}
+
 // CreateMSSQLEngine 创建SQLServer数据库引擎
 func CreateMSSQLEngine(connString string) *xorm.Engine {
 	engine, err := xorm.NewEngine("mssql", connString)
 	if err != nil {
-		fmt.Println("createCSLEngine error")
+		fmt.Println("createMSSQLEngine error")
 	}
 	engine.TZLocation, _ = time.LoadLocation("UTC")
 	engine.SetTableMapper(core.SameMapper{})
@@ -56,25 +83,15 @@ func CreateMSSQLEngine(connString string) *xorm.Engine {
 	return engine
 }
 
-// GetCSLEngine 获取CSL数据库引擎
-func GetCSLEngine() *xorm.Engine {
-	return cslEngine
-}
-
 // CreateMySQLEngine 创建MySQL数据库引擎
 func CreateMySQLEngine(connString string) *xorm.Engine {
 	var err error
 	engine, err := xorm.NewEngine("mysql", connString)
 	if err != nil {
-		fmt.Println("createINVEngine error")
+		fmt.Println("createMySQLEngine error")
 	}
 	engine.SetTableMapper(core.SnakeMapper{})
 	engine.SetColumnMapper(core.SnakeMapper{})
 
 	return engine
-}
-
-// GetINVEngine 获取MSL v1.0数据库引擎
-func GetINVEngine() *xorm.Engine {
-	return invEngine
 }
