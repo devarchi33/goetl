@@ -29,43 +29,45 @@ func ConvertByteResult(source []map[string][]byte) []map[string]string {
 	return result
 }
 
-func buildETL() *goetl.ETL {
-	etl := goetl.New(AssignETL{})
-	return etl
-}
-
 // AssignETL 分配
 type AssignETL struct{}
+
+// New 创建AssignETL对象
+func (AssignETL) New() *goetl.ETL {
+	etl := goetl.New(AssignETL{})
+	etl.After(AssignETL{}.ReadyToLoad)
+	return etl
+}
 
 // Extract ...
 func (etl AssignETL) Extract(ctx context.Context) (interface{}, error) {
 	engine := factory.GetCSLEngine()
-	masters := make([]models.RecvSuppMst, 0)
-	if err := engine.Where("BrandCode = ? AND ShopCode = ?", "SA", "CFW5").Find(&masters); err != nil {
-		return nil, err
-	}
+	details := make([]models.RecvSupp, 0)
+	engine.Join("INNER", "RecvSuppMst", "RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo").
+		Where("RecvSuppMst.BrandCode = ? AND RecvSuppMst.ShopCode = ?", "SA", "CFW5").
+		Find(&details)
 
-	return masters, nil
+	return details, nil
 }
 
 // Transform ...
 func (etl AssignETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
-	cslMasters, ok := source.([]models.RecvSuppMst)
+	recvSuppList, ok := source.([]models.RecvSupp)
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
-	mslMasters := make([]models.Transaction, 0)
-	for _, mst := range cslMasters {
-		mslMasters = append(mslMasters, models.Transaction{
-			TransactionID: mst.WayBillNo,
-			WaybillNo:     mst.WayBillNo,
-			BoxNo:         mst.BoxNo,
-			SkuCode:       "",
-			Qty:           0,
+	transactions := make([]models.Transaction, 0)
+	for _, recvSupp := range recvSuppList {
+		transactions = append(transactions, models.Transaction{
+			TransactionID: recvSupp.RecvSuppMst.RecvSuppNo,
+			WaybillNo:     recvSupp.RecvSuppMst.WayBillNo,
+			BoxNo:         recvSupp.RecvSuppMst.BoxNo,
+			SkuCode:       recvSupp.RecvSuppDtl.ProdCode,
+			Qty:           recvSupp.RecvSuppDtl.RecvSuppQty,
 		})
 	}
 
-	return mslMasters, nil
+	return transactions, nil
 }
 
 // ReadyToLoad ...
@@ -75,20 +77,20 @@ func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) error 
 		return errors.New("Convert Failed")
 	}
 	savedMasters := make([]models.Transaction, 0)
-	for _, mst := range masters {
+	for _, recvSupp := range masters {
 		sql := `SELECT id
 		FROM transactions
 		WHERE transaction_id = ?
 		`
 
 		engine := factory.GetClrEngine()
-		result, err := engine.Query(sql, mst.TransactionID)
+		result, err := engine.Query(sql, recvSupp.TransactionID)
 		if err != nil {
 			return err
 		}
 
 		if len(result) == 0 {
-			savedMasters = append(savedMasters, mst)
+			savedMasters = append(savedMasters, recvSupp)
 		}
 	}
 
@@ -100,13 +102,13 @@ func (etl AssignETL) Load(ctx context.Context, source interface{}) error {
 	if source == nil {
 		return errors.New("source is nil")
 	}
-	mslMasters, ok := source.([]models.Transaction)
+	transactions, ok := source.([]models.Transaction)
 	if !ok {
 		return errors.New("Convert Failed")
 	}
 	engine := factory.GetClrEngine()
 
-	if _, err := engine.Insert(&mslMasters); err != nil {
+	if _, err := engine.Insert(&transactions); err != nil {
 		return err
 	}
 	return nil

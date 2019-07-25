@@ -8,34 +8,39 @@ import (
 
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/pangpanglabs/goetl"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// TransactionID:
+// WaybillNo:
+// BoxNo:
+// SkuCode:
+// Qty:
 func TestTransform(t *testing.T) {
 	Convey("测试AssignETL的Transform方法", t, func() {
-		Convey("如果map中的Key都是正确的，应该得到正确的TransactionMaster数组", func() {
-			source := []map[string]string{
-				map[string]string{
-					"RecvSuppNo":         "EECDVQ201907220001",
-					"BrandCode":          "EE",
-					"ShopCode":           "CDVQ",
-					"Dates":              "20190722",
-					"ShippingTypeCode":   "01",
-					"WayBillNo":          "SR201907220001",
-					"RecvSuppStatusCode": "R",
-				},
+		Convey("如果map中的Key都是正确的，应该得到正确的Transaction数组", func() {
+			master := models.RecvSuppMst{
+				RecvSuppNo: "EECDVQ201907220001",
+				WayBillNo:  "SR201907220001",
+				BoxNo:      "01",
 			}
-			masters, err := AssignETL{}.Transform(context.Background(), source)
+			detail := models.RecvSuppDtl{
+				ProdCode:    "SPJA948S2230095",
+				RecvSuppQty: 2,
+			}
+			recvSupp := models.RecvSupp{
+				RecvSuppMst: master,
+				RecvSuppDtl: detail,
+			}
+			transactions, err := AssignETL{}.Transform(context.Background(), []models.RecvSupp{recvSupp})
 			So(err, ShouldBeNil)
-			master := masters.([]models.TransactionMaster)[0]
-			So(master.ID, ShouldEqual, 0)
-			So(master.Date, ShouldEqual, "20190722")
-			So(master.PlantCode, ShouldEqual, "EE-CDVQ")
-			So(master.WaybillNo, ShouldEqual, "SR201907220001")
-			So(master.OrderNo, ShouldEqual, "EECDVQ201907220001")
-			So(master.TransactionCode, ShouldEqual, "OS100")
-			So(master.Channel, ShouldEqual, "CLEARANCE")
+			transaction := transactions.([]models.Transaction)[0]
+			So(transaction.ID, ShouldEqual, 0)
+			So(transaction.TransactionID, ShouldEqual, "EECDVQ201907220001")
+			So(transaction.WaybillNo, ShouldEqual, "SR201907220001")
+			So(transaction.BoxNo, ShouldEqual, "01")
+			So(transaction.SkuCode, ShouldEqual, "SPJA948S2230095")
+			So(transaction.Qty, ShouldEqual, 2)
 		})
 	})
 }
@@ -43,8 +48,7 @@ func TestTransform(t *testing.T) {
 func TestAssignETL(t *testing.T) {
 	Convey("测试AssignETL的Run方法", t, func() {
 		Convey("可以把入库预约从CSL导入到MSL", func() {
-			etl := goetl.New(AssignETL{})
-			etl.After(AssignETL{}.ReadyToLoad)
+			etl := AssignETL{}.New()
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
 		})
