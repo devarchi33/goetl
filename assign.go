@@ -1,4 +1,4 @@
-package goetl
+package main
 
 import (
 	"context"
@@ -41,7 +41,7 @@ type AssignETL struct{}
 func (etl AssignETL) Extract(ctx context.Context) (interface{}, error) {
 	engine := factory.GetCSLEngine()
 	masters := make([]models.RecvSuppMst, 0)
-	if err := engine.Where("BrandCode = ? AND ShopCode = ?", "EE", "CDVQ").Find(&masters); err != nil {
+	if err := engine.Where("BrandCode = ? AND ShopCode = ?", "SA", "CFW5").Find(&masters); err != nil {
 		return nil, err
 	}
 
@@ -54,15 +54,14 @@ func (etl AssignETL) Transform(ctx context.Context, source interface{}) (interfa
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
-	mslMasters := make([]models.TransactionMaster, 0)
+	mslMasters := make([]models.Transaction, 0)
 	for _, mst := range cslMasters {
-		mslMasters = append(mslMasters, models.TransactionMaster{
-			Date:            mst.Dates,
-			PlantCode:       mst.BrandCode + "-" + mst.ShopCode,
-			WaybillNo:       mst.WayBillNo,
-			OrderNo:         mst.RecvSuppNo,
-			TransactionCode: "OS100",
-			Channel:         "CLEARANCE",
+		mslMasters = append(mslMasters, models.Transaction{
+			TransactionID: mst.WayBillNo,
+			WaybillNo:     mst.WayBillNo,
+			BoxNo:         mst.BoxNo,
+			SkuCode:       "",
+			Qty:           0,
 		})
 	}
 
@@ -71,19 +70,19 @@ func (etl AssignETL) Transform(ctx context.Context, source interface{}) (interfa
 
 // ReadyToLoad ...
 func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) error {
-	masters, ok := source.([]models.TransactionMaster)
+	masters, ok := source.([]models.Transaction)
 	if !ok {
 		return errors.New("Convert Failed")
 	}
-	savedMasters := make([]models.TransactionMaster, 0)
+	savedMasters := make([]models.Transaction, 0)
 	for _, mst := range masters {
 		sql := `SELECT id
-		FROM transaction_masters
-		WHERE order_no = ?
+		FROM transactions
+		WHERE transaction_id = ?
 		`
 
-		engine := factory.GetINVEngine()
-		result, err := engine.Query(sql, mst.OrderNo)
+		engine := factory.GetClrEngine()
+		result, err := engine.Query(sql, mst.TransactionID)
 		if err != nil {
 			return err
 		}
@@ -101,11 +100,11 @@ func (etl AssignETL) Load(ctx context.Context, source interface{}) error {
 	if source == nil {
 		return errors.New("source is nil")
 	}
-	mslMasters, ok := source.([]models.TransactionMaster)
+	mslMasters, ok := source.([]models.Transaction)
 	if !ok {
 		return errors.New("Convert Failed")
 	}
-	engine := factory.GetINVEngine()
+	engine := factory.GetClrEngine()
 
 	if _, err := engine.Insert(&mslMasters); err != nil {
 		return err

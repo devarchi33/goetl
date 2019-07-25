@@ -28,3 +28,18 @@ type TransactionDetail struct {
 func (TransactionDetail) TableName() string {
 	return "transaction_details"
 }
+
+// Transaction ...
+type Transaction struct {
+	ID            int64  `xorm:"bigint not null autoincr pk 'id'"`
+	TransactionID string `xorm:"varchar(14) not null 'transaction_id'"`
+	WaybillNo     string `xorm:"varchar(13) not null"`
+	BoxNo         string `xorm:"varchar(20) not null"`
+	SkuCode       string `xorm:"varchar(18) not null"`
+	Qty           int    `xorm:"int not null"`
+}
+
+// TableName 设置对应的表名
+func (Transaction) TableName() string {
+	return "transactions"
+}

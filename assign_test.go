@@ -1,4 +1,4 @@
-package goetl
+package main
 
 import (
 	"clearance-adapter/models"
@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/pangpanglabs/goetl"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,8 +43,8 @@ func TestTransform(t *testing.T) {
 func TestAssignETL(t *testing.T) {
 	Convey("测试AssignETL的Run方法", t, func() {
 		Convey("可以把入库预约从CSL导入到MSL", func() {
-			etl := New(AssignETL{})
-			etl.AfterTransform(AssignETL{}.ReadyToLoad)
+			etl := goetl.New(AssignETL{})
+			etl.After(AssignETL{}.ReadyToLoad)
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
 		})
