@@ -19,6 +19,8 @@ var (
 	invEngine *xorm.Engine
 	// clrEngine Clearance 数据库
 	clrEngine *xorm.Engine
+	// mslEngine msl2.0 数据库
+	mslEngine *xorm.Engine
 	once      sync.Once
 )
 
@@ -32,6 +34,9 @@ func Init() {
 
 	clrEngine = CreateMySQLEngine(config.GetClrConnString())
 	SetClrEngine(clrEngine)
+
+	mslEngine = CreateMySQLEngine(config.GetMSLConnString())
+	SetMslEngine(mslEngine)
 }
 
 // GetCSLEngine 获取CSL数据库引擎
@@ -67,6 +72,18 @@ func GetClrEngine() *xorm.Engine {
 func SetClrEngine(engine *xorm.Engine) {
 	once.Do(func() {
 		clrEngine = engine
+	})
+}
+
+//GetMslEngine 获取MSL数据库引擎
+func GetMslEngine() *xorm.Engine {
+	return mslEngine
+}
+
+// SetMslEngine 设置MSL数据库引擎
+func SetMslEngine(engine *xorm.Engine) {
+	once.Do(func() {
+		mslEngine = engine
 	})
 }
 

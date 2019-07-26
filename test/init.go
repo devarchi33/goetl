@@ -17,7 +17,7 @@ import (
 
 func init() {
 	factory.Init()
-	setUpCSLDB()
+	//setUpCSLDB()
 	setUpClrDB()
 }
 
