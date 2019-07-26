@@ -1,6 +1,7 @@
 package main
 
 import (
+	"clearance-adapter/factory"
 	"clearance-adapter/models"
 	_ "clearance-adapter/test"
 	"context"
@@ -51,6 +52,21 @@ func TestAssignETL(t *testing.T) {
 			etl := AssignETL{}.New()
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
+		})
+		Convey("相同waybill_no, box_no, sku_code的数据应该只存在一条", func() {
+			etl := AssignETL{}.New()
+			etl.Run(context.Background())
+			sql := `
+				SELECT sum(count) as count
+				FROM (
+				SELECT COUNT(1) as count
+				FROM transactions
+				GROUP BY waybill_no, box_no, sku_code
+				) AS T
+			`
+			result, _ := factory.GetClrEngine().Query(sql)
+			count := ConvertByteResult(result)[0]["count"]
+			So(count, ShouldEqual, "191")
 		})
 	})
 }

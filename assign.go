@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
@@ -106,10 +107,53 @@ func (etl AssignETL) Load(ctx context.Context, source interface{}) error {
 	if !ok {
 		return errors.New("Convert Failed")
 	}
-	engine := factory.GetClrEngine()
 
-	if _, err := engine.Insert(&transactions); err != nil {
-		return err
+	txnChannel := make(chan models.Transaction, 0)
+	savableTxnChannel := make(chan models.Transaction, 0)
+
+	AssignETL{}.validateTransaction(txnChannel, savableTxnChannel)
+	AssignETL{}.save(savableTxnChannel)
+
+	for _, txn := range transactions {
+		txnChannel <- txn
 	}
+
 	return nil
+}
+
+func (AssignETL) validateTransaction(txnChannel <-chan models.Transaction, savableTxnChannel chan<- models.Transaction) {
+	engine := factory.GetClrEngine()
+	workerCount := 5
+	for i := 0; i < workerCount; i++ {
+		go func() {
+			for txn := range txnChannel {
+				sql := `SELECT id
+					FROM transactions
+					WHERE waybill_no = ? AND box_no = ? AND sku_code = ?
+				`
+				result, err := engine.Query(sql, txn.WaybillNo, txn.BoxNo, txn.SkuCode)
+				if err != nil {
+					log.Println(err.Error())
+				}
+				if len(result) == 0 {
+					savableTxnChannel <- txn
+				}
+			}
+		}()
+	}
+}
+
+func (AssignETL) save(savableTxnChannel <-chan models.Transaction) {
+	engine := factory.GetClrEngine()
+	workerCount := 5
+	for i := 0; i < workerCount; i++ {
+		go func() {
+			for transaction := range savableTxnChannel {
+				_, err := engine.Insert(&transaction)
+				if err != nil {
+					log.Println(err.Error())
+				}
+			}
+		}()
+	}
 }
