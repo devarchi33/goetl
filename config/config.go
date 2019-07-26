@@ -61,3 +61,13 @@ func GetClrConnString() string {
 	readConfig(*congfigEnv)
 	return viper.Get("clrConnString").(string)
 }
+
+// GetMSLConnString MSL v2.0 数据库连接字符串
+func GetMSLConnString() string {
+	if *congfigEnv == "" {
+		defaultAppEnv := "dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("mslConnString").(string)
+}
