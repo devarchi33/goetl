@@ -12,11 +12,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// TransactionID:
-// WaybillNo:
-// BoxNo:
-// SkuCode:
-// Qty:
 func TestTransform(t *testing.T) {
 	Convey("测试AssignETL的Transform方法", t, func() {
 		Convey("如果map中的Key都是正确的，应该得到正确的Transaction数组", func() {
@@ -47,6 +42,14 @@ func TestTransform(t *testing.T) {
 }
 
 func TestAssignETL(t *testing.T) {
+	// SELECT * FROM RecvSuppDtl
+	// 	JOIN RecvSuppMst
+	// 	ON RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo
+	// 	AND RecvSuppMst.BrandCode = RecvSuppDtl.BrandCode
+	// 	AND RecvSuppMst.ShopCode = RecvSuppDtl.ShopCode
+	// WHERE RecvSuppMst.BrandCode = 'SA'
+	// AND RecvSuppMst.ShopCode = 'CFW5'
+
 	Convey("测试AssignETL的Run方法", t, func() {
 		Convey("可以把入库预约从CSL导入到MSL", func() {
 			etl := AssignETL{}.New()

@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
+	"clearance-adapter/repositories"
 
 	"github.com/pangpanglabs/goetl"
 )
@@ -36,7 +36,6 @@ type AssignETL struct{}
 // New 创建AssignETL对象
 func (AssignETL) New() *goetl.ETL {
 	etl := goetl.New(AssignETL{})
-	etl.After(AssignETL{}.ReadyToLoad)
 	return etl
 }
 
@@ -44,7 +43,10 @@ func (AssignETL) New() *goetl.ETL {
 func (etl AssignETL) Extract(ctx context.Context) (interface{}, error) {
 	engine := factory.GetCSLEngine()
 	details := make([]models.RecvSupp, 0)
-	engine.Join("INNER", "RecvSuppMst", "RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo").
+	engine.Join("INNER", "RecvSuppMst",
+		"RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo",
+		"RecvSuppMst.BrandCode = RecvSuppDtl.BrandCode",
+		"RecvSuppMst.ShopCode = RecvSuppDtl.ShopCode").
 		Where("RecvSuppMst.BrandCode = ? AND RecvSuppMst.ShopCode = ?", "SA", "CFW5").
 		Find(&details)
 
@@ -71,33 +73,6 @@ func (etl AssignETL) Transform(ctx context.Context, source interface{}) (interfa
 	return transactions, nil
 }
 
-// ReadyToLoad ...
-func (etl AssignETL) ReadyToLoad(ctx context.Context, source interface{}) error {
-	masters, ok := source.([]models.Transaction)
-	if !ok {
-		return errors.New("Convert Failed")
-	}
-	savedMasters := make([]models.Transaction, 0)
-	for _, recvSupp := range masters {
-		sql := `SELECT id
-		FROM transactions
-		WHERE transaction_id = ?
-		`
-
-		engine := factory.GetClrEngine()
-		result, err := engine.Query(sql, recvSupp.TransactionID)
-		if err != nil {
-			return err
-		}
-
-		if len(result) == 0 {
-			savedMasters = append(savedMasters, recvSupp)
-		}
-	}
-
-	return nil
-}
-
 // Load ...
 func (etl AssignETL) Load(ctx context.Context, source interface{}) error {
 	if source == nil {
@@ -108,52 +83,7 @@ func (etl AssignETL) Load(ctx context.Context, source interface{}) error {
 		return errors.New("Convert Failed")
 	}
 
-	txnChannel := make(chan models.Transaction, 0)
-	savableTxnChannel := make(chan models.Transaction, 0)
-
-	AssignETL{}.validateTransaction(txnChannel, savableTxnChannel)
-	AssignETL{}.save(savableTxnChannel)
-
-	for _, txn := range transactions {
-		txnChannel <- txn
-	}
+	repositories.TransactionRepository{}.Save(transactions)
 
 	return nil
-}
-
-func (AssignETL) validateTransaction(txnChannel <-chan models.Transaction, savableTxnChannel chan<- models.Transaction) {
-	engine := factory.GetClrEngine()
-	workerCount := 5
-	for i := 0; i < workerCount; i++ {
-		go func() {
-			for txn := range txnChannel {
-				sql := `SELECT id
-					FROM transactions
-					WHERE waybill_no = ? AND box_no = ? AND sku_code = ?
-				`
-				result, err := engine.Query(sql, txn.WaybillNo, txn.BoxNo, txn.SkuCode)
-				if err != nil {
-					log.Println(err.Error())
-				}
-				if len(result) == 0 {
-					savableTxnChannel <- txn
-				}
-			}
-		}()
-	}
-}
-
-func (AssignETL) save(savableTxnChannel <-chan models.Transaction) {
-	engine := factory.GetClrEngine()
-	workerCount := 5
-	for i := 0; i < workerCount; i++ {
-		go func() {
-			for transaction := range savableTxnChannel {
-				_, err := engine.Insert(&transaction)
-				if err != nil {
-					log.Println(err.Error())
-				}
-			}
-		}()
-	}
 }
