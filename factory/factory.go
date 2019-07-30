@@ -15,13 +15,11 @@ import (
 var (
 	// cslEngine CSL 数据库
 	cslEngine *xorm.Engine
-	// invEngine MSL v1.0 数据库
-	invEngine *xorm.Engine
 	// clrEngine Clearance 数据库
 	clrEngine *xorm.Engine
-	// mslEngine msl2.0 数据库
-	mslEngine *xorm.Engine
-	once      sync.Once
+	// p2brandEngine pangpang-brand 数据库
+	p2brandEngine *xorm.Engine
+	once          sync.Once
 )
 
 // Init 初始化 数据库引擎
@@ -29,14 +27,11 @@ func Init() {
 	cslEngine = CreateMSSQLEngine(config.GetCSLConnString())
 	SetCSLEngine(cslEngine)
 
-	invEngine = CreateMySQLEngine(config.GetINVConnString())
-	SetINVEngine(invEngine)
-
 	clrEngine = CreateMySQLEngine(config.GetClrConnString())
 	SetClrEngine(clrEngine)
 
-	mslEngine = CreateMySQLEngine(config.GetMSLConnString())
-	SetMslEngine(mslEngine)
+	p2brandEngine = CreateMySQLEngine(config.GetP2BrandConnString())
+	SetP2BrandEngine(p2brandEngine)
 }
 
 // GetCSLEngine 获取CSL数据库引擎
@@ -48,18 +43,6 @@ func GetCSLEngine() *xorm.Engine {
 func SetCSLEngine(engine *xorm.Engine) {
 	once.Do(func() {
 		cslEngine = engine
-	})
-}
-
-// GetINVEngine 获取MSL v1.0数据库引擎
-func GetINVEngine() *xorm.Engine {
-	return invEngine
-}
-
-// SetINVEngine 设置INV数据库引擎
-func SetINVEngine(engine *xorm.Engine) {
-	once.Do(func() {
-		invEngine = engine
 	})
 }
 
@@ -75,15 +58,15 @@ func SetClrEngine(engine *xorm.Engine) {
 	})
 }
 
-//GetMslEngine 获取MSL数据库引擎
-func GetMslEngine() *xorm.Engine {
-	return mslEngine
+//GetP2BrandEngine 获取pangpang-brand数据库引擎
+func GetP2BrandEngine() *xorm.Engine {
+	return p2brandEngine
 }
 
-// SetMslEngine 设置MSL数据库引擎
-func SetMslEngine(engine *xorm.Engine) {
+// SetP2BrandEngine 设置MSL数据库引擎
+func SetP2BrandEngine(engine *xorm.Engine) {
 	once.Do(func() {
-		mslEngine = engine
+		p2brandEngine = engine
 	})
 }
 

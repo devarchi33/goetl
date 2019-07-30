@@ -1,89 +1,138 @@
 package main
 
 import (
-	"clearance-adapter/factory"
-	"clearance-adapter/models"
+	"clearance-adapter/domain/entities"
 	"clearance-adapter/repositories"
 	"context"
 	"errors"
+	"log"
+	"time"
 
 	"github.com/pangpanglabs/goetl"
 )
 
-// InStorageETL 入库
+// InStorageETL 入库 p2-brand -> CSL
 type InStorageETL struct{}
 
 // New 创建InStorageETL对象，从Clearance到CSL
 func (InStorageETL) New() *goetl.ETL {
 	etl := goetl.New(InStorageETL{})
+	etl.Before(InStorageETL{}.buildTransactions)
+	etl.Before(InStorageETL{}.filterStorableTransactions)
 	return etl
 }
 
 // Extract ...
 func (etl InStorageETL) Extract(ctx context.Context) (interface{}, error) {
-	engine := factory.GetClrEngine()
-	transactions := make([]models.Transaction, 0)
-	engine.Find(&transactions)
+	local, _ := time.LoadLocation("Local")
+	start, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-07-01 00:00:00", local)
+	end, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-07-31 23:59:59", local)
+	result, err := repositories.StockTransactionRepository{}.GetInStorageByCreateAt(start, end)
+	if err != nil {
+		return nil, err
+	}
 
-	return transactions, nil
+	return result, nil
 }
 
-// Transform ...
-func (etl InStorageETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
-	transactions, ok := source.([]models.Transaction)
+// 相同运单号合并为一个Transaction
+func (etl InStorageETL) buildTransactions(ctx context.Context, source interface{}) (interface{}, error) {
+	data, ok := source.([]map[string]string)
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
 
-	mastersMap := make(map[string]models.RecvSuppMst, 0)
-	details := make([]models.RecvSuppDtl, 0)
-	for _, txn := range transactions {
-		details = append(details, models.RecvSuppDtl{
-			BrandCode:        "SA",
-			ShopCode:         "CFW5",
-			RecvSuppNo:       txn.TransactionID,
-			ProdCode:         txn.SkuCode,
-			RecvSuppQty:      txn.Qty,
-			RecvSuppFixedQty: txn.Qty,
-		})
-		key := txn.TransactionID + "-" + txn.WaybillNo + "-" + txn.BoxNo
-		mastersMap[key] = models.RecvSuppMst{
-			RecvSuppNo: txn.TransactionID,
-			BrandCode:  "SA",
-			ShopCode:   "CFW5",
-			WayBillNo:  txn.WaybillNo,
-			BoxNo:      txn.BoxNo,
+	items := make(map[string][]map[string]string, 0)
+	for _, item := range data {
+		key := item["brand_coce"] + "-" + item["shop_coce"] + "-" + item["waybill_no"] + "-" + item["box_no"]
+		if _, ok := items[key]; ok {
+			items[key] = append(items[key], item)
+		} else {
+			items[key] = make([]map[string]string, 0)
+			items[key] = append(items[key], item)
 		}
 	}
 
-	masters := make([]models.RecvSuppMst, 0)
-	for _, mst := range mastersMap {
-		masters = append(masters, mst)
+	transactions := make([]entities.Transaction, 0)
+	for _, v := range items {
+		txn, err := entities.Transaction{}.Create(v)
+		if err != nil {
+			continue
+		}
+		transactions = append(transactions, txn)
 	}
 
-	return map[string]interface{}{
-		"RecvSuppMst": masters,
-		"RecvSuppDtl": details,
-	}, nil
+	return transactions, nil
+}
+
+// validateTransactions 验证transaction是否可以入库
+func (etl InStorageETL) validateTransaction(transaction entities.Transaction) (bool, error) {
+	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(transaction.BrandCode, transaction.ShopCode, transaction.WaybillNo)
+	if err != nil {
+		log.Println(err.Error())
+		return false, err
+	}
+
+	if len(recvSupp) == 0 {
+		return false, errors.New("there is no outbound order which waybill no is: " + transaction.WaybillNo)
+	}
+
+	ok := true
+	for _, v := range recvSupp {
+		ok = ok && (v.RecvSuppStatusCode == "R")
+	}
+
+	if !ok {
+		return false, errors.New("some sku already in storage")
+	}
+
+	return true, nil
+}
+
+// filterStorableTransactions 过滤出可以入库的运单
+func (etl InStorageETL) filterStorableTransactions(ctx context.Context, source interface{}) (interface{}, error) {
+	transactions, ok := source.([]entities.Transaction)
+	if !ok {
+		return nil, errors.New("Convert Failed")
+	}
+
+	storableTransactions := make([]entities.Transaction, 0)
+	for _, txn := range transactions {
+		ok, err := InStorageETL{}.validateTransaction(txn)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		if ok {
+			storableTransactions = append(storableTransactions, txn)
+		}
+	}
+	return storableTransactions, nil
+}
+
+// Transform ...
+func (etl InStorageETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
+	transactions, ok := source.([]entities.Transaction)
+	if !ok {
+		return nil, errors.New("Convert Failed")
+	}
+
+	return transactions, nil
 }
 
 // Load ...
 func (etl InStorageETL) Load(ctx context.Context, source interface{}) error {
-	mstDtlMap, ok := source.(map[string]interface{})
-	if !ok {
-		return errors.New("Convert Failed")
-	}
-	masters, ok := mstDtlMap["RecvSuppMst"].([]models.RecvSuppMst)
-	if !ok {
-		return errors.New("Convert Failed")
-	}
-	details, ok := mstDtlMap["RecvSuppDtl"].([]models.RecvSuppDtl)
+	transactions, ok := source.([]entities.Transaction)
 	if !ok {
 		return errors.New("Convert Failed")
 	}
 
-	repositories.RecvSuppRepository{}.SaveMasters(masters)
-	repositories.RecvSuppRepository{}.SaveDetails(details)
+	for _, txn := range transactions {
+		err := repositories.RecvSuppRepository{}.PutInStorage(txn.BrandCode, txn.ShopCode, txn.WaybillNo, txn.UserID)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+	}
 
 	return nil
 }
