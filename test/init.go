@@ -17,7 +17,7 @@ import (
 
 func init() {
 	factory.Init()
-	//setUpCSLDB()
+	setUpCSLDB()
 	setUpClrDB()
 }
 
@@ -30,7 +30,7 @@ func setUpCSLDB() {
 }
 
 func initRecvSuppMstData() {
-	filename, err := filepath.Abs("test/data/RecvSuppMst_data.csv")
+	filename, err := filepath.Abs("test/data/test_assign_etl_RecvSuppMst_data.csv")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -200,7 +200,7 @@ func loadRecvSuppMstData(masters []models.RecvSuppMst) {
 }
 
 func initRecvSuppDtlData() {
-	filename, err := filepath.Abs("test/data/RecvSuppDtl_data.csv")
+	filename, err := filepath.Abs("test/data/test_assign_etl_RecvSuppDtl_data.csv")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -288,6 +288,40 @@ func createRecvSuppDtlTable() {
 
 func setUpClrDB() {
 	createTransactionsTable()
+	initTransactionsData()
+}
+
+func initTransactionsData() {
+	filename, err := filepath.Abs("test/data/test_in_storage_etl_transactions_data.csv")
+	if err != nil {
+		panic(err.Error())
+	}
+	headers, data := readDataFromCSV(filename)
+	transactions := buildTransactions(headers, data)
+
+	loadTransactionsData(transactions)
+}
+
+func buildTransactions(headers map[int]string, data [][]string) []models.Transaction {
+	transactions := make([]models.Transaction, 0)
+	for _, row := range data {
+		txn := new(models.Transaction)
+		setObjectValue(headers, row, txn)
+		transactions = append(transactions, *txn)
+	}
+
+	return transactions
+}
+
+func loadTransactionsData(transactions []models.Transaction) {
+	for _, txn := range transactions {
+		if affected, err := factory.GetClrEngine().Insert(&txn); err != nil {
+			fmt.Printf("loadTransactionsData error: %v", err.Error())
+			fmt.Println()
+			fmt.Printf("affected: %v", affected)
+			fmt.Println()
+		}
+	}
 }
 
 func createTransactionsTable() {
