@@ -1,7 +1,8 @@
-package main
+package services
 
 import (
 	"clearance-adapter/domain/entities"
+	"clearance-adapter/repositories"
 	_ "clearance-adapter/test"
 	"context"
 	"log"
@@ -91,48 +92,42 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 func TestInStorageETL(t *testing.T) {
 	// SELECT * FROM tansactions
 	Convey("测试InStorageETL的Run方法", t, func() {
-		Convey("可以把入库数据从Clearance导入到CSL", func() {
-			etl := InStorageETL{}.New()
+		Convey("某个时间段没有入库运单的话，应该没有数据在CSL入库", func() {
+			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:00:00")
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 14)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, false)
+			}
+		})
+		Convey("运单号为1010590009008的运单应该在CSL入库", func() {
+			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
+			err := etl.Run(context.Background())
+			So(err, ShouldBeNil)
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 14)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, true)
+				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
+			}
+		})
+		Convey("运单号为1010590009014的运单应该在CSL入库", func() {
+			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
+			err := etl.Run(context.Background())
+			So(err, ShouldBeNil)
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CFGY", "1010590009014")
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 11)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, true)
+				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
+			}
 		})
 	})
 }
-
-// func TestInStorageETLTransform(t *testing.T) {
-// 	Convey("测试InStorageETL的Transform方法", t, func() {
-// 		Convey("将Transctions匹配成RecvSuppMst和RecvSuppDtl", func() {
-// 			transactions := []models.Transaction{
-// 				models.Transaction{
-// 					ID:            1,
-// 					TransactionID: "CFW51907236000",
-// 					WaybillNo:     "1010590009017",
-// 					BoxNo:         "1010590009017",
-// 					SkuCode:       "SPWH937G8951075",
-// 					Qty:           2,
-// 				},
-// 				models.Transaction{
-// 					ID:            1,
-// 					TransactionID: "CFW51907236000",
-// 					WaybillNo:     "1010590009017",
-// 					BoxNo:         "1010590009017",
-// 					SkuCode:       "SPAC937D0219999",
-// 					Qty:           2,
-// 				},
-// 			}
-// 			mstDtlMap, err := InStorageETL{}.Transform(context.Background(), transactions)
-// 			So(err, ShouldBeNil)
-// 			masters := mstDtlMap.(map[string]interface{})["RecvSuppMst"].([]models.RecvSuppMst)
-// 			So(masters, ShouldNotBeNil)
-// 			So(masters[0].RecvSuppNo, ShouldEqual, "CFW51907236000")
-// 			So(masters[0].WayBillNo, ShouldEqual, "1010590009017")
-// 			So(masters[0].BoxNo, ShouldEqual, "1010590009017")
-// 			details := mstDtlMap.(map[string]interface{})["RecvSuppDtl"].([]models.RecvSuppDtl)
-// 			So(details, ShouldNotBeNil)
-// 			So(details[0].ProdCode, ShouldEqual, "SPWH937G8951075")
-// 			So(details[0].RecvSuppFixedQty, ShouldEqual, 2)
-// 			So(details[1].ProdCode, ShouldEqual, "SPAC937D0219999")
-// 			So(details[1].RecvSuppFixedQty, ShouldEqual, 2)
-// 		})
-// 	})
-// }

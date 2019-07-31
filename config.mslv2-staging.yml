@@ -1,0 +1,6 @@
+
+cslConnString: "server=10.201.10.167;user id=CSL_DEV;password=8zMb4ZP1;database=CSL;connection timeout=300"
+
+clrConnString: "mslv2_app:Eland^123@tcp(139.196.228.246:3307)/mslv2_clearance?charset=utf8&parseTime=True&loc=UTC"
+
+p2brandConnString: "pangpang_app:Eland^123@tcp(139.196.228.246:3307)/pangpang_brand_sku_location?charset=utf8&parseTime=True&loc=UTC"

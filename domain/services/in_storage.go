@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"clearance-adapter/domain/entities"
@@ -12,22 +12,31 @@ import (
 )
 
 // InStorageETL 入库 p2-brand -> CSL
-type InStorageETL struct{}
+type InStorageETL struct {
+	StartDateTime time.Time
+	EndDateTime   time.Time
+}
 
 // New 创建InStorageETL对象，从Clearance到CSL
-func (InStorageETL) New() *goetl.ETL {
-	etl := goetl.New(InStorageETL{})
+func (InStorageETL) New(startDatetime, endDateTime string) *goetl.ETL {
+	local, _ := time.LoadLocation("Local")
+	start, _ := time.ParseInLocation("2006-01-02 15:04:05", startDatetime, local)
+	end, _ := time.ParseInLocation("2006-01-02 15:04:05", endDateTime, local)
+	inStorageETL := InStorageETL{
+		StartDateTime: start,
+		EndDateTime:   end,
+	}
+
+	etl := goetl.New(inStorageETL)
 	etl.Before(InStorageETL{}.buildTransactions)
 	etl.Before(InStorageETL{}.filterStorableTransactions)
+
 	return etl
 }
 
 // Extract ...
 func (etl InStorageETL) Extract(ctx context.Context) (interface{}, error) {
-	local, _ := time.LoadLocation("Local")
-	start, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-07-01 00:00:00", local)
-	end, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-07-31 23:59:59", local)
-	result, err := repositories.StockTransactionRepository{}.GetInStorageByCreateAt(start, end)
+	result, err := repositories.StockTransactionRepository{}.GetInStorageByCreateAt(etl.StartDateTime, etl.EndDateTime)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +53,7 @@ func (etl InStorageETL) buildTransactions(ctx context.Context, source interface{
 
 	items := make(map[string][]map[string]string, 0)
 	for _, item := range data {
-		key := item["brand_coce"] + "-" + item["shop_coce"] + "-" + item["waybill_no"] + "-" + item["box_no"]
+		key := item["brand_coce"] + "-" + item["shop_coce"] + "-" + item["waybill_no"]
 		if _, ok := items[key]; ok {
 			items[key] = append(items[key], item)
 		} else {
@@ -79,11 +88,15 @@ func (etl InStorageETL) validateTransaction(transaction entities.Transaction) (b
 
 	ok := true
 	for _, v := range recvSupp {
-		ok = ok && (v.RecvSuppStatusCode == "R")
+		ok = ok && (v.RecvSuppStatusCode == "R") // v.RecvSuppStatusCode == "R"的是ok的
+	}
+
+	for _, v := range recvSupp {
+		ok = ok && (v.RecvChk == false) // v.RecvChk == false 的都是ok的
 	}
 
 	if !ok {
-		return false, errors.New("some sku already in storage")
+		return false, errors.New("some outbound order already in storage")
 	}
 
 	return true, nil
