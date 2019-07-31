@@ -354,7 +354,6 @@ func buildStockTransaction(headers map[int]string, data [][]string) []models.Sto
 
 func loadStockTransactionData(transactions []models.StockTransaction) {
 	for _, txn := range transactions {
-		fmt.Println(txn)
 		if affected, err := factory.GetP2BrandEngine().Insert(&txn); err != nil {
 			fmt.Printf("loadStockTransactionData error: %v", err.Error())
 			fmt.Println()

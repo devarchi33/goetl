@@ -35,7 +35,7 @@ func getCurrPath() string {
 // GetCSLConnString CSL 数据库连接字符串
 func GetCSLConnString() string {
 	if *congfigEnv == "" {
-		defaultAppEnv := "dev"
+		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
 	}
 	readConfig(*congfigEnv)
@@ -45,7 +45,7 @@ func GetCSLConnString() string {
 // GetClrConnString Clearance 数据库连接字符串
 func GetClrConnString() string {
 	if *congfigEnv == "" {
-		defaultAppEnv := "dev"
+		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
 	}
 	readConfig(*congfigEnv)
@@ -55,7 +55,7 @@ func GetClrConnString() string {
 // GetP2BrandConnString pangpang-brand 数据库连接字符串
 func GetP2BrandConnString() string {
 	if *congfigEnv == "" {
-		defaultAppEnv := "dev"
+		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
 	}
 	readConfig(*congfigEnv)
