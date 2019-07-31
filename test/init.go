@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
@@ -18,7 +19,7 @@ import (
 func init() {
 	factory.Init()
 	setUpCSLDB()
-	setUpClrDB()
+	setUpP2BrandDB()
 }
 
 func setUpCSLDB() {
@@ -30,7 +31,7 @@ func setUpCSLDB() {
 }
 
 func initRecvSuppMstData() {
-	filename, err := filepath.Abs("test/data/test_assign_etl_RecvSuppMst_data.csv")
+	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppMst_data.csv")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -53,6 +54,9 @@ func setObjectValue(headers map[int]string, data []string, obj interface{}) {
 		}
 		if field.Kind() == reflect.String {
 			field.SetString(val)
+		} else if field.Kind() == reflect.Int64 {
+			v, _ := strconv.ParseInt(val, 10, 64)
+			field.SetInt(v)
 		} else if field.Kind() == reflect.Int {
 			v, _ := strconv.ParseInt(val, 10, 64)
 			field.SetInt(v)
@@ -200,7 +204,7 @@ func loadRecvSuppMstData(masters []models.RecvSuppMst) {
 }
 
 func initRecvSuppDtlData() {
-	filename, err := filepath.Abs("test/data/test_assign_etl_RecvSuppDtl_data.csv")
+	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppDtl_data.csv")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -286,37 +290,73 @@ func createRecvSuppDtlTable() {
 	}
 }
 
-func setUpClrDB() {
-	createTransactionsTable()
-	initTransactionsData()
+func setUpP2BrandDB() {
+	createStockTransactionTable()
+	initStockTransactionData()
+
+	createStockTransactionItemTable()
+	initStockTransactionItemData()
 }
 
-func initTransactionsData() {
-	filename, err := filepath.Abs("test/data/test_in_storage_etl_transactions_data.csv")
+func createStockTransactionTable() {
+	sql := `DROP TABLE IF EXISTS stock_transaction;`
+	if _, err := factory.GetP2BrandEngine().Exec(sql); err != nil {
+		fmt.Printf("drop StockTransactionTable error: %v", err.Error())
+		fmt.Println()
+	}
+
+	sql = `
+		CREATE TABLE stock_transaction
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			tenant_code VARCHAR(255),
+			type VARCHAR(255),
+			waybill_no VARCHAR(255),
+			created_at DATETIME,
+			colleague_id BIGINT(20),
+			box_no VARCHAR(255),
+			shipment_location_id BIGINT(20),
+			receipt_location_id BIGINT(20),
+			brand_code VARCHAR(255)
+		);
+	`
+
+	if _, err := factory.GetP2BrandEngine().Exec(sql); err != nil {
+		fmt.Printf("createStockTransactionTable error: %v", err.Error())
+		fmt.Println()
+	}
+}
+
+func initStockTransactionData() {
+	filename, err := filepath.Abs("test/data/test_in_storage_etl_stock_transaction_data.csv")
 	if err != nil {
 		panic(err.Error())
 	}
 	headers, data := readDataFromCSV(filename)
-	transactions := buildTransactions(headers, data)
+	transactions := buildStockTransaction(headers, data)
 
-	loadTransactionsData(transactions)
+	loadStockTransactionData(transactions)
 }
 
-func buildTransactions(headers map[int]string, data [][]string) []models.Transaction {
-	transactions := make([]models.Transaction, 0)
+func buildStockTransaction(headers map[int]string, data [][]string) []models.StockTransaction {
+	transactions := make([]models.StockTransaction, 0)
 	for _, row := range data {
-		txn := new(models.Transaction)
+		txn := new(models.StockTransaction)
 		setObjectValue(headers, row, txn)
+		local, _ := time.LoadLocation("Local")
+		t, _ := time.ParseInLocation("2006-01-02 15:04:05", row[4], local)
+		txn.CreatedAt = t
 		transactions = append(transactions, *txn)
 	}
 
 	return transactions
 }
 
-func loadTransactionsData(transactions []models.Transaction) {
+func loadStockTransactionData(transactions []models.StockTransaction) {
 	for _, txn := range transactions {
-		if affected, err := factory.GetClrEngine().Insert(&txn); err != nil {
-			fmt.Printf("loadTransactionsData error: %v", err.Error())
+		fmt.Println(txn)
+		if affected, err := factory.GetP2BrandEngine().Insert(&txn); err != nil {
+			fmt.Printf("loadStockTransactionData error: %v", err.Error())
 			fmt.Println()
 			fmt.Printf("affected: %v", affected)
 			fmt.Println()
@@ -324,28 +364,64 @@ func loadTransactionsData(transactions []models.Transaction) {
 	}
 }
 
-func createTransactionsTable() {
-	sql := `
-		DROP TABLE IF EXISTS transactions;
-	`
-	if _, err := factory.GetClrEngine().Exec(sql); err != nil {
-		fmt.Printf("createTransactionsTable error: %v", err.Error())
+func createStockTransactionItemTable() {
+	sql := `DROP TABLE IF EXISTS stock_transaction_item;`
+	if _, err := factory.GetP2BrandEngine().Exec(sql); err != nil {
+		fmt.Printf("drop StockTransactionItemTable error: %v", err.Error())
 		fmt.Println()
 	}
 
 	sql = `
-		CREATE TABLE transactions
+		CREATE TABLE stock_transaction_item
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			transaction_id VARCHAR(14) NOT NULL,
-			waybill_no VARCHAR(13) NOT NULL,
-			box_no VARCHAR(20) NOT NULL,
-			sku_code VARCHAR(18) NOT NULL,
-			qty INT NOT NULL
+			stock_transaction_id BIGINT(20),
+			product_id BIGINT(20),
+			sku_id BIGINT(20),
+			barcode VARCHAR(255),
+			quantity BIGINT(20),
+			created_at DATETIME,
+			brand_code VARCHAR(255)
 		);
 	`
-	if _, err := factory.GetClrEngine().Exec(sql); err != nil {
-		fmt.Printf("createTransactionsTable error: %v", err.Error())
+	if _, err := factory.GetP2BrandEngine().Exec(sql); err != nil {
+		fmt.Printf("createStockTransactionItemTable error: %v", err.Error())
 		fmt.Println()
+	}
+}
+
+func initStockTransactionItemData() {
+	filename, err := filepath.Abs("test/data/test_in_storage_etl_stock_transaction_item_data.csv")
+	if err != nil {
+		panic(err.Error())
+	}
+	headers, data := readDataFromCSV(filename)
+	transactionItems := buildStockTransactionItem(headers, data)
+
+	loadStockTransactionItemData(transactionItems)
+}
+
+func buildStockTransactionItem(headers map[int]string, data [][]string) []models.StockTransactionItem {
+	transactionItems := make([]models.StockTransactionItem, 0)
+	for _, row := range data {
+		txn := new(models.StockTransactionItem)
+		setObjectValue(headers, row, txn)
+		local, _ := time.LoadLocation("Local")
+		t, _ := time.ParseInLocation("2006-01-02 15:04:05", row[6], local)
+		txn.CreatedAt = t
+		transactionItems = append(transactionItems, *txn)
+	}
+
+	return transactionItems
+}
+
+func loadStockTransactionItemData(transactionItems []models.StockTransactionItem) {
+	for _, txn := range transactionItems {
+		if affected, err := factory.GetP2BrandEngine().Insert(&txn); err != nil {
+			fmt.Printf("loadStockTransactionItemData error: %v", err.Error())
+			fmt.Println()
+			fmt.Printf("affected: %v", affected)
+			fmt.Println()
+		}
 	}
 }

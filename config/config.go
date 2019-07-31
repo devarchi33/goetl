@@ -42,16 +42,6 @@ func GetCSLConnString() string {
 	return viper.Get("cslConnString").(string)
 }
 
-// GetINVConnString MSL v1.0 数据库连接字符串
-func GetINVConnString() string {
-	if *congfigEnv == "" {
-		defaultAppEnv := "dev"
-		congfigEnv = &defaultAppEnv
-	}
-	readConfig(*congfigEnv)
-	return viper.Get("invConnString").(string)
-}
-
 // GetClrConnString Clearance 数据库连接字符串
 func GetClrConnString() string {
 	if *congfigEnv == "" {
@@ -62,12 +52,12 @@ func GetClrConnString() string {
 	return viper.Get("clrConnString").(string)
 }
 
-// GetMSLConnString MSL v2.0 数据库连接字符串
-func GetMSLConnString() string {
+// GetP2BrandConnString pangpang-brand 数据库连接字符串
+func GetP2BrandConnString() string {
 	if *congfigEnv == "" {
 		defaultAppEnv := "dev"
 		congfigEnv = &defaultAppEnv
 	}
 	readConfig(*congfigEnv)
-	return viper.Get("mslConnString").(string)
+	return viper.Get("p2brandConnString").(string)
 }

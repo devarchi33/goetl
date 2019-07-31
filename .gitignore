@@ -10,3 +10,4 @@ debug
 .idea/
 mysql/
 mssql/
+playbook.toml
