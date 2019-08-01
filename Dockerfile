@@ -14,7 +14,7 @@ FROM pangpanglabs/alpine-ssl
 RUN apk add -U tzdata
 WORKDIR /go/bin/
 # copy config files to image
-COPY --from=builder /go/src/clearance-adapter/configs/*.yml ./configs/
+COPY --from=builder /go/src/clearance-adapter/*.yml ./
 # copy execute file to image
 COPY --from=builder /go/bin/clearance-adapter ./
 # EXPOSE <PROJECT-PORT>
