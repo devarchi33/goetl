@@ -18,3 +18,9 @@ func TestGetByWaybillNo(t *testing.T) {
 		})
 	})
 }
+
+func TestInit(t *testing.T) {
+	Convey("测试初始化数据库", t, func() {
+		So(1, ShouldEqual, 1)
+	})
+}
