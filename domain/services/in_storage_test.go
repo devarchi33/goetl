@@ -33,23 +33,24 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 					"sku_code":   "SPWJ948S2256070",
 					"qty":        "3",
 					"user_id":    "shi.yanxun",
-				}, map[string]string{
-					"brand_code": "SA",
-					"shop_code":  "CEGP",
-					"waybill_no": "1010590009009",
-					"box_no":     "1010590009009",
-					"sku_code":   "SPYC949H2130095",
-					"qty":        "4",
-					"user_id":    "shi.yanxun",
-				}, map[string]string{
-					"brand_code": "SA",
-					"shop_code":  "CEGP",
-					"waybill_no": "1010590009009",
-					"box_no":     "1010590009009",
-					"sku_code":   "SPYC949H2130100",
-					"qty":        "5",
-					"user_id":    "shi.yanxun",
 				},
+				// map[string]string{
+				// 	"brand_code": "SA",
+				// 	"shop_code":  "CEGP",
+				// 	"waybill_no": "1010590009009",
+				// 	"box_no":     "1010590009009",
+				// 	"sku_code":   "SPYC949H2130095",
+				// 	"qty":        "4",
+				// 	"user_id":    "shi.yanxun",
+				// }, map[string]string{
+				// 	"brand_code": "SA",
+				// 	"shop_code":  "CEGP",
+				// 	"waybill_no": "1010590009009",
+				// 	"box_no":     "1010590009009",
+				// 	"sku_code":   "SPYC949H2130100",
+				// 	"qty":        "5",
+				// 	"user_id":    "shi.yanxun",
+				// },
 			}
 
 			result, err := InStorageETL{}.buildTransactions(context.Background(), data)
@@ -74,17 +75,17 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 			So(transactions[0].Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
 			So(transactions[0].Items[1].Qty, ShouldEqual, 3)
 			// 第二条
-			So(transactions[1].BrandCode, ShouldEqual, "SA")
-			So(transactions[1].ShopCode, ShouldEqual, "CEGP")
-			So(transactions[1].WaybillNo, ShouldEqual, "1010590009009")
-			So(transactions[1].BoxNo, ShouldEqual, "1010590009009")
-			So(transactions[1].UserID, ShouldEqual, "shi.yanxun")
-			So(transactions[1].Items, ShouldNotBeNil)
-			So(len(transactions[1].Items), ShouldEqual, 2)
-			So(transactions[1].Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
-			So(transactions[1].Items[0].Qty, ShouldEqual, 4)
-			So(transactions[1].Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
-			So(transactions[1].Items[1].Qty, ShouldEqual, 5)
+			// So(transactions[1].BrandCode, ShouldEqual, "SA")
+			// So(transactions[1].ShopCode, ShouldEqual, "CEGP")
+			// So(transactions[1].WaybillNo, ShouldEqual, "1010590009009")
+			// So(transactions[1].BoxNo, ShouldEqual, "1010590009009")
+			// So(transactions[1].UserID, ShouldEqual, "shi.yanxun")
+			// So(transactions[1].Items, ShouldNotBeNil)
+			// So(len(transactions[1].Items), ShouldEqual, 2)
+			// So(transactions[1].Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
+			// So(transactions[1].Items[0].Qty, ShouldEqual, 4)
+			// So(transactions[1].Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
+			// So(transactions[1].Items[1].Qty, ShouldEqual, 5)
 		})
 	})
 }
