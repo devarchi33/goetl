@@ -19,7 +19,7 @@ func (StockTransactionRepository) GetInStorageByCreateAt(start, end time.Time) (
 			tx.box_no,
 			sku.code AS sku_code,
 			txi.quantity AS qty,
-			'shi.yanxun' AS user_id
+			'7000028260' AS emp_id
 		FROM pangpang_brand_sku_location.stock_transaction AS tx
 			JOIN pangpang_brand_sku_location.stock_transaction_item AS txi
 				ON tx.id = txi.stock_transaction_id

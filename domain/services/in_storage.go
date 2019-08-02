@@ -53,7 +53,7 @@ func (etl InStorageETL) buildTransactions(ctx context.Context, source interface{
 
 	items := make(map[string][]map[string]string, 0)
 	for _, item := range data {
-		key := item["brand_coce"] + "-" + item["shop_coce"] + "-" + item["waybill_no"]
+		key := item["brand_code"] + "-" + item["shop_code"] + "-" + item["waybill_no"]
 		if _, ok := items[key]; ok {
 			items[key] = append(items[key], item)
 		} else {
@@ -96,7 +96,7 @@ func (etl InStorageETL) validateTransaction(transaction entities.Transaction) (b
 	}
 
 	if !ok {
-		return false, errors.New("some outbound order already in storage")
+		return false, errors.New("outbound order that waybill no is " + transaction.WaybillNo + " has been put in storage")
 	}
 
 	return true, nil
@@ -141,7 +141,7 @@ func (etl InStorageETL) Load(ctx context.Context, source interface{}) error {
 	}
 
 	for _, txn := range transactions {
-		err := repositories.RecvSuppRepository{}.PutInStorage(txn.BrandCode, txn.ShopCode, txn.WaybillNo, txn.UserID)
+		err := repositories.RecvSuppRepository{}.PutInStorage(txn.BrandCode, txn.ShopCode, txn.WaybillNo, txn.EmpID)
 		if err != nil {
 			log.Printf(err.Error())
 		}

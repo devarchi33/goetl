@@ -24,7 +24,7 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 					"box_no":     "1010590009008",
 					"sku_code":   "SPWJ948S2255070",
 					"qty":        "2",
-					"user_id":    "shi.yanxun",
+					"emp_id":     "7000028260",
 				}, map[string]string{
 					"brand_code": "SA",
 					"shop_code":  "CEGP",
@@ -32,25 +32,25 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 					"box_no":     "1010590009008",
 					"sku_code":   "SPWJ948S2256070",
 					"qty":        "3",
-					"user_id":    "shi.yanxun",
+					"emp_id":     "7000028260",
 				},
-				// map[string]string{
-				// 	"brand_code": "SA",
-				// 	"shop_code":  "CEGP",
-				// 	"waybill_no": "1010590009009",
-				// 	"box_no":     "1010590009009",
-				// 	"sku_code":   "SPYC949H2130095",
-				// 	"qty":        "4",
-				// 	"user_id":    "shi.yanxun",
-				// }, map[string]string{
-				// 	"brand_code": "SA",
-				// 	"shop_code":  "CEGP",
-				// 	"waybill_no": "1010590009009",
-				// 	"box_no":     "1010590009009",
-				// 	"sku_code":   "SPYC949H2130100",
-				// 	"qty":        "5",
-				// 	"user_id":    "shi.yanxun",
-				// },
+				map[string]string{
+					"brand_code": "SA",
+					"shop_code":  "CEGP",
+					"waybill_no": "1010590009009",
+					"box_no":     "1010590009009",
+					"sku_code":   "SPYC949H2130095",
+					"qty":        "4",
+					"emp_id":     "7000028260",
+				}, map[string]string{
+					"brand_code": "SA",
+					"shop_code":  "CEGP",
+					"waybill_no": "1010590009009",
+					"box_no":     "1010590009009",
+					"sku_code":   "SPYC949H2130100",
+					"qty":        "5",
+					"emp_id":     "7000028260",
+				},
 			}
 
 			result, err := InStorageETL{}.buildTransactions(context.Background(), data)
@@ -62,30 +62,28 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 			if !ok {
 				log.Printf("Convert Failed")
 			}
-			// 第一条
-			So(transactions[0].BrandCode, ShouldEqual, "SA")
-			So(transactions[0].ShopCode, ShouldEqual, "CEGP")
-			So(transactions[0].WaybillNo, ShouldEqual, "1010590009008")
-			So(transactions[0].BoxNo, ShouldEqual, "1010590009008")
-			So(transactions[0].UserID, ShouldEqual, "shi.yanxun")
-			So(transactions[0].Items, ShouldNotBeNil)
-			So(len(transactions[0].Items), ShouldEqual, 2)
-			So(transactions[0].Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
-			So(transactions[0].Items[0].Qty, ShouldEqual, 2)
-			So(transactions[0].Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
-			So(transactions[0].Items[1].Qty, ShouldEqual, 3)
-			// 第二条
-			// So(transactions[1].BrandCode, ShouldEqual, "SA")
-			// So(transactions[1].ShopCode, ShouldEqual, "CEGP")
-			// So(transactions[1].WaybillNo, ShouldEqual, "1010590009009")
-			// So(transactions[1].BoxNo, ShouldEqual, "1010590009009")
-			// So(transactions[1].UserID, ShouldEqual, "shi.yanxun")
-			// So(transactions[1].Items, ShouldNotBeNil)
-			// So(len(transactions[1].Items), ShouldEqual, 2)
-			// So(transactions[1].Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
-			// So(transactions[1].Items[0].Qty, ShouldEqual, 4)
-			// So(transactions[1].Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
-			// So(transactions[1].Items[1].Qty, ShouldEqual, 5)
+			So(len(transactions), ShouldEqual, 2)
+			for _, txn := range transactions {
+				if txn.BrandCode == "SA" && txn.ShopCode == "CEGP" && txn.WaybillNo == "1010590009008" {
+					So(txn.BoxNo, ShouldEqual, "1010590009008")
+					So(txn.EmpID, ShouldEqual, "7000028260")
+					So(txn.Items, ShouldNotBeNil)
+					So(len(txn.Items), ShouldEqual, 2)
+					So(txn.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
+					So(txn.Items[0].Qty, ShouldEqual, 2)
+					So(txn.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
+					So(txn.Items[1].Qty, ShouldEqual, 3)
+				} else if txn.BrandCode == "SA" && txn.ShopCode == "CEGP" && txn.WaybillNo == "1010590009009" {
+					So(txn.BoxNo, ShouldEqual, "1010590009009")
+					So(txn.EmpID, ShouldEqual, "7000028260")
+					So(txn.Items, ShouldNotBeNil)
+					So(len(txn.Items), ShouldEqual, 2)
+					So(txn.Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
+					So(txn.Items[0].Qty, ShouldEqual, 4)
+					So(txn.Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
+					So(txn.Items[1].Qty, ShouldEqual, 5)
+				}
+			}
 		})
 	})
 }
@@ -94,7 +92,7 @@ func TestInStorageETL(t *testing.T) {
 	// SELECT * FROM tansactions
 	Convey("测试InStorageETL的Run方法", t, func() {
 		Convey("某个时间段没有入库运单的话，应该没有数据在CSL入库", func() {
-			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:00:00")
+			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:01:00")
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
 			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
@@ -114,6 +112,8 @@ func TestInStorageETL(t *testing.T) {
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, true)
 				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
 		})
@@ -127,6 +127,8 @@ func TestInStorageETL(t *testing.T) {
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, true)
 				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
 		})

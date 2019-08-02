@@ -597,8 +597,8 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 		@BrandCode VARCHAR(4),   -- 브랜드 코드
 		@ShopCode CHAR(4),       -- 매장코드
 		@WaybillNo VARCHAR(13),  -- 운송장번호
-		@UserID VARCHAR(20)      -- 入库人ID
-	AS
+		@EmpID CHAR(10)      -- 入库人EmpNo
+		AS
 		--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 		SET XACT_ABORT ON;
 		SET NOCOUNT ON;
@@ -613,7 +613,7 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 			DECLARE @ErrorParam2 NVARCHAR(4000) = '';
 			DECLARE @CurrDate CHAR(8);
 			DECLARE @RecvEmpName NVARCHAR(200);
-			DECLARE @EmpId VARCHAR(20);
+			DECLARE @UserID VARCHAR(20);
 			BEGIN TRY
 				-- 마감체크
 				IF (
@@ -641,12 +641,15 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 				PRINT (@RecvSuppNo);
 
 
-				SELECT @EmpId = A.EmpID,
-					@RecvEmpName = B.EmpName
-				FROM UserInfo AS A
-					INNER JOIN Employee AS B
-						ON (B.EmpID = A.EmpID)
-				WHERE UserID = @UserID;
+		SELECT @RecvEmpName = EmpName
+		FROM Employee
+		WHERE EmpID = @EmpID
+
+
+		SELECT @UserID = UserID
+		FROM UserInfo
+		WHERE EmpID = @EmpID
+
 
 				SELECT @CurrDate = CONVERT(CHAR(8), GETDATE(), 112);
 				-- 인터페이스 실시간 처리 확인
@@ -717,7 +720,7 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 							SET RecvChk = 1,                  -- 매장입고여부  조회할때 RecvChk 만 보고  RecvSuppStatusCode = 'F'	는 안본다. RecvChk = 0 ,RecvSuppStatusCode = 'F' 면 데이터 꼬인것.
 								ShopSuppRecvDate = @CurrDate, -- 매장입고일자
 								RecvSuppStatusCode = 'F',     -- 입고확정
-								RecvEmpID = @EmpId,           -- 입고자사번
+								RecvEmpID = @EmpID,           -- 입고자사번
 								RecvEmpName = @RecvEmpName,   -- 입고자명
 								ModiUserID = @UserID,
 								ModiDateTime = GETDATE(),
