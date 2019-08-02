@@ -11,7 +11,7 @@ type Transaction struct {
 	ShopCode  string
 	WaybillNo string
 	BoxNo     string
-	UserID    string
+	EmpID     string
 	Items     []TransactionItem
 }
 
@@ -29,7 +29,7 @@ func (Transaction) Create(data []map[string]string) (Transaction, error) {
 	}
 
 	txnData := data[0]
-	err := Transaction{}.checkRequirement(txnData, "brand_code", "shop_code", "waybill_no", "box_no", "user_id")
+	err := Transaction{}.checkRequirement(txnData, "brand_code", "shop_code", "waybill_no", "box_no", "emp_id")
 	if err != nil {
 		return transaction, err
 	}
@@ -38,7 +38,7 @@ func (Transaction) Create(data []map[string]string) (Transaction, error) {
 	transaction.ShopCode = txnData["shop_code"]
 	transaction.WaybillNo = txnData["waybill_no"]
 	transaction.BoxNo = txnData["box_no"]
-	transaction.UserID = txnData["user_id"]
+	transaction.EmpID = txnData["emp_id"]
 	transaction.Items = make([]TransactionItem, 0)
 
 	for _, item := range data {
