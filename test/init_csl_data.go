@@ -7,11 +7,10 @@ import (
 )
 
 func initCSL() {
-	// createCSLDB()
 	createRecvSuppMstTable()
-	// setRecvSuppMstData()
 	createRecvSuppDtlTable()
-	// setRecvSuppDtlData()
+	createStockMisDtlTable()
+	createProductTable()
 	createMonthlyBizFuctionClosingTable()
 	createIFConfigTable()
 	createUserInfoTable()
@@ -19,6 +18,7 @@ func initCSL() {
 	createSP()
 }
 
+// 创建的时候有问题，暂未使用，需要事先创建CSL数据库
 func createCSLDB() {
 	session := factory.GetCSLEngine().NewSession()
 	defer session.Close()
@@ -211,7 +211,7 @@ func createEmployeeTable() {
 	}
 }
 
-// Master 部分
+// RecvSuppMaster 部分
 func createRecvSuppMstTable() {
 	session := factory.GetCSLEngine().NewSession()
 	defer session.Close()
@@ -315,40 +315,7 @@ func createRecvSuppMstTable() {
 	}
 }
 
-// func setRecvSuppMstData() {
-// 	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppMst_data.csv")
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// 	headers, data := readDataFromCSV(filename)
-// 	masters := buildRecvSuppMsts(headers, data)
-
-// 	loadRecvSuppMstData(masters)
-// }
-
-// func buildRecvSuppMsts(headers map[int]string, data [][]string) []models.RecvSuppMst {
-// 	masters := make([]models.RecvSuppMst, 0)
-// 	for _, row := range data {
-// 		master := new(models.RecvSuppMst)
-// 		setObjectValue(headers, row, master)
-// 		masters = append(masters, *master)
-// 	}
-
-// 	return masters
-// }
-
-// func loadRecvSuppMstData(masters []models.RecvSuppMst) {
-// 	for _, master := range masters {
-// 		if affected, err := factory.GetCSLEngine().Insert(&master); err != nil {
-// 			fmt.Printf("loadRecvSuppMstData error: %v", err.Error())
-// 			fmt.Println()
-// 			fmt.Printf("affected: %v", affected)
-// 			fmt.Println()
-// 		}
-// 	}
-// }
-
-// Detail 部分
+// RecvSuppDetail 部分
 func createRecvSuppDtlTable() {
 	session := factory.GetCSLEngine().NewSession()
 	defer session.Close()
@@ -446,38 +413,158 @@ func createRecvSuppDtlTable() {
 	}
 }
 
-// func setRecvSuppDtlData() {
-// 	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppDtl_data.csv")
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// 	headers, data := readDataFromCSV(filename)
-// 	details := buildRecvSuppDtls(headers, data)
+// 误差部分
+func createStockMisDtlTable() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
 
-// 	loadRecvSuppDtlData(details)
-// }
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createStockMisDtlTable error: %v", err.Error())
+		log.Println()
+	}
 
-// func buildRecvSuppDtls(headers map[int]string, data [][]string) []models.RecvSuppDtl {
-// 	details := make([]models.RecvSuppDtl, 0)
-// 	for _, row := range data {
-// 		detail := new(models.RecvSuppDtl)
-// 		setObjectValue(headers, row, detail)
-// 		details = append(details, *detail)
-// 	}
+	if _, err := session.Exec("DROP TABLE IF EXISTS CSL.dbo.StockMisDtl;"); err != nil {
+		log.Printf("createStockMisDtlTable error: %v", err.Error())
+		log.Println()
+	}
 
-// 	return details
-// }
+	sql := `
+		CREATE TABLE CSL.dbo.StockMisDtl
+		(
+			BrandCode VARCHAR(4) NOT NULL,
+			ShopCode CHAR(4) NOT NULL,
+			Dates CHAR(8) NOT NULL,
+			SeqNo INT NOT NULL,
+			DtSeq INT NOT NULL,
+			SAPDeliveryNo CHAR(10),
+			SAPDeliveryItemNo CHAR(10),
+			ProdCode VARCHAR(18) NOT NULL,
+			RecvSuppQty INT,
+			StockMisQty INT,
+			StockMisFixQty INT,
+			StockMisReasonCode CHAR(2),
+			StockMisStatusCode CHAR(2),
+			StockMisResultCode CHAR(2),
+			RecvDate CHAR(8),
+			RecvSuppNo CHAR(14),
+			StyleCode VARCHAR(18) NOT NULL,
+			StockMisNo CHAR(14) NOT NULL,
+			RecvSuppDate CHAR(8),
+			ShopDesc NVARCHAR(200),
+			BrandDesc NVARCHAR(200),
+			PlantCode CHAR(4) NOT NULL,
+			InsertEmpID CHAR(10),
+			InsertEmpName NVARCHAR(100) NOT NULL,
+			RecvEmpID CHAR(10),
+			RecvEmpName NVARCHAR(100),
+			StockMisRecvDateTime SMALLDATETIME,
+			ProcessEmpID VARCHAR(20),
+			ProcessEmpName NVARCHAR(100),
+			StockMisProcDateTime SMALLDATETIME,
+			NewSAPDeliveryNo CHAR(10),
+			BoxNo CHAR(20) NOT NULL,
+			RecvSuppType CHAR,
+			DelChk BIT DEFAULT 0 NOT NULL,
+			InUserID VARCHAR(20) NOT NULL,
+			InDateTime DATETIME,
+			ModiUserID VARCHAR(20) NOT NULL,
+			ModiDateTime DATETIME,
+			SendState VARCHAR(2) DEFAULT '' NOT NULL,
+			SendFlag CHAR DEFAULT 'R' NOT NULL,
+			SendSeqNo BIGINT NOT NULL IDENTITY,
+			SendDateTime DATETIME,
+			InvtBaseDate CHAR(8) NOT NULL,
+			RecvSuppNoNew CHAR(14),
+			SendEmpName NVARCHAR(100),
+			WayBillNo01 CHAR(13)
+		);
+	`
 
-// func loadRecvSuppDtlData(details []models.RecvSuppDtl) {
-// 	for _, detail := range details {
-// 		if affected, err := factory.GetCSLEngine().Insert(&detail); err != nil {
-// 			fmt.Printf("loadRecvSuppDtlData error: %v", err.Error())
-// 			fmt.Println()
-// 			fmt.Printf("affected: %v", affected)
-// 			fmt.Println()
-// 		}
-// 	}
-// }
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createRecvSuppMstTable error: %v", err.Error())
+		fmt.Println()
+	}
+}
+
+// 商品部分，误差需要
+func createProductTable() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createProductTable error: %v", err.Error())
+		log.Println()
+	}
+
+	if _, err := session.Exec("DROP TABLE IF EXISTS CSL.dbo.Product;"); err != nil {
+		log.Printf("createProductTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE CSL.dbo.Product
+		(
+			BrandCode VARCHAR(4) NOT NULL,
+			ProdCode VARCHAR(18) NOT NULL,
+			ProdName NVARCHAR(200),
+			StyleCode VARCHAR(18) NOT NULL,
+			ColorCode CHAR(3) NOT NULL,
+			ColorName NVARCHAR(200),
+			SizeCode CHAR(3) NOT NULL,
+			SizeName NVARCHAR(200),
+			BaseUnitCnt INT,
+			BaseUnitCode CHAR(3),
+			BaseUnitName NVARCHAR(60),
+			UseChk BIT DEFAULT 1 NOT NULL,
+			InUserID VARCHAR(20) NOT NULL,
+			InDateTime DATETIME,
+			Price DECIMAL(13,2) DEFAULT 0 NOT NULL,
+			PreProdCode VARCHAR(18),
+			ModiUserID VARCHAR(20),
+			ModiDateTime DATETIME
+		);
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createProductTable error: %v", err.Error())
+		fmt.Println()
+	}
+
+	sql = `
+		INSERT INTO CSL.dbo.Product (BrandCode, ProdCode, ProdName, StyleCode, ColorCode, ColorName, SizeCode, SizeName, BaseUnitCnt, BaseUnitCode, BaseUnitName, UseChk, InUserID, InDateTime, Price, PreProdCode, ModiUserID, ModiDateTime) 
+		VALUES 
+		('SA', 'SPWH936D5430075', N'蜡笔小新彩色短裙, (30)Yellow, 165/70A(M)', 'SPWH936D54', '30 ', '(30)Yellow', '075', 'M', null, null, null, 1, 'system', '2019-04-22 00:00:00.000', 199.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWH936D5430080', N'蜡笔小新彩色短裙, (30)Yellow, 170/74A(L)', 'SPWH936D54', '30 ', '(30)Yellow', '080', 'L', null, null, null, 1, 'system', '2019-04-22 00:00:00.000', 199.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2255070', N'女式牛仔裙, (55)Indigo, 160/66A(S)', 'SPWJ948S22', '55 ', '(55)Indigo', '070', 'S', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2255075', N'女式牛仔裙, (55)Indigo, 165/70A(M)', 'SPWJ948S22', '55 ', '(55)Indigo', '075', 'M', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2255080', N'女式牛仔裙, (55)Indigo, 170/74A(L)', 'SPWJ948S22', '55 ', '(55)Indigo', '080', 'L', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2256070', N'女式牛仔裙, (56)Light Indigo, 160/66A(S)', 'SPWJ948S22', '56 ', '(56)Light Indigo', '070', 'S', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2256075', N'女式牛仔裙, (56)Light Indigo, 165/70A(M)', 'SPWJ948S22', '56 ', '(56)Light Indigo', '075', 'M', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2355070', N'女式牛仔裙, (55)Indigo, 160/66A(S)', 'SPWJ948S23', '55 ', '(55)Indigo', '070', 'S', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 199.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2355080', N'女式牛仔裙, (55)Indigo, 170/74A(L)', 'SPWJ948S23', '55 ', '(55)Indigo', '080', 'L', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 199.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2356070', N'女式牛仔裙, (56)Light Indigo, 160/66A(S)', 'SPWJ948S23', '56 ', '(56)Light Indigo', '070', 'S', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 199.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPWJ948S2356075', N'女式牛仔裙, (56)Light Indigo, 165/70A(M)', 'SPWJ948S23', '56 ', '(56)Light Indigo', '075', 'M', null, null, null, 1, 'system', '2019-05-16 00:00:00.000', 199.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949H2130095', N'大格纹衬衫, (30)Yellow, 170/92A(M)', 'SPYC949H21', '30 ', '(30)Yellow', '095', 'M', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949H2130100', N'大格纹衬衫, (30)Yellow, 175/96A(L)', 'SPYC949H21', '30 ', '(30)Yellow', '100', 'L', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949H2130105', N'大格纹衬衫, (30)Yellow, 180/100A(XL)', 'SPYC949H21', '30 ', '(30)Yellow', '105', 'XL', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949H2159095', N'大格纹衬衫, (59)Navy, 170/92A(M)', 'SPYC949H21', '59 ', '(59)Navy', '095', 'M', null, null, null, 1, 'system', '2019-06-24 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949H2159100', N'大格纹衬衫, (59)Navy, 175/96A(L)', 'SPYC949H21', '59 ', '(59)Navy', '100', 'L', null, null, null, 1, 'system', '2019-06-24 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949S1139085', N'女式格子衬衫, (39)Ivory, 160/84A(S)', 'SPYC949S11', '39 ', '(39)Ivory', '085', 'S', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949S1139090', N'女式格子衬衫, (39)Ivory, 165/88A(M)', 'SPYC949S11', '39 ', '(39)Ivory', '090', 'M', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949S1139095', N'女式格子衬衫, (39)Ivory, 170/92A(L)', 'SPYC949S11', '39 ', '(39)Ivory', '095', 'L', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949S1159085', N'女式格子衬衫, (59)Navy, 160/84A(S)', 'SPYC949S11', '59 ', '(59)Navy', '085', 'S', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949S1159090', N'女式格子衬衫, (59)Navy, 165/88A(M)', 'SPYC949S11', '59 ', '(59)Navy', '090', 'M', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYC949S1159095', N'女式格子衬衫, (59)Navy, 170/92A(L)', 'SPYC949S11', '59 ', '(59)Navy', '095', 'L', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYS949H2250095', N'条纹衬衫, (50)Blue, 170/92A(M)', 'SPYS949H22', '50 ', '(50)Blue', '095', 'M', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYS949H2250100', N'条纹衬衫, (50)Blue, 175/96A(L)', 'SPYS949H22', '50 ', '(50)Blue', '100', 'L', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('SA', 'SPYS949H2250105', N'条纹衬衫, (50)Blue, 180/100A(XL)', 'SPYS949H22', '50 ', '(50)Blue', '105', 'XL', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887');
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createProductTable error: %v", err.Error())
+		fmt.Println()
+	}
+}
 
 // SP 部分
 func createSP() {
@@ -485,6 +572,7 @@ func createSP() {
 	createComonRaiseError()
 	createChkRecvSupp()
 	createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo()
+	createInsertStockInMissSaveStockMisDtlC1()
 }
 
 func createMonthlyClosingChk() {
@@ -840,6 +928,457 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createInsertStockInMissSaveStockMisDtlC1() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createInsertStockInMissSaveStockMisDtlC1 error: %v", err.Error())
+		log.Println()
+	}
+
+	if _, err := session.Exec("DROP PROCEDURE IF EXISTS dbo.up_CSLK_IOM_InsertStockInMissSave_StockMisDtl_C1_Clearance"); err != nil {
+		log.Printf("createInsertStockInMissSaveStockMisDtlC1 error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE PROCEDURE [dbo].[up_CSLK_IOM_InsertStockInMissSave_StockMisDtl_C1_Clearance]
+		@BrandCode  VARCHAR(4)
+		,@ShopCode  CHAR(4)
+		,@WaybillNo  VARCHAR(13)
+		,@ProdCode  VARCHAR(18)
+		,@ShopRecvSuppQty INT
+		,@ShopInFixQty  INT
+		,@ErrorRegEmpID VARCHAR(20) -- 登记这条误差的人的EmpID
+		,@RecvDate	CHAR(8)='' -- 入库日期
+	AS
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SET XACT_ABORT ON
+	SET NOCOUNT ON
+	
+	BEGIN
+	
+		DECLARE @ErrorCode  NVARCHAR(50) ='';
+		DECLARE @ErrorParam1 NVARCHAR(4000)='';
+		DECLARE @ErrorParam2 NVARCHAR(4000)='';
+	
+	
+	DECLARE @CurrDate    CHAR(8)   -- 현재일자
+	DECLARE @SeqNo     INT    -- 착오순번
+	DECLARE @DtSeq     INT    -- 착오상세순번
+	DECLARE @ErrorRegEmpName  NVARCHAR(200) -- 등록자명
+	DECLARE @ErrorRegUserID  VARCHAR(20)
+	DECLARE @SuppEmpName NVARCHAR(100)
+	
+	DECLARE @RecvSuppNo    CHAR(14)  -- 대표 입출고번호
+	DECLARE @RecvSuppNo_Temp  CHAR(14)  -- 상품이 포함된 입출고번호
+	
+	
+	BEGIN TRY
+	
+	-- 현재년월일 입력
+	SELECT @CurrDate = CONVERT(CHAR(8),GETDATE(),112)
+	
+	SELECT @ErrorRegEmpName = E.EmpName
+			, @ErrorRegUserID = U.UserID
+		FROM CSL.dbo.Employee E
+		JOIN CSL.dbo.UserInfo U
+		ON E.EmpID = U.EmpID
+		WHERE E.EmpID = @ErrorRegEmpID
+		AND U.UseChk = 1
+	
+	/***착오등록막음(복합매장)  2011.12.22  ***/
+	DECLARE @StyleCode VARCHAR(18)
+	
+	DECLARE  @Exists table ( e bit)
+	
+	select @Stylecode = StyleCode
+	from Product where ProdCode = @ProdCode
+	
+	
+	-- 이미 해당 상품에 대한 오차가 등록되었을 경우
+	IF EXISTS ( SELECT * FROM StockMisDtl WHERE BrandCode = @BrandCode AND ShopCode = @ShopCode AND BoxNo = @WaybillNo AND ProdCode = @ProdCode  AND DelChk = 0 )
+	BEGIN
+		-- 에러 처리
+		SET @ErrorCode = 'IOM138'
+		EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2
+	
+		--PRINT N'이미 해상 상품에 대한 오차가 등록되었습니다.'
+	
+	END
+	
+	
+	IF ( (@ShopInFixQty - @ShopRecvSuppQty ) >= 0 )
+	BEGIN
+		/******** 실물이 많을 경우 *********/
+		--PRINT N'실물이 많을 경우'
+	
+		DECLARE @RecvSuppQty_ProdCode INT    -- 상품별 출고수량 ( 총합 아님 )
+		DECLARE @SAPDeliveryNo   CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
+		DECLARE @SAPDeliveryNo_Temp  CHAR(10)
+		DECLARE @SAPDeliveryItemNo  CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
+	
+	
+		-- 해당 박스의 첫번째 입출고 번호 구함
+		SELECT TOP 1
+		@RecvSuppNo = MST.RecvSuppNo,
+		@SeqNo = MST.SeqNo,
+		@SAPDeliveryNo = MST.SAPDeliveryNo,
+		@SuppEmpName = MST.SuppEmpName
+		FROM RecvSuppMst AS MST
+		WHERE MST.BrandCode = @BrandCode AND MST.ShopCode = @ShopCode AND MST.WayBillNo = @WaybillNo
+		AND MST.BoxNo = @WaybillNo
+		AND ShippingTypeCode IN ('01','66','16') --wangpengda 20100203
+		AND MST.DelChk = 0
+		AND MST.ShopSuppRecvDate=@RecvDate			--ADD BY SHEN.XUE 20140804
+	
+	
+		-- 해당상품이 속한 첫번째 입출고 번호 구함
+		SELECT TOP 1 @RecvSuppNo_Temp = MST.RecvSuppNo, @SeqNo = MST.SeqNo, @RecvSuppQty_ProdCode = DTL.RecvSuppQty,
+			@SAPDeliveryNo_Temp = DTL.SAPDeliveryNo, @SAPDeliveryItemNo = DTL.SAPDeliveryItemNo
+		FROM RecvSuppMst AS MST
+		INNER JOIN RecvSuppDtl AS DTL
+		ON (MST.RecvSuppNo = DTL.RecvSuppNo AND DTL.DelChk = 0)
+		WHERE MST.BrandCode = @BrandCode AND MST.ShopCode = @ShopCode AND MST.WayBillNo = @WaybillNo AND MST.BoxNo = @WaybillNo
+		AND DTL.ProdCode = @ProdCode
+		AND ShippingTypeCode IN ('01','66','16') --wangpengda 20100203
+		AND MST.DelChk = 0
+		AND MST.ShopSuppRecvDate=@RecvDate			--ADD BY SHEN.XUE 20140804
+		IF @RecvSuppNo_Temp IS NOT NULL
+		BEGIN
+		SET @RecvSuppNo = @RecvSuppNo_Temp
+		SET @SAPDeliveryNo = @SAPDeliveryNo_Temp
+		END
+	
+		-- DtSeq 일렬번호 구함
+		SELECT @DtSeq = ISNULL(MAX(DTL.DtSeq),0) + 1 FROM StockMisDtl AS DTL
+		WHERE DTL.BrandCode = @BrandCode
+		AND DTL.ShopCode = @ShopCode
+		AND DTL.SeqNo = @SeqNo --modify by li.guolin 20151013
+		AND DTL.Dates=@CurrDate  --modify by li.guolin 20151013
+		print @DtSeq
+		-- 오차 데이터 생성
+		INSERT StockMisDtl
+			( BrandCode
+			, ShopCode
+			, Dates
+			, SeqNo
+			, DtSeq
+			, SAPDeliveryNo
+			, SAPDeliveryItemNo
+			, ProdCode
+			, RecvSuppQty
+			, StockMisQty
+			, StockMisFixQty
+			, StockMisReasonCode
+			, StockMisStatusCode
+			, StockMisResultCode
+			, RecvDate
+			, RecvSuppNo
+			, StyleCode
+			, StockMisNo
+			, RecvSuppDate
+			, ShopDesc
+			, BrandDesc
+			, PlantCode
+			, InsertEmpID
+			, RecvEmpID
+			, StockMisRecvDateTime
+			, ProcessEmpID
+			, StockMisProcDateTime
+			, NewSAPDeliveryNo
+			, RecvSuppType
+			, BoxNo
+			, DelChk
+			, InUserID
+			, InDateTime
+			, ModiUserID
+			, ModiDateTime
+			, RecvEmpName
+			, ProcessEmpName
+			, InsertEmpName
+			, SendState
+			, SendFlag
+			, SendDateTime
+			, InvtBaseDate
+			, SendEmpName
+			, WayBillNo01                              -- 운송장번호 김재훈 20110503
+			)
+		SELECT TOP 1 B.BrandCode
+			, B.ShopCode        -- 매장코드
+			, @CurrDate        -- 현재일자 Dates
+			, A.SeqNo         -- SeqNo
+			, @DtSeq         -- DtSeq -- 상세순번
+			, @SAPDeliveryNo       -- SAPDeliveryNo
+			, @SAPDeliveryItemNo      -- SAPDeliveryItemNo
+			, @ProdCode        --, A.ProdCode        -- ProdCode
+			, ISNULL(@RecvSuppQty_ProdCode,0)       -- RecvSuppQty 출고수량
+			, ABS(@ShopRecvSuppQty - @ShopInFixQty) -- StockMisQty 착오수량
+			, 0          -- StockMisFixQty 착오확정수량
+			, Null          -- StockMisReasonCode 착오
+			, '10'          -- StockMisStatusCode 착오 처리 상태(10: 매장입고)
+			, Null          -- StockMisResultCode
+			, B.ShopSuppRecvDate      -- RecvDate
+			, @RecvSuppNo        -- RecvSuppNo
+			, (SELECT StyleCode FROM Product WHERE ProdCode = @ProdCode) AS StyleCode -- StyleCode (스타일코드)
+			, B.BrandCode + B.ShopCode + @CurrDate  -- StockMisNo (상품착오번호 = 브랜드코드 + 매장코드 + 날짜)
+			, B.BrandSuppRecvDate      -- RecvSuppDate (출고일)
+			, null          -- ShopDesc
+			, null          -- BrandDesc
+			, B.PlantCode        -- PlantCode
+			, @ErrorRegEmpID            -- InsertEmpID 등록자    WangPengDa 20100127
+			, @ErrorRegEmpID            -- RecvEmpID 접수자    WangPengDa 20100127
+			, null          -- StockMisRecvDateTime (smalldatetime)
+			, null          -- ProcessEmpID 처리자
+			, null          -- StockMisProcDateTime
+			, null          -- NewSAPDeliveryNo
+			, CASE WHEN (@ShopInFixQty - @ShopRecvSuppQty ) < 0 THEN 'S' ELSE 'R' END -- RecvSuppType 물류출고수량 > 매장입고수량 : 'S' else 'R'
+			, B.BoxNo         -- BoxNo
+			, 0          -- DelChk
+			, @ErrorRegUserID        -- InUserID
+			, GETDATE()        -- InDateTime
+			, @ErrorRegUserID        -- ModiUserID
+			, GETDATE()        -- ModiDateTime
+			, @ErrorRegEmpName      -- RecvEmpName  접수자
+			, Null          -- ProcessEmpName 처리자
+			, @ErrorRegEmpName      -- InsertEmpName 등록자
+			, ''          -- SendState
+			, 'R'          -- SendFlag
+			, null
+			,@CurrDate         -- SendDateTime
+			,@SuppEmpName        -- SendEmpName 王鹏达 20100629
+			,B.WayBillNo                               -- WayBillNo01 운송장번호 김재훈 20110503
+			FROM RecvSuppDtl AS A
+		INNER JOIN RecvSuppMst AS B ON (B.RecvSuppNo = A.RecvSuppNo)
+		INNER JOIN Product    AS C ON (C.BrandCode = A.BrandCode AND C.ProdCode = A.ProdCode)
+		WHERE B.RecvSuppNo = @RecvSuppNo
+	
+	END
+	ELSE
+	BEGIN
+		/************************ 데이터가 많을 경우 ************************
+		이 경우는 무조건 입고확정 정보가 상품별로 모두 존재하는 경우임.
+		*********************************************************************/
+		--PRINT N'데이터가 많을 경우'
+	
+		DECLARE @RecvSuppNo_Inner   CHAR(14)
+		DECLARE @SeqNo_Inner    INT
+		DECLARE @ProdCode_Inner    VARCHAR(18)
+		DECLARE @RecvSuppQty_Inner   INT
+	
+		DECLARE @StockMisQty_Inner   INT  -- 임시 잔여 오차수량 저장변수
+		DECLARE @StockMisQtyProduct_Inner INT  -- 임시 오차수량 저장변수
+		DECLARE @IsBreak_Inner    BIT  -- 중지 가능여부 저장변수
+		DECLARE @SAPDeliveryNo_Inner   CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
+		DECLARE @SAPDeliveryItemNo_Inner  CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
+	
+		SET @StockMisQty_Inner = @ShopInFixQty - @ShopRecvSuppQty
+		--PRINT N'00 @StockMisQty_Inner' + CONVERT(VARCHAR(10), @StockMisQty_Inner)
+	
+		DECLARE @StockMisCursor CURSOR
+	
+		-- 대상 상품에 대한 입출고정보 결과 커서 ( 예측되는 결과 : 1..*, 상품이 여러개의 레코드에 포함되는 경우가 발생함 )
+		SET @StockMisCursor = CURSOR LOCAL SCROLL FOR
+		SELECT 
+		MST.RecvSuppNo, 
+		MST.SeqNo, 
+		DTL.ProdCode, 
+		DTL.RecvSuppQty, 
+		DTL.SAPDeliveryNo, 
+		DTL.SAPDeliveryItemNo, 
+		MST.SuppEmpName
+		FROM RecvSuppMst AS MST
+		INNER JOIN RecvSuppDtl AS DTL
+		ON (MST.RecvSuppNo = DTL.RecvSuppNo AND DTL.DelChk = 0)
+		WHERE MST.BrandCode = @BrandCode AND MST.ShopCode = @ShopCode
+		AND ShippingTypeCode IN ('01','66','16')  --wangpengda 20100203
+		AND MST.DelChk = 0
+		AND MST.WayBillNo = @WaybillNo
+		AND MST.BoxNo = @WaybillNo
+		AND DTL.ProdCode = @ProdCode					--modify by li.guolin 20151013
+		AND MST.ShopSuppRecvDate=@RecvDate			--ADD BY SHEN.XUE 20140804
+		OPEN @StockMisCursor
+	
+		FETCH NEXT FROM @StockMisCursor
+		INTO @RecvSuppNo_Inner,
+		@SeqNo_Inner, 
+		@ProdCode_Inner, 
+		@RecvSuppQty_Inner, 
+		@SAPDeliveryNo_Inner, 
+		@SAPDeliveryItemNo_Inner, 
+		@SuppEmpName
+	
+		-- 최초 한번 동작해야함.
+		SET @IsBreak_Inner = '0'
+	
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+		SELECT @DtSeq = ISNULL(MAX(DTL.DtSeq),0) + 1 FROM StockMisDtl AS DTL
+		WHERE DTL.BrandCode = @BrandCode   --modify by li.guolin 20151013
+			AND DTL.ShopCode = @ShopCode   --modify by li.guolin 20151013
+			AND DTL.SeqNo = @SeqNo_Inner  --modify by li.guolin 20151013
+			AND DTL.Dates=@CurrDate  --modify by li.guolin 20151013
+		IF ( @IsBreak_Inner = '1' )
+		BEGIN
+		--PRINT N'BREAK'
+		BREAK
+		END
+	
+	
+		--PRINT N'01 @StockMisQty_Inner' + CONVERT(VARCHAR(10), @StockMisQty_Inner)
+	
+		-- "해당상품의 출고수량 총합 >= 오차수량" 의 조건에 위배되면 커서실행을 멈춘다.
+	--  IF (@ProdCode_Inner=@ProdCode)
+		--BEGIN
+	
+			IF ( @StockMisQty_Inner < 0)
+			BEGIN
+			IF ( @RecvSuppQty_Inner < ABS(@StockMisQty_Inner) )
+			BEGIN
+			SET @StockMisQtyProduct_Inner = @RecvSuppQty_Inner
+			SET @StockMisQty_Inner = ( ABS(@StockMisQty_Inner) - @RecvSuppQty_Inner ) * -1
+			--PRINT N'IF @StockMisQtyProduct_Inner' + CONVERT(VARCHAR(10), @StockMisQtyProduct_Inner)
+			END
+			ELSE
+			BEGIN
+			SET @StockMisQtyProduct_Inner = ISNULL(ABS(@StockMisQty_Inner),0)
+			SET @IsBreak_Inner = '1'
+			--PRINT N'ELSE @StockMisQtyProduct_Inner' + CONVERT(VARCHAR(10), @StockMisQtyProduct_Inner)
+			END
+			END
+			ELSE
+			BEGIN
+			SET @IsBreak_Inner = '1'
+			END
+	
+		--PRINT N'02 @StockMisQty_Inner' + CONVERT(VARCHAR(10), @StockMisQty_Inner)
+	
+		-- 오차 데이터 생성
+			INSERT StockMisDtl
+				( BrandCode
+				, ShopCode
+				, Dates
+				, SeqNo
+				, DtSeq
+				, SAPDeliveryNo
+				, SAPDeliveryItemNo
+				, ProdCode
+				, RecvSuppQty
+				, StockMisQty
+				, StockMisFixQty
+				, StockMisReasonCode
+				, StockMisStatusCode
+				, StockMisResultCode
+				, RecvDate
+				, RecvSuppNo
+				, StyleCode
+				, StockMisNo
+				, RecvSuppDate
+				, ShopDesc
+				, BrandDesc
+				, PlantCode
+				, InsertEmpID
+				, RecvEmpID
+				, StockMisRecvDateTime
+				, ProcessEmpID
+				, StockMisProcDateTime
+				, NewSAPDeliveryNo
+				, RecvSuppType
+				, BoxNo
+				, DelChk
+				, InUserID
+				, InDateTime
+				, ModiUserID
+				, ModiDateTime
+				, RecvEmpName
+				, ProcessEmpName
+				, InsertEmpName
+				, SendState
+				, SendFlag
+				, SendDateTime
+				, InvtBaseDate
+				, SendEmpName
+				, WayBillNo01                              -- 운송장번호 김재훈 20110503
+				)
+			SELECT B.BrandCode
+				, B.ShopCode        -- 매장코드
+				, @CurrDate        -- 현재일자 Dates
+				, A.SeqNo         -- SeqNo
+				, @DtSeq         -- DtSeq -- 상세순번
+				, @SAPDeliveryNo_Inner       -- SAPDeliveryNo
+				, @SAPDeliveryItemNo_Inner      -- SAPDeliveryItemNo
+				, @ProdCode_Inner       --, A.ProdCode        -- ProdCode
+				, @RecvSuppQty_Inner      -- RecvSuppQty 출고수량
+				, ABS(@StockMisQtyProduct_Inner)   -- StockMisQty 착오수량
+				, 0          -- StockMisFixQty 착오확정수량
+				, Null          -- StockMisReasonCode 착오
+				, '10'          -- StockMisStatusCode 착오 처리 상태(10: 매장입고)
+				, Null          -- StockMisResultCode
+				, B.ShopSuppRecvDate      -- RecvDate
+				, @RecvSuppNo_Inner      -- RecvSuppNo
+				, (SELECT StyleCode FROM Product WHERE ProdCode = @ProdCode) AS StyleCode -- StyleCode (스타일코드)
+				, B.BrandCode + B.ShopCode + @CurrDate  -- StockMisNo (상품착오번호 = 브랜드코드 + 매장코드 + 날짜)
+				, B.BrandSuppRecvDate      -- RecvSuppDate (출고일)
+				, null          -- ShopDesc
+				, null          -- BrandDesc
+				, B.PlantCode        -- PlantCode
+				, @ErrorRegEmpID            -- InsertEmpID      WangPengDa 20100127
+				, @ErrorRegEmpID            -- RecvEmpID        WangPengDa 20100127
+				, null          -- StockMisRecvDateTime (smalldatetime)
+				, null          -- ProcessEmpID
+				, null          -- StockMisProcDateTime
+				, null          -- NewSAPDeliveryNo
+				, CASE WHEN (@ShopInFixQty - @ShopRecvSuppQty ) < 0 THEN 'S' ELSE 'R' END -- RecvSuppType 물류출고수량 > 매장입고수량 : 'S' else 'R'
+				, B.BoxNo         -- BoxNo
+				, 0          -- DelChk
+				, @ErrorRegUserID        -- InUserID
+				, GETDATE()        -- InDateTime
+				, @ErrorRegUserID        -- ModiUserID
+				, GETDATE()        -- ModiDateTime
+				, @ErrorRegEmpName      -- RecvEmpName
+				, Null          -- ProcessEmpName
+				, @ErrorRegEmpName      -- InsertEmpName
+				, ''          -- SendState
+				, 'R'          -- SendFlag
+				, null
+				,B.InvtBaseDate        -- SendDateTime
+				,@SuppEmpName        --SendEmpName
+					,B.WayBillNo                               -- WayBillNo01 운송장번호 김재훈 20110503
+				FROM RecvSuppDtl AS A
+				INNER JOIN RecvSuppMst AS B ON (B.RecvSuppNo = A.RecvSuppNo)
+				INNER JOIN Product    AS C ON (C.BrandCode = A.BrandCode AND C.ProdCode = A.ProdCode)
+				WHERE B.RecvSuppNo = @RecvSuppNo_Inner
+				AND A.ProdCode = @ProdCode_Inner
+		--END
+		FETCH NEXT FROM @StockMisCursor
+		INTO @RecvSuppNo_Inner,
+			@SeqNo_Inner, 
+			@ProdCode_Inner, 
+			@RecvSuppQty_Inner, 
+			@SAPDeliveryNo_Inner, 
+			@SAPDeliveryItemNo_Inner, 
+			@SuppEmpName
+		END
+	
+		CLOSE @StockMisCursor
+		DEALLOCATE @StockMisCursor
+	END
+	
+	
+	END TRY
+	BEGIN CATCH
+	
+		EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2
+	END CATCH
+	END;
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createInsertStockInMissSaveStockMisDtlC1 error: %v", err.Error())
 		log.Println()
 	}
 }
