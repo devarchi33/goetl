@@ -2,18 +2,16 @@ package test
 
 import (
 	"clearance-adapter/factory"
-	"clearance-adapter/models"
 	"fmt"
 	"log"
-	"path/filepath"
 )
 
 func initCSL() {
 	// createCSLDB()
 	createRecvSuppMstTable()
-	setRecvSuppMstData()
+	// setRecvSuppMstData()
 	createRecvSuppDtlTable()
-	setRecvSuppDtlData()
+	// setRecvSuppDtlData()
 	createMonthlyBizFuctionClosingTable()
 	createIFConfigTable()
 	createUserInfoTable()
@@ -297,40 +295,58 @@ func createRecvSuppMstTable() {
 		fmt.Printf("createRecvSuppMstTable error: %v", err.Error())
 		fmt.Println()
 	}
-}
 
-func setRecvSuppMstData() {
-	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppMst_data.csv")
-	if err != nil {
-		panic(err.Error())
-	}
-	headers, data := readDataFromCSV(filename)
-	masters := buildRecvSuppMsts(headers, data)
+	sql = `
+		INSERT INTO CSL.dbo.RecvSuppMst 
+		(
+			RecvSuppNo, BrandCode, ShopCode, Dates, SeqNo, SAPDeliveryNo, SAPDeliveryDate, RecvSuppType, NormalProductType, ShopSuppRecvDate, BrandSuppRecvDate, TransTypeCode, ShippingTypeCode, WayBillNo, RecvSuppStatusCode, RequestNo, BoxNo, ShopDesc, BrandDesc, PlantCode, RoundRecvSuppNo, RoundSAPDeliveryNo, TargetShopCode, 
+			RecvChk, OrderControlNo, RecvEmpID, RecvEmpName, SuppEmpID, SuppEmpName, SAPMenuType, DelChk, InUserID, InDateTime, ModiUserID, ModiDateTime, SendState, SendFlag, SendDateTime, InvtBaseDate, BoxAmount, StockOutUseAmt, ExpressNo, ShippingCompanyCode, BoxGram, DeliveryID, DeliveryOrderNo, VolumeType, VolumesSize, 
+			VolumesUnit, Channel, ProvinceCode, CityCode, DistrictCode, Area, ShopManagerName, MobilePhone, DeliverySendTime, DeliveryReceiveTime, BoxType
+		) 
+		VALUES 
+		('CEGP1907236002', 'SA', 'CEGP', '20190723', 6002, '8074783302', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009008', 'R', '              ', '1010590009008       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
+		('CFGY1907236000', 'SA', 'CFGY', '20190723', 6000, '8074783296', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009014', 'R', '              ', '1010590009014       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
+		('CFGY1907236010', 'SA', 'CFGY', '20190723', 6010, '8074783305', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009014', 'R', '              ', '1010590009014       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  ');
+	`
 
-	loadRecvSuppMstData(masters)
-}
-
-func buildRecvSuppMsts(headers map[int]string, data [][]string) []models.RecvSuppMst {
-	masters := make([]models.RecvSuppMst, 0)
-	for _, row := range data {
-		master := new(models.RecvSuppMst)
-		setObjectValue(headers, row, master)
-		masters = append(masters, *master)
-	}
-
-	return masters
-}
-
-func loadRecvSuppMstData(masters []models.RecvSuppMst) {
-	for _, master := range masters {
-		if affected, err := factory.GetCSLEngine().Insert(&master); err != nil {
-			fmt.Printf("loadRecvSuppMstData error: %v", err.Error())
-			fmt.Println()
-			fmt.Printf("affected: %v", affected)
-			fmt.Println()
-		}
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createRecvSuppMstTable error: %v", err.Error())
+		fmt.Println()
 	}
 }
+
+// func setRecvSuppMstData() {
+// 	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppMst_data.csv")
+// 	if err != nil {
+// 		panic(err.Error())
+// 	}
+// 	headers, data := readDataFromCSV(filename)
+// 	masters := buildRecvSuppMsts(headers, data)
+
+// 	loadRecvSuppMstData(masters)
+// }
+
+// func buildRecvSuppMsts(headers map[int]string, data [][]string) []models.RecvSuppMst {
+// 	masters := make([]models.RecvSuppMst, 0)
+// 	for _, row := range data {
+// 		master := new(models.RecvSuppMst)
+// 		setObjectValue(headers, row, master)
+// 		masters = append(masters, *master)
+// 	}
+
+// 	return masters
+// }
+
+// func loadRecvSuppMstData(masters []models.RecvSuppMst) {
+// 	for _, master := range masters {
+// 		if affected, err := factory.GetCSLEngine().Insert(&master); err != nil {
+// 			fmt.Printf("loadRecvSuppMstData error: %v", err.Error())
+// 			fmt.Println()
+// 			fmt.Printf("affected: %v", affected)
+// 			fmt.Println()
+// 		}
+// 	}
+// }
 
 // Detail 部分
 func createRecvSuppDtlTable() {
@@ -389,40 +405,79 @@ func createRecvSuppDtlTable() {
 		fmt.Printf("createRecvSuppDtlTable error: %v", err.Error())
 		fmt.Println()
 	}
-}
 
-func setRecvSuppDtlData() {
-	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppDtl_data.csv")
-	if err != nil {
-		panic(err.Error())
+	sql = `
+		INSERT INTO CSL.dbo.RecvSuppDtl 
+		(
+			RecvSuppNo, RecvSuppSeqNo, SupGroupCode, BrandCode, ShopCode, Dates, SeqNo, SAPDeliveryNo, SAPDeliveryItemNo, RoundRecvSuppNo, RoundRecvSuppDtSeq, RoundSAPDeliveryNo, RoundSAPDeliveryItemNo, ProdCode, PriceTypeCode, SaipType, 
+			RecvSuppQty, RecvSuppFixedQty, SalePrice, AbnormalProdReasonCode, DelChk, InUserID, InDateTime, ModiUserID, ModiDateTime, SendState, SendFlag, SendDateTime, AbnormalChkCode, AbnormalSerialNo, ModiReason, ApplyID
+		) 
+		VALUES 
+		('CEGP1907236002', 1, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'SPWJ948S2255070', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 2, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000320    ', '              ', 0, '          ', '          ', 'SPWJ948S2255075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 3, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000330    ', '              ', 0, '          ', '          ', 'SPWJ948S2255080', '  ', '  ', 2, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 4, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000340    ', '              ', 0, '          ', '          ', 'SPWJ948S2256070', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 5, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000350    ', '              ', 0, '          ', '          ', 'SPWJ948S2256075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 9, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000400    ', '              ', 0, '          ', '          ', 'SPWJ948S2356075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 10, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000470    ', '              ', 0, '          ', '          ', 'SPYC949H2130095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 11, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000480    ', '              ', 0, '          ', '          ', 'SPYC949H2130100', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 12, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000490    ', '              ', 0, '          ', '          ', 'SPYC949H2130105', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 13, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000500    ', '              ', 0, '          ', '          ', 'SPYC949H2159095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 14, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000510    ', '              ', 0, '          ', '          ', 'SPYC949H2159100', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 6, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000360    ', '              ', 0, '          ', '          ', 'SPWJ948S2355070', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 7, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000380    ', '              ', 0, '          ', '          ', 'SPWJ948S2355080', '  ', '  ', 2, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1907236002', 8, '01', 'SA', 'CEGP', '20190723', 6002, '8074783302', '000390    ', '              ', 0, '          ', '          ', 'SPWJ948S2356070', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236000', 1, '01', 'SA', 'CFGY', '20190723', 6000, '8074783296', '000260    ', '              ', 0, '          ', '          ', 'SPWH936D5430075', '  ', '  ', 8, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236000', 2, '01', 'SA', 'CFGY', '20190723', 6000, '8074783296', '000270    ', '              ', 0, '          ', '          ', 'SPWH936D5430080', '  ', '  ', 8, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 1, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000610    ', '              ', 0, '          ', '          ', 'SPYC949S1139085', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 2, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000620    ', '              ', 0, '          ', '          ', 'SPYC949S1139090', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 3, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000630    ', '              ', 0, '          ', '          ', 'SPYC949S1139095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 4, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000640    ', '              ', 0, '          ', '          ', 'SPYC949S1159085', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 5, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000650    ', '              ', 0, '          ', '          ', 'SPYC949S1159090', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 6, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000660    ', '              ', 0, '          ', '          ', 'SPYC949S1159095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 7, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000850    ', '              ', 0, '          ', '          ', 'SPYS949H2250095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 8, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000860    ', '              ', 0, '          ', '          ', 'SPYS949H2250100', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CFGY1907236010', 9, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000870    ', '              ', 0, '          ', '          ', 'SPYS949H2250105', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', '');
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createRecvSuppDtlTable error: %v", err.Error())
+		fmt.Println()
 	}
-	headers, data := readDataFromCSV(filename)
-	details := buildRecvSuppDtls(headers, data)
-
-	loadRecvSuppDtlData(details)
 }
 
-func buildRecvSuppDtls(headers map[int]string, data [][]string) []models.RecvSuppDtl {
-	details := make([]models.RecvSuppDtl, 0)
-	for _, row := range data {
-		detail := new(models.RecvSuppDtl)
-		setObjectValue(headers, row, detail)
-		details = append(details, *detail)
-	}
+// func setRecvSuppDtlData() {
+// 	filename, err := filepath.Abs("test/data/test_in_storage_etl_RecvSuppDtl_data.csv")
+// 	if err != nil {
+// 		panic(err.Error())
+// 	}
+// 	headers, data := readDataFromCSV(filename)
+// 	details := buildRecvSuppDtls(headers, data)
 
-	return details
-}
+// 	loadRecvSuppDtlData(details)
+// }
 
-func loadRecvSuppDtlData(details []models.RecvSuppDtl) {
-	for _, detail := range details {
-		if affected, err := factory.GetCSLEngine().Insert(&detail); err != nil {
-			fmt.Printf("loadRecvSuppDtlData error: %v", err.Error())
-			fmt.Println()
-			fmt.Printf("affected: %v", affected)
-			fmt.Println()
-		}
-	}
-}
+// func buildRecvSuppDtls(headers map[int]string, data [][]string) []models.RecvSuppDtl {
+// 	details := make([]models.RecvSuppDtl, 0)
+// 	for _, row := range data {
+// 		detail := new(models.RecvSuppDtl)
+// 		setObjectValue(headers, row, detail)
+// 		details = append(details, *detail)
+// 	}
+
+// 	return details
+// }
+
+// func loadRecvSuppDtlData(details []models.RecvSuppDtl) {
+// 	for _, detail := range details {
+// 		if affected, err := factory.GetCSLEngine().Insert(&detail); err != nil {
+// 			fmt.Printf("loadRecvSuppDtlData error: %v", err.Error())
+// 			fmt.Println()
+// 			fmt.Printf("affected: %v", affected)
+// 			fmt.Println()
+// 		}
+// 	}
+// }
 
 // SP 部分
 func createSP() {
