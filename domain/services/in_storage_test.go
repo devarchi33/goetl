@@ -2,6 +2,8 @@ package services
 
 import (
 	"clearance-adapter/domain/entities"
+	"clearance-adapter/factory"
+	"clearance-adapter/infra"
 	"clearance-adapter/repositories"
 	_ "clearance-adapter/test"
 	"context"
@@ -117,6 +119,36 @@ func TestInStorageETL(t *testing.T) {
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
 		})
+		Convey("运单号为1010590009008的运单应该存在有误差的商品", func() {
+			// SPYC949H2159095 4, 5 +1
+			// SPYC949H2159100 3, 2 -1
+			sql := `
+				SELECT * FROM CSL.dbo.StockMisDtl
+				WHERE BrandCode = ?
+				AND ShopCode = ?
+				AND WayBillNo01 = ?
+			`
+			result, _ := factory.GetCSLEngine().Query(sql, "SA", "CEGP", "1010590009008")
+			So(len(result), ShouldEqual, 3)
+			stockMissList := infra.ConvertByteResult(result)
+			for _, stockMiss := range stockMissList {
+				skuCode := stockMiss["ProdCode"]
+				if skuCode == "SPYC949H2159095" {
+					So(stockMiss["RecvSuppQty"], ShouldEqual, "4")
+					So(stockMiss["StockMisQty"], ShouldEqual, "1")
+					So(stockMiss["RecvSuppType"], ShouldEqual, "R")
+				} else if skuCode == "SPYC949H2159100" {
+					So(stockMiss["RecvSuppQty"], ShouldEqual, "3")
+					So(stockMiss["StockMisQty"], ShouldEqual, "1")
+					So(stockMiss["RecvSuppType"], ShouldEqual, "S")
+				} else if skuCode == "SPWJ948S2256070" {
+					So(stockMiss["RecvSuppQty"], ShouldEqual, "4")
+					So(stockMiss["StockMisQty"], ShouldEqual, "4")
+					So(stockMiss["RecvSuppType"], ShouldEqual, "S")
+				}
+			}
+		})
+
 		Convey("运单号为1010590009014的运单应该在CSL入库", func() {
 			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
 			err := etl.Run(context.Background())

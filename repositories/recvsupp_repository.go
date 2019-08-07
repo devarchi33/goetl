@@ -42,3 +42,25 @@ func (RecvSuppRepository) GetByWaybillNo(brandCode, shopCode, waybillNo string) 
 
 	return details, nil
 }
+
+// WriteDownStockMiss 记录误差
+func (RecvSuppRepository) WriteDownStockMiss(brandCode, shopCode, inDate, waybillNo, skuCode, empID string, outQty, inQty int) error {
+	sql := `
+		EXEC [up_CSLK_IOM_InsertStockInMissSave_StockMisDtl_C1_Clearance]
+				@BrandCode = ?,
+				@ShopCode = ?,
+				@WaybillNo = ?,
+				@ProdCode = ?,
+				@ShopRecvSuppQty = ?,
+				@ShopInFixQty = ?,
+				@ErrorRegEmpID = ?,
+				@RecvDate = ?
+		`
+
+	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, skuCode, outQty, inQty, empID, inDate)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
