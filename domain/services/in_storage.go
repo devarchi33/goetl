@@ -83,7 +83,7 @@ func (etl InStorageETL) validateTransaction(transaction entities.Transaction) (b
 	}
 
 	if len(recvSupp) == 0 {
-		return false, errors.New("there is no outbound order which waybill no is: " + transaction.WaybillNo)
+		return false, errors.New("there is no outbound order which waybill no is: " + transaction.WaybillNo + ", shop is: " + transaction.BrandCode + "-" + transaction.ShopCode)
 	}
 
 	ok := true
@@ -144,6 +144,87 @@ func (etl InStorageETL) Load(ctx context.Context, source interface{}) error {
 		err := repositories.RecvSuppRepository{}.PutInStorage(txn.BrandCode, txn.ShopCode, txn.WaybillNo, txn.EmpID)
 		if err != nil {
 			log.Printf(err.Error())
+		}
+		etl.writeDownStockMiss(txn)
+	}
+
+	return nil
+}
+
+// 记录误差
+func (etl InStorageETL) writeDownStockMiss(transaction entities.Transaction) error {
+	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(transaction.BrandCode, transaction.ShopCode, transaction.WaybillNo)
+	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	type StockMiss struct {
+		BrandCode string
+		ShopCode  string
+		InDate    string
+		WaybillNo string
+		EmpID     string
+		SkuCode   string
+		OutQty    int
+		InQty     int
+	}
+
+	stockMissMap := make(map[string]StockMiss, 0)
+	for _, v := range recvSupp {
+		key := transaction.BrandCode + "-" + transaction.ShopCode + "-" + recvSupp[0].ShopSuppRecvDate + "-" + transaction.WaybillNo + "-" + v.ProdCode
+		_, ok := stockMissMap[key]
+		if ok {
+			stockMiss := stockMissMap[key]
+			stockMiss.OutQty += v.RecvSuppQty
+			stockMissMap[key] = stockMiss
+
+		} else {
+			stockMiss := StockMiss{
+				BrandCode: v.RecvSuppMst.BrandCode,
+				ShopCode:  v.RecvSuppMst.ShopCode,
+				InDate:    v.ShopSuppRecvDate,
+				WaybillNo: v.WayBillNo,
+				EmpID:     v.RecvEmpID,
+				SkuCode:   v.ProdCode,
+				OutQty:    v.RecvSuppQty,
+				InQty:     0,
+			}
+			stockMissMap[key] = stockMiss
+		}
+	}
+
+	for _, v := range transaction.Items {
+		key := transaction.BrandCode + "-" + transaction.ShopCode + "-" + recvSupp[0].ShopSuppRecvDate + "-" + transaction.WaybillNo + "-" + v.SkuCode
+		_, ok := stockMissMap[key]
+		if ok {
+			stockMiss := stockMissMap[key]
+			stockMiss.InQty += v.Qty
+			stockMiss.EmpID = transaction.EmpID
+			stockMissMap[key] = stockMiss
+		} else {
+			stockMiss := StockMiss{
+				BrandCode: transaction.BrandCode,
+				ShopCode:  transaction.ShopCode,
+				InDate:    time.Now().Format("20061012"),
+				WaybillNo: transaction.WaybillNo,
+				EmpID:     transaction.EmpID,
+				SkuCode:   v.SkuCode,
+				OutQty:    0,
+				InQty:     v.Qty,
+			}
+			stockMissMap[key] = stockMiss
+		}
+	}
+
+	if len(stockMissMap) > 0 {
+		for _, v := range stockMissMap {
+			if v.OutQty != v.InQty {
+				err := repositories.RecvSuppRepository{}.WriteDownStockMiss(v.BrandCode, v.ShopCode, v.InDate, v.WaybillNo, v.SkuCode, v.EmpID, v.OutQty, v.InQty)
+				if err != nil {
+					log.Printf(err.Error())
+				}
+			}
 		}
 	}
 

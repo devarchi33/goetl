@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-// Transaction 以StockTransaction为主的信息，会把id替换成code
+// Transaction 以StockDistribute为主的信息，会把id替换成code
 type Transaction struct {
 	BrandCode string
 	ShopCode  string
@@ -15,7 +15,7 @@ type Transaction struct {
 	Items     []TransactionItem
 }
 
-// TransactionItem 以StockTransactionItem为主的信息，会把id替换成code
+// TransactionItem 以StockDistributeItem为主的信息，会把id替换成code
 type TransactionItem struct {
 	SkuCode string
 	Qty     int
