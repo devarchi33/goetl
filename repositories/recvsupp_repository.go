@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"clearance-adapter/factory"
+	"clearance-adapter/infra"
 	"clearance-adapter/models"
 )
 
@@ -45,6 +46,7 @@ func (RecvSuppRepository) GetByWaybillNo(brandCode, shopCode, waybillNo string) 
 
 // WriteDownStockMiss 记录误差
 func (RecvSuppRepository) WriteDownStockMiss(brandCode, shopCode, inDate, waybillNo, skuCode, empID string, outQty, inQty int) error {
+
 	sql := `
 		EXEC [up_CSLK_IOM_InsertStockInMissSave_StockMisDtl_C1_Clearance]
 				@BrandCode = ?,
@@ -63,4 +65,24 @@ func (RecvSuppRepository) WriteDownStockMiss(brandCode, shopCode, inDate, waybil
 	}
 
 	return nil
+}
+
+// GetShopCodeByChiefShopCodeAndBrandCode 根据主卖场Code和品牌获取子卖场的Code
+func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, brandCode string) (string, error) {
+	sql := `
+		SELECT ShopCode
+		FROM ComplexShopMapping
+		WHERE BrandCode = ?
+		AND ChiefShopCode = ?
+		AND DelChk = 0
+	`
+
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, chiefShopCode)
+	if err != nil {
+		return "", err
+	}
+
+	shop := infra.ConvertByteResult(result)[0]["ShopCode"]
+
+	return shop, nil
 }

@@ -57,13 +57,15 @@ func setProductData() {
 		log.Println()
 	}
 	sql = `
-		INSERT INTO pangpang_brand_product.product (tenant_code, code, name, brand_id, title_image, list_price, has_digital, enable, created_at, updated_at, deleted_at) 
+		INSERT INTO pangpang_brand_product.product 
+		(tenant_code, code, name, brand_id, title_image, list_price, has_digital, enable, created_at, updated_at, deleted_at) 
 		VALUES 
 		('pangpang', 'SPYC949S11', '女式格子衬衫', 2, '', 259, 0, 1, '2019-07-25 00:37:52', '2019-07-25 00:37:52', null),
 		('pangpang', 'SPWJ948S22', '女式牛仔裙', 2, '', 259, 0, 1, '2019-07-25 00:37:59', '2019-07-25 00:37:59', null),
 		('pangpang', 'SPWJ948S23', '女式牛仔裙', 2, '', 199, 0, 1, '2019-07-25 00:37:59', '2019-07-25 00:37:59', null),
 		('pangpang', 'SPYC949H21', '大格纹衬衫', 2, '', 259, 0, 1, '2019-07-25 00:37:59', '2019-07-25 00:37:59', null),
-		('pangpang', 'SPYS949H22', '条纹衬衫', 2, '', 259, 0, 1, '2019-07-25 00:38:00', '2019-07-25 00:38:00', null);
+		('pangpang', 'SPYS949H22', '条纹衬衫', 2, '', 259, 0, 1, '2019-07-25 00:38:00', '2019-07-25 00:38:00', null),
+		('pangpang', 'Q3AFAFDU6S21', '男女同款拖鞋', 40, '', 79, 0, 1, '2019-07-25 00:38:00', '2019-07-25 00:38:00', null);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("setProductData error: %v", err.Error())
@@ -145,7 +147,13 @@ func setSkuData() {
 			(5, 'SPYS949H2285095', '条纹衬衫, (85)Brown, 170/92A(M)', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
 			(5, 'SPYS949H2285100', '条纹衬衫, (85)Brown, 175/96A(L)', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
 			(5, 'SPYS949H2285105', '条纹衬衫, (85)Brown, 180/100A(XL)', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
-			(5, 'SPYS949H22NAONA', '条纹衬衫, (NA)I.Color, 통합사이즈', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1);
+			(5, 'SPYS949H22NAONA', '条纹衬衫, (NA)I.Color, 통합사이즈', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
+			(6, 'Q3AFAFDU6S2100230', '男女同款拖鞋, (00)生产代表颜色, 230MM', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
+			(6, 'Q3AFAFDU6S2100240', '男女同款拖鞋, (00)生产代表颜色, 240MM', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
+			(6, 'Q3AFAFDU6S2100250', '男女同款拖鞋, (00)生产代表颜色, 250MM', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
+			(6, 'Q3AFAFDU6S2100260', '男女同款拖鞋, (00)生产代表颜色, 260MM', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
+			(6, 'Q3AFAFDU6S2100270', '男女同款拖鞋, (00)生产代表颜色, 270MM', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1),
+			(6, 'Q3AFAFDU6S2100280', '男女同款拖鞋, (00)生产代表颜色, 280MM', '', '2019-07-25 00:39:13', '2019-07-25 00:39:13', null, 1);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("setSkuData error: %v", err.Error())
