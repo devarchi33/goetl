@@ -15,6 +15,7 @@ func initCSL() {
 	createIFConfigTable()
 	createUserInfoTable()
 	createEmployeeTable()
+	createComplexShopMappingTable()
 	createSP()
 }
 
@@ -211,6 +212,86 @@ func createEmployeeTable() {
 	}
 }
 
+func createComplexShopMappingTable() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createComplexShopMappingTable error: %v", err.Error())
+		log.Println()
+	}
+
+	if _, err := session.Exec("DROP TABLE IF EXISTS CSL.dbo.ComplexShopMapping;"); err != nil {
+		log.Printf("createComplexShopMappingTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE CSL.dbo.ComplexShopMapping
+		(
+			BrandCode VARCHAR(4) NOT NULL,
+			ShopCode CHAR(4) NOT NULL,
+			ChiefBrandCode VARCHAR(4) NOT NULL,
+			ChiefShopCode CHAR(4) NOT NULL,
+			DelChk BIT NOT NULL,
+			InUserID VARCHAR(20) NOT NULL,
+			InDateTime DATETIME
+		);
+
+		INSERT INTO CSL.dbo.ComplexShopMapping (BrandCode, ShopCode, ChiefBrandCode, ChiefShopCode, DelChk, InUserID, InDateTime) 
+		VALUES 
+		('MC', 'CGND', 'SA', 'CG4R', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CGTJ', 'SA', 'CEGP', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CGXU', 'SA', 'CG4U', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CH69', 'SA', 'CFZV', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CH6D', 'SA', 'CFRW', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CHRR', 'SA', 'CEYL', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CHSB', 'SA', 'CFGY', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJ29', 'SA', 'CDGT', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJD7', 'SA', 'CCX4', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJD8', 'SA', 'CEKG', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJDE', 'SA', 'CFTN', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJJN', 'SA', 'CJJL', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJJU', 'SA', 'CJJS', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJRG', 'SA', 'CFW5', 0, 'system', '2019-08-09 05:17:32.373'),
+		('MC', 'CJXA', 'SA', 'CJJD', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CH0D', 'SA', 'CG4R', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CH71', 'SA', 'CFZV', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CH7A', 'SA', 'CFRW', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CHGA', 'SA', 'CG4U', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CHTM', 'SA', 'CFGY', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CHZM', 'SA', 'CEYL', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJ3B', 'SA', 'CDGT', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJC1', 'SA', 'CEGP', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJDF', 'SA', 'CFTN', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJDM', 'SA', 'CEKG', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJFV', 'SA', 'CCX4', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJJM', 'SA', 'CJJL', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJJT', 'SA', 'CJJS', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJRH', 'SA', 'CFW5', 0, 'system', '2019-08-09 05:17:32.373'),
+		('Q3', 'CJXB', 'SA', 'CJJD', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CCX4', 'SA', 'CCX4', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CDGT', 'SA', 'CDGT', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CEGP', 'SA', 'CEGP', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CEKG', 'SA', 'CEKG', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CEYL', 'SA', 'CEYL', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CFGY', 'SA', 'CFGY', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CFRW', 'SA', 'CFRW', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CFTN', 'SA', 'CFTN', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CFW5', 'SA', 'CFW5', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CFZV', 'SA', 'CFZV', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CG4R', 'SA', 'CG4R', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CG4U', 'SA', 'CG4U', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CJJD', 'SA', 'CJJD', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CJJL', 'SA', 'CJJL', 0, 'system', '2019-08-09 05:17:32.373'),
+		('SA', 'CJJS', 'SA', 'CJJS', 0, 'system', '2019-08-09 05:17:32.373');
+	`
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createComplexShopMappingTable error: %v", err.Error())
+		fmt.Println()
+	}
+}
+
 // RecvSuppMaster 部分
 func createRecvSuppMstTable() {
 	session := factory.GetCSLEngine().NewSession()
@@ -306,7 +387,8 @@ func createRecvSuppMstTable() {
 		VALUES 
 		('CEGP1907236002', 'SA', 'CEGP', '20190723', 6002, '8074783302', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009008', 'R', '              ', '1010590009008       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
 		('CFGY1907236000', 'SA', 'CFGY', '20190723', 6000, '8074783296', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009014', 'R', '              ', '1010590009014       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
-		('CFGY1907236010', 'SA', 'CFGY', '20190723', 6010, '8074783305', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009014', 'R', '              ', '1010590009014       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  ');
+		('CFGY1907236010', 'SA', 'CFGY', '20190723', 6010, '8074783305', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009014', 'R', '              ', '1010590009014       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
+		('CJC11907236000', 'Q3', 'CJC1', '20190723', 6002, '8074783302', '20190723', 'R', 'A', '20190723', '20190723', '5', '01', '1010590009009', 'R', '              ', '1010590009009       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190723', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  ');
 	`
 
 	if _, err := session.Exec(sql); err != nil {
@@ -404,7 +486,12 @@ func createRecvSuppDtlTable() {
 		('CFGY1907236010', 6, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000660    ', '              ', 0, '          ', '          ', 'SPYC949S1159095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
 		('CFGY1907236010', 7, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000850    ', '              ', 0, '          ', '          ', 'SPYS949H2250095', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
 		('CFGY1907236010', 8, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000860    ', '              ', 0, '          ', '          ', 'SPYS949H2250100', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
-		('CFGY1907236010', 9, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000870    ', '              ', 0, '          ', '          ', 'SPYS949H2250105', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', '');
+		('CFGY1907236010', 9, '01', 'SA', 'CFGY', '20190723', 6010, '8074783305', '000870    ', '              ', 0, '          ', '          ', 'SPYS949H2250105', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CJC11907236000', 1, '01', 'Q3', 'CJC1', '20190723', 6002, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'Q3AFAFDU6S2100230', '  ', '  ', 1, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CJC11907236000', 1, '01', 'Q3', 'CJC1', '20190723', 6002, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'Q3AFAFDU6S2100240', '  ', '  ', 2, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CJC11907236000', 1, '01', 'Q3', 'CJC1', '20190723', 6002, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'Q3AFAFDU6S2100250', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CJC11907236000', 1, '01', 'Q3', 'CJC1', '20190723', 6002, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'Q3AFAFDU6S2100260', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CJC11907236000', 1, '01', 'Q3', 'CJC1', '20190723', 6002, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'Q3AFAFDU6S2100270', '  ', '  ', 5, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', '');
 	`
 
 	if _, err := session.Exec(sql); err != nil {
@@ -557,7 +644,13 @@ func createProductTable() {
 		('SA', 'SPYC949S1159095', N'女式格子衬衫, (59)Navy, 170/92A(L)', 'SPYC949S11', '59 ', '(59)Navy', '095', 'L', null, null, null, 1, 'system', '2019-05-15 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
 		('SA', 'SPYS949H2250095', N'条纹衬衫, (50)Blue, 170/92A(M)', 'SPYS949H22', '50 ', '(50)Blue', '095', 'M', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
 		('SA', 'SPYS949H2250100', N'条纹衬衫, (50)Blue, 175/96A(L)', 'SPYS949H22', '50 ', '(50)Blue', '100', 'L', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
-		('SA', 'SPYS949H2250105', N'条纹衬衫, (50)Blue, 180/100A(XL)', 'SPYS949H22', '50 ', '(50)Blue', '105', 'XL', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887');
+		('SA', 'SPYS949H2250105', N'条纹衬衫, (50)Blue, 180/100A(XL)', 'SPYS949H22', '50 ', '(50)Blue', '105', 'XL', null, null, null, 1, 'system', '2019-05-17 00:00:00.000', 259.00, ' ', null, '2019-08-06 05:29:20.887'),
+		('Q3', 'Q3AFAFDU6S2100230', N'男女同款拖鞋, (00)生产代表颜色, 230MM', 'Q3AFAFDU6S21', '00 ', N'(00)生产代表颜色', '230', '230MM', null, null, null, 1, 'system', '2018-02-12 05:07:58.857', 79.00, ' ', null, '2019-08-09 05:27:44.677'),
+		('Q3', 'Q3AFAFDU6S2100240', N'男女同款拖鞋, (00)生产代表颜色, 240MM', 'Q3AFAFDU6S21', '00 ', N'(00)生产代表颜色', '240', '240MM', null, null, null, 1, 'system', '2018-02-12 05:07:58.857', 79.00, ' ', null, '2019-08-09 05:27:44.677'),
+		('Q3', 'Q3AFAFDU6S2100250', N'男女同款拖鞋, (00)生产代表颜色, 250MM', 'Q3AFAFDU6S21', '00 ', N'(00)生产代表颜色', '250', '250MM', null, null, null, 1, 'system', '2018-02-12 05:07:58.857', 79.00, ' ', null, '2019-08-09 05:27:44.677'),
+		('Q3', 'Q3AFAFDU6S2100260', N'男女同款拖鞋, (00)生产代表颜色, 260MM', 'Q3AFAFDU6S21', '00 ', N'(00)生产代表颜色', '260', '260MM', null, null, null, 1, 'system', '2018-02-12 05:07:58.857', 79.00, ' ', null, '2019-08-09 05:27:44.677'),
+		('Q3', 'Q3AFAFDU6S2100270', N'男女同款拖鞋, (00)生产代表颜色, 270MM', 'Q3AFAFDU6S21', '00 ', N'(00)生产代表颜色', '270', '270MM', null, null, null, 1, 'system', '2018-02-12 05:07:58.857', 79.00, ' ', null, '2019-08-09 05:27:44.677'),
+		('Q3', 'Q3AFAFDU6S2100280', N'男女同款拖鞋, (00)生产代表颜色, 280MM', 'Q3AFAFDU6S21', '00 ', N'(00)生产代表颜色', '280', '280MM', null, null, null, 1, 'system', '2018-02-12 05:07:58.857', 79.00, ' ', null, '2019-08-09 05:27:44.677');
 	`
 
 	if _, err := session.Exec(sql); err != nil {
@@ -738,7 +831,7 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 	sql := `
 		CREATE PROCEDURE [dbo].[up_CSLK_IOM_UpdateStockInEnterConfirmSave_RecvSuppMst_R1_Clearance_By_WaybillNo]
 		@BrandCode VARCHAR(4),   -- 브랜드 코드
-		@ShopCode CHAR(4),       -- 매장코드
+		@ShopCode CHAR(4),       -- 主卖场
 		@WaybillNo VARCHAR(13),  -- 운송장번호
 		@EmpID CHAR(10)      -- 入库人EmpNo
 		AS
@@ -757,6 +850,7 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 			DECLARE @CurrDate CHAR(8);
 			DECLARE @RecvEmpName NVARCHAR(200);
 			DECLARE @UserID VARCHAR(20);
+
 			BEGIN TRY
 				-- 마감체크
 				IF (
@@ -769,6 +863,19 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 								);
 					EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
 				END;
+
+
+	-- 				SELECT @ShopCode = ShopCode
+	-- 				FROM ComplexShopMapping
+	-- 				WHERE BrandCode = @BrandCode
+	-- 				AND ChiefShopCode = @ChiefShopCode
+	-- 				AND DelChk = 0
+	--
+	-- 				IF @ShopCode IS NULL
+	-- 				BEGIN
+	-- 					PRINT ('ShopCode is null')
+	-- 					EXEC [up_CSLK_ComonRaiseError] 'ShopCode is null', @ErrorParam1, @ErrorParam2;
+	-- 				END
 
 				--Query Start
 				PRINT ('@RecvSuppNo1');
@@ -956,74 +1063,72 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		,@ShopInFixQty  INT
 		,@ErrorRegEmpID VARCHAR(20) -- 登记这条误差的人的EmpID
 		,@RecvDate	CHAR(8)='' -- 入库日期
-	AS
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-	SET XACT_ABORT ON
-	SET NOCOUNT ON
-	
-	BEGIN
-	
+		AS
+		SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+		SET XACT_ABORT ON
+		SET NOCOUNT ON
+
+		BEGIN
+
 		DECLARE @ErrorCode  NVARCHAR(50) ='';
 		DECLARE @ErrorParam1 NVARCHAR(4000)='';
 		DECLARE @ErrorParam2 NVARCHAR(4000)='';
-	
-	
-	DECLARE @CurrDate    CHAR(8)   -- 현재일자
-	DECLARE @SeqNo     INT    -- 착오순번
-	DECLARE @DtSeq     INT    -- 착오상세순번
-	DECLARE @ErrorRegEmpName  NVARCHAR(200) -- 등록자명
-	DECLARE @ErrorRegUserID  VARCHAR(20)
-	DECLARE @SuppEmpName NVARCHAR(100)
-	
-	DECLARE @RecvSuppNo    CHAR(14)  -- 대표 입출고번호
-	DECLARE @RecvSuppNo_Temp  CHAR(14)  -- 상품이 포함된 입출고번호
-	
-	
-	BEGIN TRY
-	
-	-- 현재년월일 입력
-	SELECT @CurrDate = CONVERT(CHAR(8),GETDATE(),112)
-	
-	SELECT @ErrorRegEmpName = E.EmpName
+
+
+		DECLARE @CurrDate    CHAR(8)   -- 현재일자
+		DECLARE @SeqNo     INT    -- 착오순번
+		DECLARE @DtSeq     INT    -- 착오상세순번
+		DECLARE @ErrorRegEmpName  NVARCHAR(200) -- 등록자명
+		DECLARE @ErrorRegUserID  VARCHAR(20)
+		DECLARE @SuppEmpName NVARCHAR(100)
+
+		DECLARE @RecvSuppNo    CHAR(14)  -- 대표 입출고번호
+		DECLARE @RecvSuppNo_Temp  CHAR(14)  -- 상품이 포함된 입출고번호
+
+		BEGIN TRY
+
+		-- 현재년월일 입력
+		SELECT @CurrDate = CONVERT(CHAR(8),GETDATE(),112)
+
+		SELECT @ErrorRegEmpName = E.EmpName
 			, @ErrorRegUserID = U.UserID
 		FROM CSL.dbo.Employee E
 		JOIN CSL.dbo.UserInfo U
 		ON E.EmpID = U.EmpID
 		WHERE E.EmpID = @ErrorRegEmpID
 		AND U.UseChk = 1
-	
-	/***착오등록막음(복합매장)  2011.12.22  ***/
-	DECLARE @StyleCode VARCHAR(18)
-	
-	DECLARE  @Exists table ( e bit)
-	
-	select @Stylecode = StyleCode
-	from Product where ProdCode = @ProdCode
-	
-	
-	-- 이미 해당 상품에 대한 오차가 등록되었을 경우
-	IF EXISTS ( SELECT * FROM StockMisDtl WHERE BrandCode = @BrandCode AND ShopCode = @ShopCode AND BoxNo = @WaybillNo AND ProdCode = @ProdCode  AND DelChk = 0 )
-	BEGIN
+
+		/***착오등록막음(복합매장)  2011.12.22  ***/
+		DECLARE @StyleCode VARCHAR(18)
+
+		DECLARE  @Exists table ( e bit)
+
+		select @Stylecode = StyleCode
+		from Product where ProdCode = @ProdCode
+
+		-- 이미 해당 상품에 대한 오차가 등록되었을 경우
+		IF EXISTS ( SELECT * FROM StockMisDtl WHERE BrandCode = @BrandCode AND ShopCode = @ShopCode AND BoxNo = @WaybillNo AND ProdCode = @ProdCode  AND DelChk = 0 )
+		BEGIN
 		-- 에러 처리
 		SET @ErrorCode = 'IOM138'
 		EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2
-	
+
 		--PRINT N'이미 해상 상품에 대한 오차가 등록되었습니다.'
-	
-	END
-	
-	
-	IF ( (@ShopInFixQty - @ShopRecvSuppQty ) >= 0 )
-	BEGIN
+
+		END
+
+
+		IF ( (@ShopInFixQty - @ShopRecvSuppQty ) >= 0 )
+		BEGIN
 		/******** 실물이 많을 경우 *********/
 		--PRINT N'실물이 많을 경우'
-	
+
 		DECLARE @RecvSuppQty_ProdCode INT    -- 상품별 출고수량 ( 총합 아님 )
 		DECLARE @SAPDeliveryNo   CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
 		DECLARE @SAPDeliveryNo_Temp  CHAR(10)
 		DECLARE @SAPDeliveryItemNo  CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
-	
-	
+
+
 		-- 해당 박스의 첫번째 입출고 번호 구함
 		SELECT TOP 1
 		@RecvSuppNo = MST.RecvSuppNo,
@@ -1036,8 +1141,8 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		AND ShippingTypeCode IN ('01','66','16') --wangpengda 20100203
 		AND MST.DelChk = 0
 		AND MST.ShopSuppRecvDate=@RecvDate			--ADD BY SHEN.XUE 20140804
-	
-	
+
+
 		-- 해당상품이 속한 첫번째 입출고 번호 구함
 		SELECT TOP 1 @RecvSuppNo_Temp = MST.RecvSuppNo, @SeqNo = MST.SeqNo, @RecvSuppQty_ProdCode = DTL.RecvSuppQty,
 			@SAPDeliveryNo_Temp = DTL.SAPDeliveryNo, @SAPDeliveryItemNo = DTL.SAPDeliveryItemNo
@@ -1054,7 +1159,7 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		SET @RecvSuppNo = @RecvSuppNo_Temp
 		SET @SAPDeliveryNo = @SAPDeliveryNo_Temp
 		END
-	
+
 		-- DtSeq 일렬번호 구함
 		SELECT @DtSeq = ISNULL(MAX(DTL.DtSeq),0) + 1 FROM StockMisDtl AS DTL
 		WHERE DTL.BrandCode = @BrandCode
@@ -1062,6 +1167,8 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		AND DTL.SeqNo = @SeqNo --modify by li.guolin 20151013
 		AND DTL.Dates=@CurrDate  --modify by li.guolin 20151013
 		print @DtSeq
+
+		PRINT @RecvSuppNo
 		-- 오차 데이터 생성
 		INSERT StockMisDtl
 			( BrandCode
@@ -1157,31 +1264,31 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		INNER JOIN RecvSuppMst AS B ON (B.RecvSuppNo = A.RecvSuppNo)
 		INNER JOIN Product    AS C ON (C.BrandCode = A.BrandCode AND C.ProdCode = A.ProdCode)
 		WHERE B.RecvSuppNo = @RecvSuppNo
-	
-	END
-	ELSE
-	BEGIN
+
+		END
+		ELSE
+		BEGIN
 		/************************ 데이터가 많을 경우 ************************
 		이 경우는 무조건 입고확정 정보가 상품별로 모두 존재하는 경우임.
 		*********************************************************************/
 		--PRINT N'데이터가 많을 경우'
-	
+
 		DECLARE @RecvSuppNo_Inner   CHAR(14)
 		DECLARE @SeqNo_Inner    INT
 		DECLARE @ProdCode_Inner    VARCHAR(18)
 		DECLARE @RecvSuppQty_Inner   INT
-	
+
 		DECLARE @StockMisQty_Inner   INT  -- 임시 잔여 오차수량 저장변수
 		DECLARE @StockMisQtyProduct_Inner INT  -- 임시 오차수량 저장변수
 		DECLARE @IsBreak_Inner    BIT  -- 중지 가능여부 저장변수
 		DECLARE @SAPDeliveryNo_Inner   CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
 		DECLARE @SAPDeliveryItemNo_Inner  CHAR(10)  -- 물류팀에서 필요로 하는 값(RecvSuppDtl에서 가져옴, 신규착오는 NULL)
-	
+
 		SET @StockMisQty_Inner = @ShopInFixQty - @ShopRecvSuppQty
 		--PRINT N'00 @StockMisQty_Inner' + CONVERT(VARCHAR(10), @StockMisQty_Inner)
-	
+
 		DECLARE @StockMisCursor CURSOR
-	
+
 		-- 대상 상품에 대한 입출고정보 결과 커서 ( 예측되는 결과 : 1..*, 상품이 여러개의 레코드에 포함되는 경우가 발생함 )
 		SET @StockMisCursor = CURSOR LOCAL SCROLL FOR
 		SELECT 
@@ -1203,7 +1310,7 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		AND DTL.ProdCode = @ProdCode					--modify by li.guolin 20151013
 		AND MST.ShopSuppRecvDate=@RecvDate			--ADD BY SHEN.XUE 20140804
 		OPEN @StockMisCursor
-	
+
 		FETCH NEXT FROM @StockMisCursor
 		INTO @RecvSuppNo_Inner,
 		@SeqNo_Inner, 
@@ -1212,10 +1319,10 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		@SAPDeliveryNo_Inner, 
 		@SAPDeliveryItemNo_Inner, 
 		@SuppEmpName
-	
+
 		-- 최초 한번 동작해야함.
 		SET @IsBreak_Inner = '0'
-	
+
 		WHILE @@FETCH_STATUS = 0
 		BEGIN
 		SELECT @DtSeq = ISNULL(MAX(DTL.DtSeq),0) + 1 FROM StockMisDtl AS DTL
@@ -1228,14 +1335,14 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 		--PRINT N'BREAK'
 		BREAK
 		END
-	
-	
+
+
 		--PRINT N'01 @StockMisQty_Inner' + CONVERT(VARCHAR(10), @StockMisQty_Inner)
-	
+
 		-- "해당상품의 출고수량 총합 >= 오차수량" 의 조건에 위배되면 커서실행을 멈춘다.
-	--  IF (@ProdCode_Inner=@ProdCode)
+		--  IF (@ProdCode_Inner=@ProdCode)
 		--BEGIN
-	
+
 			IF ( @StockMisQty_Inner < 0)
 			BEGIN
 			IF ( @RecvSuppQty_Inner < ABS(@StockMisQty_Inner) )
@@ -1255,9 +1362,9 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 			BEGIN
 			SET @IsBreak_Inner = '1'
 			END
-	
+
 		--PRINT N'02 @StockMisQty_Inner' + CONVERT(VARCHAR(10), @StockMisQty_Inner)
-	
+
 		-- 오차 데이터 생성
 			INSERT StockMisDtl
 				( BrandCode
@@ -1364,18 +1471,18 @@ func createInsertStockInMissSaveStockMisDtlC1() {
 			@SAPDeliveryItemNo_Inner, 
 			@SuppEmpName
 		END
-	
+
 		CLOSE @StockMisCursor
 		DEALLOCATE @StockMisCursor
-	END
-	
-	
-	END TRY
-	BEGIN CATCH
-	
+		END
+
+
+		END TRY
+		BEGIN CATCH
+
 		EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2
-	END CATCH
-	END;
+		END CATCH
+		END;
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createInsertStockInMissSaveStockMisDtlC1 error: %v", err.Error())

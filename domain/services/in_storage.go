@@ -76,7 +76,11 @@ func (etl InStorageETL) buildTransactions(ctx context.Context, source interface{
 
 // validateTransactions 验证transaction是否可以入库
 func (etl InStorageETL) validateTransaction(transaction entities.Transaction) (bool, error) {
-	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(transaction.BrandCode, transaction.ShopCode, transaction.WaybillNo)
+	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(transaction.ShopCode, transaction.BrandCode)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(transaction.BrandCode, shopCode, transaction.WaybillNo)
 	if err != nil {
 		log.Println(err.Error())
 		return false, err
@@ -141,7 +145,11 @@ func (etl InStorageETL) Load(ctx context.Context, source interface{}) error {
 	}
 
 	for _, txn := range transactions {
-		err := repositories.RecvSuppRepository{}.PutInStorage(txn.BrandCode, txn.ShopCode, txn.WaybillNo, txn.EmpID)
+		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(txn.ShopCode, txn.BrandCode)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+		err = repositories.RecvSuppRepository{}.PutInStorage(txn.BrandCode, shopCode, txn.WaybillNo, txn.EmpID)
 		if err != nil {
 			log.Printf(err.Error())
 		}
@@ -153,7 +161,11 @@ func (etl InStorageETL) Load(ctx context.Context, source interface{}) error {
 
 // 记录误差
 func (etl InStorageETL) writeDownStockMiss(transaction entities.Transaction) error {
-	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(transaction.BrandCode, transaction.ShopCode, transaction.WaybillNo)
+	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(transaction.ShopCode, transaction.BrandCode)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(transaction.BrandCode, shopCode, transaction.WaybillNo)
 	if err != nil {
 		log.Println(err.Error())
 		return err
@@ -203,9 +215,13 @@ func (etl InStorageETL) writeDownStockMiss(transaction entities.Transaction) err
 			stockMiss.EmpID = transaction.EmpID
 			stockMissMap[key] = stockMiss
 		} else {
+			shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(transaction.ShopCode, transaction.BrandCode)
+			if err != nil {
+				log.Printf(err.Error())
+			}
 			stockMiss := StockMiss{
 				BrandCode: transaction.BrandCode,
-				ShopCode:  transaction.ShopCode,
+				ShopCode:  shopCode,
 				InDate:    time.Now().Format("20061012"),
 				WaybillNo: transaction.WaybillNo,
 				EmpID:     transaction.EmpID,
@@ -216,7 +232,6 @@ func (etl InStorageETL) writeDownStockMiss(transaction entities.Transaction) err
 			stockMissMap[key] = stockMiss
 		}
 	}
-
 	if len(stockMissMap) > 0 {
 		for _, v := range stockMissMap {
 			if v.OutQty != v.InQty {

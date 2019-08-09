@@ -150,12 +150,22 @@ func TestInStorageETL(t *testing.T) {
 		})
 
 		Convey("运单号为1010590009014的运单应该在CSL入库", func() {
-			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
-			err := etl.Run(context.Background())
-			So(err, ShouldBeNil)
 			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CFGY", "1010590009014")
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 11)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, true)
+				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
+			}
+		})
+
+		Convey("CEGP的子卖场CJC1运单号为1010590009009的运单应该存在CSL入库", func() {
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("Q3", "CJC1", "1010590009009")
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 5)
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, true)
 				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
