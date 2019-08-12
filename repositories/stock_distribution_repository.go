@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-// StockTransactionRepository P2-brand-sku-location的仓库
-type StockTransactionRepository struct{}
+// StockDistributionRepository P2-brand-sku-location的仓库
+type StockDistributionRepository struct{}
 
 // GetInStorageByCreateAt 获取某一时间段的入库数据
-func (StockTransactionRepository) GetInStorageByCreateAt(start, end time.Time) ([]map[string]string, error) {
+func (StockDistributionRepository) GetInStorageByCreateAt(start, end time.Time) ([]map[string]string, error) {
 	sql := `
 			SELECT
 			txi.brand_code,

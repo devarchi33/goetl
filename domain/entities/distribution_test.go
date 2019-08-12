@@ -7,8 +7,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCreateTransaction(t *testing.T) {
-	Convey("测试Transaction.Create(), 根据map类型的数据转换成Transaction", t, func() {
+func TestCreateDistribution(t *testing.T) {
+	Convey("测试Distribution.Create(), 根据map类型的数据转换成Distribution", t, func() {
 		Convey("如果源数据类型正确，应该能成确转换", func() {
 			data := []map[string]string{
 				map[string]string{
@@ -29,19 +29,19 @@ func TestCreateTransaction(t *testing.T) {
 					"emp_id":     "7000028260",
 				},
 			}
-			transaction, err := Transaction{}.Create(data)
+			distribution, err := Distribution{}.Create(data)
 			So(err, ShouldBeNil)
-			So(transaction.BrandCode, ShouldEqual, "SA")
-			So(transaction.ShopCode, ShouldEqual, "CEGP")
-			So(transaction.WaybillNo, ShouldEqual, "1010590009008")
-			So(transaction.BoxNo, ShouldEqual, "1010590009008")
-			So(transaction.EmpID, ShouldEqual, "7000028260")
-			So(transaction.Items, ShouldNotBeNil)
-			So(len(transaction.Items), ShouldEqual, 2)
-			So(transaction.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
-			So(transaction.Items[0].Qty, ShouldEqual, 2)
-			So(transaction.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
-			So(transaction.Items[1].Qty, ShouldEqual, 3)
+			So(distribution.BrandCode, ShouldEqual, "SA")
+			So(distribution.ShopCode, ShouldEqual, "CEGP")
+			So(distribution.WaybillNo, ShouldEqual, "1010590009008")
+			So(distribution.BoxNo, ShouldEqual, "1010590009008")
+			So(distribution.EmpID, ShouldEqual, "7000028260")
+			So(distribution.Items, ShouldNotBeNil)
+			So(len(distribution.Items), ShouldEqual, 2)
+			So(distribution.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
+			So(distribution.Items[0].Qty, ShouldEqual, 2)
+			So(distribution.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
+			So(distribution.Items[1].Qty, ShouldEqual, 3)
 		})
 		Convey("如果源数据中如果不包含“brand_code, shop_code, waybill_no, box_no, emp_id其中的一个或多个key，应该转换失败", func() {
 			data := []map[string]string{
@@ -54,7 +54,7 @@ func TestCreateTransaction(t *testing.T) {
 					"emp_id":     "7000028260",
 				},
 			}
-			_, err := Transaction{}.Create(data)
+			_, err := Distribution{}.Create(data)
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("shop_code is required"))
 		})
@@ -69,7 +69,7 @@ func TestCreateTransaction(t *testing.T) {
 					"emp_id":     "7000028260",
 				},
 			}
-			_, err := Transaction{}.Create(data)
+			_, err := Distribution{}.Create(data)
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("qty is required"))
 		})
