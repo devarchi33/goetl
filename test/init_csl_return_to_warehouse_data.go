@@ -124,7 +124,8 @@ func createStyleTable() {
 			InDateTime DATETIME,
 			UseChk BIT,
 			SaleMonthCode CHAR(2),
-			PreStyleCode VARCHAR(18)
+			PreStyleCode VARCHAR(18),
+			ModiDateTime DATETIME
 		);
 
 		INSERT INTO CSL.dbo.Style 
@@ -340,14 +341,15 @@ func createReturnToWarehouseMasterSP() {
 												--AND RecvSuppStatusCode<> 'T'
 												)
 					BEGIN  
-						SELECT 'ERROR:'+ RecvSuppNo AS RecvSuppNo FROM RecvSuppMst  WITH(NOLOCK)
-											WHERE BrandCode = @BrandCode 
-												AND ShopCode = @ShopCode
-												AND WayBillNo = @WayBillNo
-												AND BoxNo = RTRIM(@WayBillNo)
-												AND ShippingCompanyCode=@ShippingCompanyCode
-												AND DelChk = 0
-												--AND RecvSuppStatusCode<> 'T'
+						SELECT 
+							RecvSuppNo AS RecvSuppNo 
+						FROM RecvSuppMst WITH(NOLOCK)
+							WHERE BrandCode = @BrandCode 
+							AND ShopCode = @ShopCode
+							AND WayBillNo = @WayBillNo
+							AND BoxNo = RTRIM(@WayBillNo)
+							AND ShippingCompanyCode=@ShippingCompanyCode
+							AND DelChk = 0
 						RETURN
 					END
 			

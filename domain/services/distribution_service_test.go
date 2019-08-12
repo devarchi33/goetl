@@ -17,7 +17,7 @@ import (
 
 func TestDistributionETLBuildDistributions(t *testing.T) {
 	Convey("测试buildDistributions方法", t, func() {
-		Convey("源数据中包含多个运单号的数据，应该能够根据运单号生成Distribution", func() {
+		Convey("源数据中包含多个运单号的数据，应该能够根据运单号生成DistributionOrder", func() {
 			data := []map[string]string{
 				map[string]string{
 					"brand_code": "SA",
@@ -55,35 +55,35 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 				},
 			}
 
-			result, err := DistributionETL{}.buildDistributions(context.Background(), data)
+			result, err := DistributionETL{}.buildDistributionOrders(context.Background(), data)
 			if err != nil {
 				log.Printf(err.Error())
 			}
 			So(err, ShouldBeNil)
-			distributions, ok := result.([]entities.Distribution)
+			orders, ok := result.([]entities.DistributionOrder)
 			if !ok {
 				log.Printf("Convert Failed")
 			}
-			So(len(distributions), ShouldEqual, 2)
-			for _, dist := range distributions {
-				if dist.BrandCode == "SA" && dist.ShopCode == "CEGP" && dist.WaybillNo == "1010590009008" {
-					So(dist.BoxNo, ShouldEqual, "1010590009008")
-					So(dist.EmpID, ShouldEqual, "7000028260")
-					So(dist.Items, ShouldNotBeNil)
-					So(len(dist.Items), ShouldEqual, 2)
-					So(dist.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
-					So(dist.Items[0].Qty, ShouldEqual, 2)
-					So(dist.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
-					So(dist.Items[1].Qty, ShouldEqual, 3)
-				} else if dist.BrandCode == "SA" && dist.ShopCode == "CEGP" && dist.WaybillNo == "1010590009009" {
-					So(dist.BoxNo, ShouldEqual, "1010590009009")
-					So(dist.EmpID, ShouldEqual, "7000028260")
-					So(dist.Items, ShouldNotBeNil)
-					So(len(dist.Items), ShouldEqual, 2)
-					So(dist.Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
-					So(dist.Items[0].Qty, ShouldEqual, 4)
-					So(dist.Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
-					So(dist.Items[1].Qty, ShouldEqual, 5)
+			So(len(orders), ShouldEqual, 2)
+			for _, order := range orders {
+				if order.BrandCode == "SA" && order.ShopCode == "CEGP" && order.WaybillNo == "1010590009008" {
+					So(order.BoxNo, ShouldEqual, "1010590009008")
+					So(order.EmpID, ShouldEqual, "7000028260")
+					So(order.Items, ShouldNotBeNil)
+					So(len(order.Items), ShouldEqual, 2)
+					So(order.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
+					So(order.Items[0].Qty, ShouldEqual, 2)
+					So(order.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
+					So(order.Items[1].Qty, ShouldEqual, 3)
+				} else if order.BrandCode == "SA" && order.ShopCode == "CEGP" && order.WaybillNo == "1010590009009" {
+					So(order.BoxNo, ShouldEqual, "1010590009009")
+					So(order.EmpID, ShouldEqual, "7000028260")
+					So(order.Items, ShouldNotBeNil)
+					So(len(order.Items), ShouldEqual, 2)
+					So(order.Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
+					So(order.Items[0].Qty, ShouldEqual, 4)
+					So(order.Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
+					So(order.Items[1].Qty, ShouldEqual, 5)
 				}
 			}
 		})
@@ -91,7 +91,6 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 }
 
 func TestDistributionETL(t *testing.T) {
-	// SELECT * FROM tansactions
 	Convey("测试DistributionETL的Run方法", t, func() {
 		Convey("某个时间段没有入库运单的话，应该没有数据在CSL入库", func() {
 			etl := DistributionETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:01:00")

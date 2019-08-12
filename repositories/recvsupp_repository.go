@@ -4,6 +4,9 @@ import (
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
+	"errors"
+	"log"
+	"time"
 )
 
 // RecvSuppRepository RecvSupp仓库，包括Master和Detail
@@ -85,4 +88,64 @@ func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, 
 	shop := infra.ConvertByteResult(result)[0]["ShopCode"]
 
 	return shop, nil
+}
+
+// CreateReturnToWarehouseOrder 创建退仓订单，返回RecvSuppNo
+func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, waybillNo, empID, deliveryOrderNo string) (string, error) {
+	sql := `
+		EXEC [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppMst_C1_Clearance]
+			@BrandCode				= ?
+			,@ShopCode				= ?
+			,@Dates					= ?
+			,@WayBillNo				= ?
+			,@ShippingTypeCode		= '41'
+			,@ShippingCompanyCode  	= 'SR'
+			,@EmpID 				= ?
+			,@DeliveryID 			= ?
+			,@DeliveryOrderNo 		= ?
+	`
+	today := time.Now().Format("20060102")
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, today, waybillNo, empID, waybillNo, deliveryOrderNo)
+	if err != nil {
+		return "", err
+	}
+
+	master := infra.ConvertByteResult(result)
+	if len(master) == 0 {
+		return "", errors.New("exec up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppMst_C1_Clearance failed")
+	}
+	recvSuppNo := master[0]["RecvSuppNo"]
+
+	return recvSuppNo, nil
+}
+
+// AddReturnToWarehouseOrderItem 向退仓单中添加商品
+func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
+	sql := `
+		EXEC [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance]
+			@RecvSuppNo			        = ?
+			,@RecvSuppSeqNo		        = NULL
+			,@BrandCode					= ?
+			,@ShopCode					= ?
+			,@Dates						= ?
+			,@ProdCode					= ?
+			,@RecvSuppQty				= 1
+			,@AbnormalProdReasonCode	= NULL
+			,@EmpID						= ?
+			,@AbnormalChkCode    		= 0
+			,@AbnormalSerialNo   		= NULL
+	`
+	today := time.Now().Format("20060102")
+	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, today, skuCode, empID)
+	if err != nil {
+		log.Println("up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance params:")
+		log.Printf("recvSuppNo: %v", recvSuppNo)
+		log.Printf("brandCode: %v", brandCode)
+		log.Printf("shopCode: %v", shopCode)
+		log.Printf("today: %v", today)
+		log.Printf("skuCode: %v", skuCode)
+		return err
+	}
+
+	return nil
 }

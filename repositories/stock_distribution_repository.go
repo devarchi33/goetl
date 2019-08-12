@@ -6,29 +6,31 @@ import (
 	"time"
 )
 
-// StockDistributionRepository P2-brand-sku-location的仓库
+// StockDistributionRepository P2-brand 物流分配入库单仓库
 type StockDistributionRepository struct{}
 
-// GetInStorageByCreateAt 获取某一时间段的入库数据
-func (StockDistributionRepository) GetInStorageByCreateAt(start, end time.Time) ([]map[string]string, error) {
+// GetDistributionOrdersByCreateAt 获取某一时间段的分配入库数据
+func (StockDistributionRepository) GetDistributionOrdersByCreateAt(start, end time.Time) ([]map[string]string, error) {
 	sql := `
-			SELECT
-			txi.brand_code,
+		SELECT
+			sdi.brand_code,
 			store.code AS shop_code,
-			tx.waybill_no,
-			tx.box_no,
+			sd.waybill_no,
+			sd.box_no,
 			sku.code AS sku_code,
-			txi.quantity AS qty,
+			sdi.quantity AS qty,
 			'7000028260' AS emp_id
-		FROM pangpang_brand_sku_location.stock_distribute AS tx
-			JOIN pangpang_brand_sku_location.stock_distribute_item AS txi
-				ON tx.id = txi.stock_distribute_id
+		FROM pangpang_brand_sku_location.stock_distribute AS sd
+			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
+				ON sd.id = sdi.stock_distribute_id
 			JOIN pangpang_brand_product.sku AS sku
-				ON sku.id = txi.sku_id
+				ON sku.id = sdi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
-				ON store.id = tx.receipt_location_id
-		WHERE tx.type = 'IN'
-			AND tx.created_at BETWEEN ? AND ?;
+				ON store.id = sd.receipt_location_id
+		WHERE sd.tenant_code = 'pangpang'
+			AND sd.type = 'IN'
+			AND sd.created_at BETWEEN ? AND ?
+			;
 	`
 
 	result, err := factory.GetP2BrandEngine().Query(sql, start.Format("2006-01-02 15:04:05"), end.Format("2006-01-02 15:04:05"))
