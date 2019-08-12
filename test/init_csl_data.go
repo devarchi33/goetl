@@ -17,6 +17,8 @@ func initCSL() {
 	createEmployeeTable()
 	createComplexShopMappingTable()
 	createSP()
+
+	initReturnToWarehouseData()
 }
 
 // 创建的时候有问题，暂未使用，需要事先创建CSL数据库
