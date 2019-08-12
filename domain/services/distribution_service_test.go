@@ -15,9 +15,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestInStorageETLBuildTransactions(t *testing.T) {
-	Convey("测试buildTransactions方法", t, func() {
-		Convey("源数据中包含多个运单号的数据，应该能够根据运单号生成Transaction", func() {
+func TestDistributionETLBuildDistributions(t *testing.T) {
+	Convey("测试buildDistributions方法", t, func() {
+		Convey("源数据中包含多个运单号的数据，应该能够根据运单号生成Distribution", func() {
 			data := []map[string]string{
 				map[string]string{
 					"brand_code": "SA",
@@ -55,46 +55,46 @@ func TestInStorageETLBuildTransactions(t *testing.T) {
 				},
 			}
 
-			result, err := InStorageETL{}.buildTransactions(context.Background(), data)
+			result, err := DistributionETL{}.buildDistributions(context.Background(), data)
 			if err != nil {
 				log.Printf(err.Error())
 			}
 			So(err, ShouldBeNil)
-			transactions, ok := result.([]entities.Transaction)
+			distributions, ok := result.([]entities.Distribution)
 			if !ok {
 				log.Printf("Convert Failed")
 			}
-			So(len(transactions), ShouldEqual, 2)
-			for _, txn := range transactions {
-				if txn.BrandCode == "SA" && txn.ShopCode == "CEGP" && txn.WaybillNo == "1010590009008" {
-					So(txn.BoxNo, ShouldEqual, "1010590009008")
-					So(txn.EmpID, ShouldEqual, "7000028260")
-					So(txn.Items, ShouldNotBeNil)
-					So(len(txn.Items), ShouldEqual, 2)
-					So(txn.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
-					So(txn.Items[0].Qty, ShouldEqual, 2)
-					So(txn.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
-					So(txn.Items[1].Qty, ShouldEqual, 3)
-				} else if txn.BrandCode == "SA" && txn.ShopCode == "CEGP" && txn.WaybillNo == "1010590009009" {
-					So(txn.BoxNo, ShouldEqual, "1010590009009")
-					So(txn.EmpID, ShouldEqual, "7000028260")
-					So(txn.Items, ShouldNotBeNil)
-					So(len(txn.Items), ShouldEqual, 2)
-					So(txn.Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
-					So(txn.Items[0].Qty, ShouldEqual, 4)
-					So(txn.Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
-					So(txn.Items[1].Qty, ShouldEqual, 5)
+			So(len(distributions), ShouldEqual, 2)
+			for _, dist := range distributions {
+				if dist.BrandCode == "SA" && dist.ShopCode == "CEGP" && dist.WaybillNo == "1010590009008" {
+					So(dist.BoxNo, ShouldEqual, "1010590009008")
+					So(dist.EmpID, ShouldEqual, "7000028260")
+					So(dist.Items, ShouldNotBeNil)
+					So(len(dist.Items), ShouldEqual, 2)
+					So(dist.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
+					So(dist.Items[0].Qty, ShouldEqual, 2)
+					So(dist.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
+					So(dist.Items[1].Qty, ShouldEqual, 3)
+				} else if dist.BrandCode == "SA" && dist.ShopCode == "CEGP" && dist.WaybillNo == "1010590009009" {
+					So(dist.BoxNo, ShouldEqual, "1010590009009")
+					So(dist.EmpID, ShouldEqual, "7000028260")
+					So(dist.Items, ShouldNotBeNil)
+					So(len(dist.Items), ShouldEqual, 2)
+					So(dist.Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
+					So(dist.Items[0].Qty, ShouldEqual, 4)
+					So(dist.Items[1].SkuCode, ShouldEqual, "SPYC949H2130100")
+					So(dist.Items[1].Qty, ShouldEqual, 5)
 				}
 			}
 		})
 	})
 }
 
-func TestInStorageETL(t *testing.T) {
+func TestDistributionETL(t *testing.T) {
 	// SELECT * FROM tansactions
-	Convey("测试InStorageETL的Run方法", t, func() {
+	Convey("测试DistributionETL的Run方法", t, func() {
 		Convey("某个时间段没有入库运单的话，应该没有数据在CSL入库", func() {
-			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:01:00")
+			etl := DistributionETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:01:00")
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
 			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
@@ -105,7 +105,7 @@ func TestInStorageETL(t *testing.T) {
 			}
 		})
 		Convey("运单号为1010590009008的运单应该在CSL入库", func() {
-			etl := InStorageETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
+			etl := DistributionETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
 			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
