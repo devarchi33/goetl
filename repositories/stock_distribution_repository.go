@@ -19,7 +19,7 @@ func (StockDistributionRepository) GetDistributionOrdersByCreateAt(start, end ti
 			sd.box_no,
 			sku.code AS sku_code,
 			sdi.quantity AS qty,
-			'7000028260' AS emp_id
+			emp.employee_no AS emp_id
 		FROM pangpang_brand_sku_location.stock_distribute AS sd
 			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
 				ON sd.id = sdi.stock_distribute_id
@@ -27,6 +27,8 @@ func (StockDistributionRepository) GetDistributionOrdersByCreateAt(start, end ti
 				ON sku.id = sdi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
 				ON store.id = sd.receipt_location_id
+			JOIN pangpang_common_colleague_employee.employees AS emp
+				ON emp.id = sd.colleague_id
 		WHERE sd.tenant_code = 'pangpang'
 			AND sd.type = 'IN'
 			AND sd.created_at BETWEEN ? AND ?

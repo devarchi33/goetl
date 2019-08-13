@@ -17,6 +17,7 @@ func initP2BrandDB() {
 	initStore()
 	initProduct()
 	initLocation()
+	initColleague()
 }
 
 // InitTestData 初始化测试数据
