@@ -28,7 +28,7 @@ func (DistributionETL) New(startDatetime, endDateTime string) *goetl.ETL {
 	}
 
 	etl := goetl.New(distributionETL)
-	etl.Before(DistributionETL{}.buildDistributions)
+	etl.Before(DistributionETL{}.buildDistributionOrders)
 	etl.Before(DistributionETL{}.filterStorableDistributions)
 
 	return etl
@@ -36,7 +36,7 @@ func (DistributionETL) New(startDatetime, endDateTime string) *goetl.ETL {
 
 // Extract ...
 func (etl DistributionETL) Extract(ctx context.Context) (interface{}, error) {
-	result, err := repositories.StockDistributionRepository{}.GetInStorageByCreateAt(etl.StartDateTime, etl.EndDateTime)
+	result, err := repositories.StockDistributionRepository{}.GetDistributionOrdersByCreateAt(etl.StartDateTime, etl.EndDateTime)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,8 @@ func (etl DistributionETL) Extract(ctx context.Context) (interface{}, error) {
 	return result, nil
 }
 
-// 相同运单号合并为一个Distribution
-func (etl DistributionETL) buildDistributions(ctx context.Context, source interface{}) (interface{}, error) {
+// 相同运单号合并为一个 DistributionOrder
+func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source interface{}) (interface{}, error) {
 	data, ok := source.([]map[string]string)
 	if !ok {
 		return nil, errors.New("Convert Failed")
@@ -62,20 +62,20 @@ func (etl DistributionETL) buildDistributions(ctx context.Context, source interf
 		}
 	}
 
-	distributions := make([]entities.Distribution, 0)
+	orders := make([]entities.DistributionOrder, 0)
 	for _, v := range items {
-		dist, err := entities.Distribution{}.Create(v)
+		order, err := entities.DistributionOrder{}.Create(v)
 		if err != nil {
 			continue
 		}
-		distributions = append(distributions, dist)
+		orders = append(orders, order)
 	}
 
-	return distributions, nil
+	return orders, nil
 }
 
 // validateDistributions 验证distribution是否可以入库
-func (etl DistributionETL) validateDistribution(distribution entities.Distribution) (bool, error) {
+func (etl DistributionETL) validateDistribution(distribution entities.DistributionOrder) (bool, error) {
 	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ShopCode, distribution.BrandCode)
 	if err != nil {
 		log.Printf(err.Error())
@@ -108,20 +108,20 @@ func (etl DistributionETL) validateDistribution(distribution entities.Distributi
 
 // filterStorableDistributions 过滤出可以入库的运单
 func (etl DistributionETL) filterStorableDistributions(ctx context.Context, source interface{}) (interface{}, error) {
-	distributions, ok := source.([]entities.Distribution)
+	orders, ok := source.([]entities.DistributionOrder)
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
 
-	storableDistributions := make([]entities.Distribution, 0)
-	for _, dist := range distributions {
-		ok, err := DistributionETL{}.validateDistribution(dist)
+	storableDistributions := make([]entities.DistributionOrder, 0)
+	for _, order := range orders {
+		ok, err := DistributionETL{}.validateDistribution(order)
 		if err != nil {
 			log.Println(err.Error())
 			continue
 		}
 		if ok {
-			storableDistributions = append(storableDistributions, dist)
+			storableDistributions = append(storableDistributions, order)
 		}
 	}
 	return storableDistributions, nil
@@ -129,38 +129,38 @@ func (etl DistributionETL) filterStorableDistributions(ctx context.Context, sour
 
 // Transform ...
 func (etl DistributionETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
-	distributions, ok := source.([]entities.Distribution)
+	orders, ok := source.([]entities.DistributionOrder)
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
 
-	return distributions, nil
+	return orders, nil
 }
 
 // Load ...
 func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
-	distributions, ok := source.([]entities.Distribution)
+	orders, ok := source.([]entities.DistributionOrder)
 	if !ok {
 		return errors.New("Convert Failed")
 	}
 
-	for _, dist := range distributions {
-		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(dist.ShopCode, dist.BrandCode)
+	for _, order := range orders {
+		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShopCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
 		}
-		err = repositories.RecvSuppRepository{}.PutInStorage(dist.BrandCode, shopCode, dist.WaybillNo, dist.EmpID)
+		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.EmpID)
 		if err != nil {
 			log.Printf(err.Error())
 		}
-		etl.writeDownStockMiss(dist)
+		etl.writeDownStockMiss(order)
 	}
 
 	return nil
 }
 
 // 记录误差
-func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution) error {
+func (etl DistributionETL) writeDownStockMiss(distribution entities.DistributionOrder) error {
 	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ShopCode, distribution.BrandCode)
 	if err != nil {
 		log.Printf(err.Error())

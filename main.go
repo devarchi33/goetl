@@ -17,8 +17,14 @@ func main() {
 	end := time.Now().Format("2006-01-02") + " 23:59:59"
 	log.Printf("起始日期: %s, 结束日期: %s \n", start, end)
 
-	etl := services.DistributionETL{}.New(start, end)
-	err := etl.Run(context.Background())
+	distributionETL := services.DistributionETL{}.New(start, end)
+	err := distributionETL.Run(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	returnToWarehouseETL := services.ReturnToWarehouseETL{}.New(start, end)
+	err = returnToWarehouseETL.Run(context.Background())
 	if err != nil {
 		log.Println(err.Error())
 	}

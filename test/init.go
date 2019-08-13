@@ -18,3 +18,9 @@ func initP2BrandDB() {
 	initProduct()
 	initLocation()
 }
+
+// InitTestData 初始化测试数据
+func InitTestData() {
+	initCSL()
+	initP2BrandDB()
+}
