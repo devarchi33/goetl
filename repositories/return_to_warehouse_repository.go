@@ -19,7 +19,7 @@ func (ReturnToWarehouseRepository) GetReturnToWarehouseOrdersByCreateAt(start, e
 			rtw.status AS status_code,
 			sku.code AS sku_code,
 			rtwi.quantity AS qty,
-			'7000028260' AS emp_id
+			emp.employee_no AS emp_id
 		FROM pangpang_brand_sku_location.return_to_warehouse AS rtw
 			JOIN pangpang_brand_sku_location.return_to_warehouse_item AS rtwi
 				ON rtw.id = rtwi.return_to_warehouse_id
@@ -27,6 +27,8 @@ func (ReturnToWarehouseRepository) GetReturnToWarehouseOrdersByCreateAt(start, e
 				ON sku.id = rtwi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
 				ON store.id = rtw.shipment_location_id
+			JOIN pangpang_common_colleague_employee.employees AS emp
+				ON emp.id = rtw.colleague_id
 		WHERE rtw.tenant_code = 'pangpang'
 			AND rtw.status = 'R'
 			AND rtw.created_at BETWEEN ? AND ?

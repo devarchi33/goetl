@@ -30,7 +30,7 @@ func setStoreData() {
 	defer session.Close()
 
 	if _, err := session.Exec("USE pangpang_brand_place_management;"); err != nil {
-		log.Printf("createPlaceDB error: %v", err.Error())
+		log.Printf("setStoreData error: %v", err.Error())
 		log.Println()
 	}
 
