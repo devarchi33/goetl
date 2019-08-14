@@ -129,14 +129,14 @@ func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, rec
 			,@ShopCode					= ?
 			,@Dates						= ?
 			,@ProdCode					= ?
-			,@RecvSuppQty				= 1
+			,@RecvSuppQty				= ?
 			,@AbnormalProdReasonCode	= NULL
 			,@EmpID						= ?
 			,@AbnormalChkCode    		= 0
 			,@AbnormalSerialNo   		= NULL
 	`
 	today := time.Now().Format("20060102")
-	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, today, skuCode, empID)
+	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, today, skuCode, qty, empID)
 	if err != nil {
 		log.Println("up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance params:")
 		log.Printf("recvSuppNo: %v", recvSuppNo)
