@@ -12,6 +12,7 @@ func initReturnToWarehouseData() {
 	createStyleTable()
 	createReturnToWarehouseMasterSP()
 	createReturnToWarehouseDetailSP()
+	createBrandTable()
 }
 
 func createOrderControlTable() {
@@ -53,7 +54,8 @@ func createOrderControlTable() {
 		INSERT INTO CSL.dbo.OrderControl 
 		(OrderControlNo, ShippingTypeCode, BrandCode, OrderControlName, StyleRangeChk, ShopRangeChk, StartDate, EndDate, ExpectedLeadTime, StorageLoc, PlantCode, InUserID, InDateTime, ModiUserID, ModiDateTime, SubStyleTypeCode, DelChk) 
 		VALUES 
-		('SA1811220001', '41', 'SA', N'SA退仓', 1, 1, '20190101', '99991231', 0, '1300', '1201', 'CNFBGLEA02', '2019-08-12 10:18:00.000', ' ', '2019-08-12 10:18:00.000', 'P', 0);
+		('SA1811220001', '41', 'SA', N'SA退仓', 1, 1, '20190101', '99991231', 0, '1300', '1201', 'CNFBGLEA02', '2019-08-12 10:18:00.000', ' ', '2019-08-12 10:18:00.000', 'P', 0),
+		('Q31811220001', '41', 'Q3', N'Q3退仓', 1, 1, '20190101', '99991231', 0, '1300', '1201', 'CNFBGLEA02', '2019-08-14 10:18:00.000', ' ', '2019-08-14 10:18:00.000', 'P', 0);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		fmt.Printf("createOrderControlTable error: %v", err.Error())
@@ -640,5 +642,45 @@ func createReturnToWarehouseDetailSP() {
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createReturnToWarehouseMasterSP error: %v", err.Error())
 		log.Println()
+	}
+}
+
+func createBrandTable() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createBrandTable error: %v", err.Error())
+		log.Println()
+	}
+
+	if _, err := session.Exec("DROP TABLE IF EXISTS CSL.dbo.Brand;"); err != nil {
+		log.Printf("createBrandTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE Brand
+		(
+			BrandCode VARCHAR(4) PRIMARY KEY NOT NULL,
+			BrandName NVARCHAR(200),
+			Initial VARCHAR(2),
+			CompanyCode CHAR(4),
+			RivalBrandDisplayOrder INT NOT NULL,
+			PlantCode CHAR(4) NOT NULL,
+			InUserID VARCHAR(20) NOT NULL,
+			InDateTime DATETIME,
+			UseChks BIT
+		);
+
+		INSERT INTO 
+		CSL.dbo.Brand (BrandCode, BrandName, Initial, CompanyCode, RivalBrandDisplayOrder, PlantCode, InUserID, InDateTime, UseChks) 
+		VALUES 
+		('Q3', 'SHOOPEN', 'Q3', 'F201', 0, '1222', 'system', '2015-06-03 05:00:01.140', 1),
+		('SA', 'SPAO(CN)', 'SA', 'F201', 0, '1200', 'system', '2013-05-04 05:00:03.410', 1);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createBrandTable error: %v", err.Error())
+		fmt.Println()
 	}
 }

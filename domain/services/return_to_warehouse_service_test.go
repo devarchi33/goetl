@@ -114,6 +114,37 @@ func TestReturnToWarehouseETL(t *testing.T) {
 				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
 				So(recvSupp.RecvSuppMst.InUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvSuppDtl.InUserID, ShouldEqual, "shi.yanxun")
+				if recvSupp.ProdCode == "SPWJ948S2255070" {
+					So(recvSupp.RecvSuppQty, ShouldEqual, 4)
+				}
+				if recvSupp.ProdCode == "SPYC949S1139095" {
+					So(recvSupp.RecvSuppQty, ShouldEqual, 1)
+				}
+			}
+		})
+
+		Convey("CEGP的子卖场CJC1运单号为20190814001的退仓出库单应该在CSL有记录", func() {
+			etl := ReturnToWarehouseETL{}.New("2019-08-14 00:00:00", "2019-08-14 23:59:59")
+			err := etl.Run(context.Background())
+			So(err, ShouldBeNil)
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("Q3", "CJC1", "20190814001")
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 2)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, false)
+				So(recvSupp.ShippingTypeCode, ShouldEqual, "41")
+				So(recvSupp.RecvSuppType, ShouldEqual, "S")
+				So(recvSupp.RecvSuppStatusCode, ShouldEqual, "R")
+				So(recvSupp.SuppEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
+				So(recvSupp.RecvSuppMst.InUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppDtl.InUserID, ShouldEqual, "shi.yanxun")
+				if recvSupp.ProdCode == "Q3AFAFDU6S2100230" {
+					So(recvSupp.RecvSuppQty, ShouldEqual, 2)
+				}
+				if recvSupp.ProdCode == "Q3AFAFDU6S2100240" {
+					So(recvSupp.RecvSuppQty, ShouldEqual, 3)
+				}
 			}
 		})
 	})

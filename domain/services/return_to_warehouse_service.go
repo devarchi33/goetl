@@ -29,8 +29,6 @@ func (ReturnToWarehouseETL) New(startDatetime, endDateTime string) *goetl.ETL {
 	}
 
 	etl := goetl.New(returnToWarehouseETL)
-	// etl.Before(ReturnToWarehouseETL{}.buildReturnToWarehouseOrders)
-	// etl.Before(ReturnToWarehouseETL{}.filterStorableDistributions)
 
 	return etl
 }
@@ -88,16 +86,22 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 			continue
 		}
 
-		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseOrder(order.BrandCode, order.ShipmentLocationCode, order.WaybillNo, order.EmpID, order.DeliveryOrderNo)
+		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShipmentLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
+		}
+
+		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseOrder(order.BrandCode, shopCode, order.WaybillNo, order.EmpID, order.DeliveryOrderNo)
+		if err != nil {
+			log.Printf(err.Error())
+			continue
 		}
 
 		var wg sync.WaitGroup
 		wg.Add(len(order.Items))
 		for _, v := range order.Items {
 			go func(item entities.ReturnToWarehouseOrderItem, wg *sync.WaitGroup) {
-				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseOrderItem(order.BrandCode, order.ShipmentLocationCode, recvSuppNo, item.SkuCode, item.Qty, order.EmpID)
+				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseOrderItem(order.BrandCode, shopCode, recvSuppNo, item.SkuCode, item.Qty, order.EmpID)
 				if err != nil {
 					log.Printf(err.Error())
 				}
