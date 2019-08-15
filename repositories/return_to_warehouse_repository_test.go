@@ -18,7 +18,7 @@ func TestGetReturnToWarehouseOrdersByCreateAt(t *testing.T) {
 			end, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-08-31 23:59:59", local)
 			result, err := ReturnToWarehouseRepository{}.GetReturnToWarehouseOrdersByCreateAt(start, end)
 			So(err, ShouldBeNil)
-			So(len(result), ShouldEqual, 2)
+			So(len(result), ShouldEqual, 4)
 			for _, item := range result {
 				requiredKeys := [7]string{"brand_code", "shipment_location_code", "waybill_no", "status_code", "emp_id", "sku_code", "qty"}
 				isOk := true
