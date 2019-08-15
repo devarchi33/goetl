@@ -123,3 +123,34 @@ func TestCreateTransferOrder(t *testing.T) {
 		})
 	})
 }
+
+func TestAddTransferOrderItem(t *testing.T) {
+	Convey("测试AddTransferOrderItem", t, func() {
+		brandCode := "SA"
+		shipmentLocationCode := "CEGP"
+		recvSuppNo := "CEGP1908150002"
+		empID := "7000028260"
+		waybillNo := "20190815001"
+		Convey("SA-CEGP卖场运单号为20190815001的调货单，添加两个商品，SPWJ948S2255070的数量应该为1，SPYS949H2250100的商品数量应该为2", func() {
+			skuCode := "SPWJ948S2255070"
+			qty := 1
+			err := RecvSuppRepository{}.AddTransferOrderItem(brandCode, shipmentLocationCode, recvSuppNo, skuCode, qty, empID)
+			So(err, ShouldBeNil)
+			skuCode = "SPYS949H2250100"
+			qty = 2
+			err = RecvSuppRepository{}.AddTransferOrderItem(brandCode, shipmentLocationCode, recvSuppNo, skuCode, qty, empID)
+			So(err, ShouldBeNil)
+			recvSupp, err := RecvSuppRepository{}.GetByWaybillNo(brandCode, shipmentLocationCode, waybillNo)
+			So(err, ShouldBeNil)
+			So(len(recvSupp), ShouldEqual, 2)
+			for _, v := range recvSupp {
+				if v.ProdCode == "SPWJ948S2255070" {
+					So(v.RecvSuppQty, ShouldEqual, 1)
+				}
+				if v.ProdCode == "SPYS949H2250100" {
+					So(v.RecvSuppQty, ShouldEqual, 2)
+				}
+			}
+		})
+	})
+}

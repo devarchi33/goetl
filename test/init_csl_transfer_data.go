@@ -12,6 +12,8 @@ func initTransferData() {
 	createBranchTable()
 	createTransferMasterSP()
 	createTransferDetailSP()
+	createTransferConfirmMasterSP()
+	createTransferConfirmDetailSP()
 }
 
 func createBranchTable() {
@@ -655,6 +657,479 @@ func createTransferDetailSP() {
 
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createTransferDetailSP error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createTransferConfirmMasterSP() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createTransferConfirmMasterSP error: %v", err.Error())
+		log.Println()
+	}
+
+	if _, err := session.Exec("DROP PROCEDURE IF EXISTS dbo.up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance"); err != nil {
+		log.Printf("createTransferConfirmMasterSP error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE PROCEDURE [dbo].[up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance]
+			@BrandCode    varchar(4) = null       
+			,@ShopCode    char(4) = null -- 入库卖场
+			,@TargetShopCode  char(4) = null   -- 出库卖场
+			,@WayBillNo    varchar(13) = null
+			,@BoxNo     char(20) = null
+			,@RoundRecvSuppNo  char(14) = null   -- 出库单RecvSuppNo
+			,@EmpID    char(10) = null
+				
+		AS         
+		--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED            
+		SET XACT_ABORT ON          
+		SET NOCOUNT ON      
+		BEGIN      
+				
+			DECLARE @NewRecvSuppNo  char(14)      
+			DECLARE @CurrDate   char(8)
+			DECLARE @NewSeq    int       
+			DECLARE @Dates    char(8)      
+			DECLARE @SendState   varchar(2)      
+			DECLARE @SendFlag   char(2)
+			DECLARE @ShippingTypeCode char(2)    -- 운송구분코드      
+			DECLARE @RecvSuppType  char(1)    -- 입출고구분      
+			DECLARE @PlantCode   char(4)    -- 물류센터코드      
+			DECLARE @RequestNo   Varchar(20)      
+			DECLARE @SAPMenuType  char(1)       
+			DECLARE @EmpName  nvarchar(200)
+			DECLARE @NormalProductType char(1)      
+			DECLARE @SuppEmpID   CHAR(10)      
+			DECLARE @SuppEmpName  nvarchar(200)
+			DECLARE @ShopSuppRecvDate  CHAR(8)
+			DECLARE @TransTypeCode   CHAR(1)   -- 운송구분
+			DECLARE @RecvSuppStatusCode CHAR(1)
+			DECLARE @UserID    varchar(20)
+				
+			DECLARE @ErrorCode  NVARCHAR(1000) ='';      
+			DECLARE @ErrorParam1 NVARCHAR(4000)='';      
+			DECLARE @ErrorParam2 NVARCHAR(4000)='';      
+					
+			BEGIN TRY       
+			-- 마감체크      
+			IF (left(dbo.udf_CSLK_MonthlyClosingChk('04','Zn'),1) = 1)      
+			BEGIN      
+			SELECT @ErrorCode = SUBSTRING(dbo.udf_CSLK_MonthlyClosingChk('04','Zn'),2,510)      
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2      
+			END      
+			
+			
+			DECLARE @TempRecvSuppStatusCode CHAR(1)      
+			SELECT @TempRecvSuppStatusCode = RecvSuppStatusCode FROM RecvSuppMst WITH(NOLOCK) WHERE RecvSuppNo = @RoundRecvSuppNo      
+				
+			IF @TempRecvSuppStatusCode = 'F'      
+			BEGIN      
+			SET @ErrorCode = 'COM011'      
+			SET @ErrorParam1 = ''      
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2           
+			END         
+			                 
+			-- 현재년월일구하기      
+			SELECT @CurrDate = CONVERT(CHAR(8),GETDATE(),112)        
+				
+			SELECT @NewSeq = IsNull(MAX(SeqNo),0) + 1      
+			FROM RecvSuppMst      
+			WHERE BrandCode = @BrandCode      
+				AND ShopCode = @ShopCode      
+				AND Dates = @CurrDate      
+				AND SeqNo < 6000      
+						
+			--ShopCode(4)+yymmdd+9999(14자리)         
+			SET @NewRecvSuppNo = @ShopCode + Right(@CurrDate,6)+ Right(replicate('0',4) + convert(varchar,@NewSeq),4)      
+				
+			DECLARE  @ShippingCompanyCode  CHAR(2) --ADD BY GAOMEIFANG 2017.5.12    
+			,@DeliveryID VARCHAR(250)=NULL --moidfy by li.guolin 20170811
+			,@DeliveryOrderNo VARCHAR(250)=NULL --moidfy by li.guolin 20170811
+			,@VolumeType NVARCHAR(20)=NULL --moidfy by li.guolin 20170811
+			,@VolumesSize VARCHAR(20)=NULL --moidfy by li.guolin 20170811
+			,@VolumesUnit NVARCHAR(10)=NULL --moidfy by li.guolin 20170811
+			,@ProvinceCode VARCHAR(8)=NULL --moidfy by li.guolin 20170823
+			,@CityCode VARCHAR(8)=NULL --moidfy by li.guolin 20170823
+			,@DistrictCode CHAR(8)=NULL --moidfy by li.guolin 20170823
+			,@Area NVARCHAR(100)=NULL --moidfy by li.guolin 20170823
+			,@ShopManagerName NVARCHAR(10)=NULL --moidfy by li.guolin 20170823
+			,@MobilePhone VARCHAR(25)=NULL --moidfy by li.guolin 20170823
+			,@BoxType CHAR(2)=NULL --moidfy by li.guolin 20170930
+			,@ExpressNo  VARCHAR(250)=NULL --moidfy by li.guolin 20170811
+			-- ShippingTypeCode 회전 매장간 '20' 본사 '24'      
+			SELECT @RequestNo = RequestNo      
+				,@ShippingTypeCode = ShippingTypeCode      
+				,@NormalProductType = NormalProductType      
+				,@SuppEmpID = SuppEmpID      
+				,@SuppEmpName = SuppEmpName   
+				,@ShippingCompanyCode=ShippingCompanyCode
+				,@DeliveryID=DeliveryID --moidfy by li.guolin 20170811
+				,@DeliveryOrderNo =DeliveryOrderNo --moidfy by li.guolin 20170811
+				,@VolumeType =VolumeType --moidfy by li.guolin 20170811
+				,@VolumesSize =VolumesSize --moidfy by li.guolin 20170811
+				,@VolumesUnit =VolumesUnit --moidfy by li.guolin 20170811
+				,@ProvinceCode =ProvinceCode --moidfy by li.guolin 20170823
+				,@CityCode =CityCode --moidfy by li.guolin 20170823
+				,@DistrictCode =DistrictCode --moidfy by li.guolin 20170823
+				,@Area =Area --moidfy by li.guolin 20170823
+				,@ShopManagerName =ShopManagerName --moidfy by li.guolin 20170823
+				,@MobilePhone =MobilePhone --moidfy by li.guolin 20170823
+				,@BoxType =BoxType --moidfy by li.guolin 20170930
+			FROM RecvSuppMst       
+			WHERE RecvSuppNo = @RoundRecvSuppNo 
+			AND DelChk=0     
+				
+		IF @ShippingCompanyCode=''
+			SET @ShippingCompanyCode=NULL   
+						
+			-- 출하유형 최종체크      
+			IF @ShippingTypeCode = '' or @ShippingTypeCode is null      
+			BEGIN      
+				IF @RequestNo = '' or @ShippingTypeCode is null      
+				SET @ShippingTypeCode = '20' -- 요청번호 없는경우 매장간      
+				ELSE      
+				SET @ShippingTypeCode = '24' -- 요청번호 없는경우 본사      
+			END      
+				
+			SET @RecvSuppType = 'R'   -- 입출고구분 S:출고/ R:입고      
+			SET @TransTypeCode = '5'  -- 운송타입      
+			SET @RecvSuppStatusCode = 'F' -- 입고확정       
+		
+			-- 물류센터코드      
+			SELECT @PlantCode = PlantCode       
+			FROM Brand WITH(NOLOCK)      
+			WHERE BrandCode = @BrandCode        
+					
+			--날짜      
+			IF @Dates IS NULL OR @Dates = ''      
+			SET @Dates = @CurrDate      
+				
+			SET @ShopSuppRecvDate = @CurrDate      
+				
+			-- SAP관련세팅      
+			SET @SendFlag = 'R'      
+			SET @SendState = ''       
+			SET @SAPMenuType = '4'  -- 매장회전      
+				
+			SELECT @EmpName = EmpName
+			FROM Employee WITH(NOLOCK)
+			WHERE EmpID = @EmpID
+		
+			SELECT @UserID = UserID
+				FROM UserInfo
+				WHERE EmpID = @EmpID
+			
+			-- 입출고 공통 (회전입고등록MASTER)      
+			INSERT INTO RecvSuppMst      
+			(      
+				RecvSuppNo      
+				,BrandCode      
+				,ShopCode      
+				,Dates      
+				,SeqNo      
+				,RecvSuppType      
+				,ShopSuppRecvDate      
+				,TransTypeCode      
+				,ShippingTypeCode      
+				,WayBillNo      
+				,RecvSuppStatusCode      
+				,BoxNo      
+				,PlantCode      
+				,RoundRecvSuppNo      
+				,TargetShopCode      
+				,RequestNo      
+				,InUserID      
+				,InDateTime      
+				,ModiUserID      
+				,ModiDateTime      
+				,RecvEmpID      
+				,RecvEmpName      
+				,SuppEmpID      
+				,SuppEmpName      
+				,BrandSuppRecvDate      
+				,SendState      
+				,SendFlag      
+				,SAPMenuType      
+				,NormalProductType      
+				,InvtBaseDate 
+				,ShippingCompanyCode
+				,DeliveryID
+				,DeliveryOrderNo
+				,VolumeType
+				,VolumesSize
+				,VolumesUnit
+				,ProvinceCode
+				,CityCode
+				,DistrictCode
+				,Area
+				,ShopManagerName
+				,MobilePhone
+				,BoxType
+				,ExpressNo
+				,Channel
+			)      
+			VALUES       
+			(      
+				@NewRecvSuppNo      
+				,@BrandCode      
+				,@ShopCode      
+				,@Dates      
+				,@NewSeq     -- @SeqNo      
+				,@RecvSuppType      
+				,@ShopSuppRecvDate      
+				,@TransTypeCode      
+				,@ShippingTypeCode      
+				,@WayBillNo      
+				,@RecvSuppStatusCode      
+				,@BoxNo      
+				,@PlantCode      
+				,@RoundRecvSuppNo      
+				,@TargetShopCode      
+				,@RequestNo      
+				,@UserID     -- 등록자
+				,GETDATE()      
+				,@UserID     -- 수정자
+				,GETDATE()       
+				,@EmpID
+				,@EmpName
+				,@SuppEmpID       -- SuppEmpID      
+				,@SuppEmpName       -- SuppEmpName      
+				,''
+				,@SendState      
+				,@SendFlag      
+				,@SAPMenuType      
+				,@NormalProductType      
+				,@ShopSuppRecvDate   -- 재고기준일자.  
+				,@ShippingCompanyCode
+				,@DeliveryID
+				,@DeliveryOrderNo
+				,@VolumeType
+				,@VolumesSize
+				,@VolumesUnit
+				,@ProvinceCode
+				,@CityCode
+				,@DistrictCode
+				,@Area
+				,@ShopManagerName
+				,@MobilePhone
+				,@BoxType
+				,@ExpressNo
+				,'Clearance'
+			)   
+		
+			-- 입고유효성 체크      
+			-- 출고된 내역이 입고되었는데 또 입고시도할려는 경우      
+			--modified by weile  
+			IF (SELECT count(*) FROM RecvSuppMst WITH(NOLOCK) WHERE RoundRecvSuppNo = @RoundRecvSuppNo AND Delchk='0') = 2    --modify by zhai.weihao 20150930 add delchk 判断
+			BEGIN      
+			SET @ErrorCode = 'IOM0304_1'      
+			SET @ErrorParam1 = ''      
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2               
+			END  
+			-- 회전출고에 회전 입고번호 적용      
+			UPDATE RecvSuppMst      
+				SET RoundRecvSuppNo = @NewRecvSuppNo      
+				,RecvEmpID = @EmpID
+				,RecvEmpName = @EmpName
+				,RecvSuppStatusCode = 'F'   -- 진행상태(입고확정)      
+				,SendFlag = @SendFlag      
+				,InvtBaseDate = @ShopSuppRecvDate  --  재고기준일자. 
+				,PlantCode = @PlantCode			--20190104 wang.wanyue 出库卖场和入库卖场PlantCode一致     
+			WHERE RecvSuppNo = @RoundRecvSuppNo      
+
+			-- 插入Detail
+			EXEC [dbo].[up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppDtl_C1_Clearance]
+			  @RecvSuppNo    = @NewRecvSuppNo
+			  ,@RecvSuppSeqNo  = NULL
+			  ,@BrandCode     = @BrandCode
+			  ,@ShopCode     = @ShopCode
+			  ,@Dates       = @Dates
+			  ,@RoundRecvSuppNo   = @RoundRecvSuppNo  -- 调货出库单的RecvSuppNo
+			  ,@EmpID   = @EmpID
+
+			-- 입출고번호 리턴      
+			SELECT @NewRecvSuppNo AS RecvSuppNo      
+				
+			END TRY      
+			BEGIN CATCH      
+					
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2      
+			END CATCH       
+		END
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createTransferConfirmMasterSP error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createTransferConfirmDetailSP() {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE CSL;"); err != nil {
+		log.Printf("createTransferMasterSP error: %v", err.Error())
+		log.Println()
+	}
+
+	if _, err := session.Exec("DROP PROCEDURE IF EXISTS dbo.up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppDtl_C1_Clearance"); err != nil {
+		log.Printf("createTransferMasterSP error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE PROCEDURE [dbo].[up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppDtl_C1_Clearance]
+			@RecvSuppNo    char(14) = null  
+			,@RecvSuppSeqNo    int   = null      
+			,@BrandCode     varchar(4) = null  
+			,@ShopCode     char(4) = null  
+			,@Dates      char(8) = null
+			,@RoundRecvSuppNo   char(14) = null  -- 调货出库单的RecvSuppNo
+			,@EmpID    char(10) = null
+			
+		AS     
+		SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED        
+		SET XACT_ABORT ON     
+		SET NOCOUNT ON  
+		BEGIN
+			DECLARE @SendState  VARCHAR(2)  
+			DECLARE @SendFlag  CHAR(1)  
+			DECLARE @SENDF   CHAR(1)  
+			DECLARE @ErrorCode  NVARCHAR(50) ='';  
+			DECLARE @ErrorParam1 NVARCHAR(4000)='';  
+			DECLARE @ErrorParam2 NVARCHAR(4000)='';
+			DECLARE @UserID    VARCHAR(20)
+			
+			BEGIN TRY   
+			
+			SET @Dates = CONVERT(CHAR(8),GETDATE(),112)  
+			SET @SendState = ''  
+			SET @SendFlag = 'R'
+			
+			-- 인터페이스실시간처리확인    
+			EXEC [up_CSLK_IF_CHK_RecvSupp] @p_RECVSUPPNO = @RecvSuppNo, @o_SENDF  = @SENDF OUTPUT  
+			
+			/* 수신시스템체크  
+			R : 등록/수정된상태, 전송전( 수정불가능)  
+			I : 전송중( 수정불가능)  
+			S : 전송후( 수정가능)  
+			*/    
+			IF (@SENDF = 'S')  
+			--IF (1=1)  
+			BEGIN  
+			
+			-- SAP진행상황체크  
+			SELECT @SendFlag = SendFlag  
+				FROM RecvSuppDtl   
+			WHERE RecvSuppNo = @RecvSuppNo  
+				AND RecvSuppSeqNo = @RecvSuppSeqNo  
+			
+			-- R:등록 I:전송중 S:완료    
+			IF ( @SendFlag = 'I')   
+			BEGIN   
+				
+				-- 데이터가 전송중이므로 잠시후 처리하십시오  
+				SET @ErrorCode = 'COM100'  
+				SET @ErrorParam1 = ''  
+				SET @ErrorParam2 = ''       
+				EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
+				
+			END  
+			ELSE  
+			
+			BEGIN    
+			
+			SELECT @UserID = UserID
+				FROM UserInfo
+				WHERE EmpID = @EmpID
+				
+			
+			-- 입출고 상세 (회전출고상세)  
+			INSERT INTO RecvSuppDtl  
+			(  
+				RecvSuppNo  
+				,RecvSuppSeqNo  
+				,BrandCode  
+				,ShopCode  
+				,Dates  
+				,SeqNo  
+				,RoundRecvSuppNo  
+				,RoundRecvSuppDtSeq  
+				,ProdCode  
+				,RecvSuppQty  
+				,RecvSuppFixedQty  
+				,SalePrice  
+				,InUserID  
+				,InDateTime  
+				,ModiUserID  
+				,ModiDateTime  
+				,SendState  
+				,SendFlag  
+				,DelChk  
+			)  
+			SELECT   
+				@RecvSuppNo
+				,RecvSuppSeqNo  
+				,@BrandCode  
+				,@ShopCode  
+				,@Dates  
+				,SeqNo  
+				,RecvSuppNo   -- 회전출고의 입출고번호  
+				,RecvSuppSeqNo  -- 회전출고의 입출고상세번호  
+				,ProdCode  
+				,RecvSuppQty  
+				,RecvSuppQty  -- 확정수량 RecvSuppFixedQty    
+				,SalePrice   --@SalePrice  
+				,@UserID  
+				,GETDATE()  
+				,@UserID  
+				,GETDATE()  
+				,@SendState  
+				,@SendFlag  
+				,DelChk  
+			FROM RecvSuppDtl  
+			WHERE RecvSuppNo = @RoundRecvSuppNo  
+		
+		
+			-- 회전출고된것 수량 확정  
+			UPDATE RecvSuppDtl  
+				SET RecvSuppFixedQty = RecvSuppQty  
+				,RoundRecvSuppNo = @RecvSuppNo  
+				,RoundRecvSuppDtSeq = RecvSuppSeqNo  
+				,SendFlag = @SendFlag  
+			WHERE RecvSuppNo = @RoundRecvSuppNo     
+			
+			END  
+			END  
+			ELSE  
+			BEGIN  
+			
+			-- 본사수정중입니다.  
+			SET @ErrorCode = 'IOM132'  
+			SET @ErrorParam1 = ''  
+			SET @ErrorParam2 = ''       
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
+			
+			END  
+		
+			
+			END TRY  
+			BEGIN CATCH  
+			
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
+			
+			END CATCH   
+		END
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createTransferMasterSP error: %v", err.Error())
 		log.Println()
 	}
 }
