@@ -37,8 +37,8 @@ func (RecvSuppRepository) GetByWaybillNo(brandCode, shopCode, waybillNo string) 
 		`RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo 
 		AND RecvSuppMst.BrandCode = RecvSuppDtl.BrandCode 
 		AND RecvSuppMst.ShopCode = RecvSuppDtl.ShopCode`).
-		Where("RecvSuppMst.BrandCode = ? AND RecvSuppMst.ShopCode = ? AND RecvSuppMst.WayBillNo = ? AND RecvSuppMst.BoxNo = ?",
-			brandCode, shopCode, waybillNo, waybillNo).
+		Where("RecvSuppMst.BrandCode = ? AND RecvSuppMst.ShopCode = ? AND RecvSuppMst.WayBillNo = ?",
+			brandCode, shopCode, waybillNo).
 		Find(&details)
 	if err != nil {
 		return nil, err
@@ -144,6 +144,75 @@ func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, rec
 		log.Printf("shopCode: %v", shopCode)
 		log.Printf("today: %v", today)
 		log.Printf("skuCode: %v", skuCode)
+
+		return err
+	}
+
+	return nil
+}
+
+// CreateTransferOrder 创建调货出库单
+func (RecvSuppRepository) CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
+	sql := `
+		EXEC [dbo].[up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance]
+			@BrandCode				= ?
+			,@ShopCode				= ?
+			,@TargetShopCode		= ?
+			,@Dates					= ?
+			,@WayBillNo				= ?
+			,@BoxNo					= ?
+			,@ShippingCompanyCode  	= ?
+			,@DeliveryOrderNo 		= ?
+			,@EmpID 				= ?
+			,@IsBigSize 			= 0
+			,@ExpressNo 			= NULL
+			,@BoxAmount 			= NULL
+			,@StockOutUseAmt 		= NULL
+			,@ProvinceCode 			= NULL
+			,@CityCode 				= NULL
+			,@DistrictCode 			= NULL
+			,@Area 					= NULL
+			,@ShopManagerName 		= NULL
+			,@MobilePhone 			= NULL
+	`
+	today := time.Now().Format("20060102")
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shipmentLocationCode, receiptLocationCode, today, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
+	if err != nil {
+		return "", err
+	}
+
+	master := infra.ConvertByteResult(result)
+	if len(master) == 0 {
+		return "", errors.New("exec up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance failed")
+	}
+	recvSuppNo := master[0]["RecvSuppNo"]
+
+	return recvSuppNo, nil
+}
+
+// AddTransferOrderItem 向调货出库单中添加商品
+func (RecvSuppRepository) AddTransferOrderItem(brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
+	sql := `
+		EXEC [dbo].[up_CSLK_IOM_InsertRotationOuterReg_RecvSuppDtl_C1_Clearance]
+			@RecvSuppNo   	= ?
+			,@RecvSuppSeqNo	= NULL
+			,@BrandCode  	= ?
+			,@ShopCode  	= ?
+			,@Dates  		= ?
+			,@ProdCode    	= ?
+			,@RecvSuppQty 	=  ?
+			,@EmpID 		= ?
+	`
+	today := time.Now().Format("20060102")
+	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, today, skuCode, qty, empID)
+	if err != nil {
+		log.Println("up_CSLK_IOM_InsertRotationOuterReg_RecvSuppDtl_C1_Clearance params:")
+		log.Printf("recvSuppNo: %v", recvSuppNo)
+		log.Printf("brandCode: %v", brandCode)
+		log.Printf("shopCode: %v", shopCode)
+		log.Printf("today: %v", today)
+		log.Printf("skuCode: %v", skuCode)
+
 		return err
 	}
 
