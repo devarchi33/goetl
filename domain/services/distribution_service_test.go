@@ -90,24 +90,44 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 	})
 }
 
+func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
+	sql := `
+		SELECT
+			sd.synced
+		FROM pangpang_brand_sku_location.stock_distribute AS sd
+			JOIN pangpang_brand_place_management.store AS store
+				ON store.id = sd.receipt_location_id
+		WHERE sd.tenant_code = 'pangpang'
+			AND store.code = ?
+			AND sd.waybill_no = ?
+	`
+	result, err := factory.GetP2BrandEngine().Query(sql, receiptLocationCode, waybillNo)
+	So(err, ShouldBeNil)
+	So(len(result), ShouldEqual, 1)
+	distList := infra.ConvertByteResult(result)
+	So(distList[0]["synced"], ShouldEqual, "1")
+}
+
 func TestDistributionETL(t *testing.T) {
 	Convey("测试DistributionETL的Run方法", t, func() {
-		Convey("某个时间段没有入库运单的话，应该没有数据在CSL入库", func() {
-			etl := DistributionETL{}.New("2019-07-01 00:00:00", "2019-07-01 00:01:00")
+		Convey("运单号为1010590009007的出库单synced=true，所以应该不会同步到CSL入库", func() {
+			etl := DistributionETL{}.New()
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
-			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009007")
 			So(err, ShouldBeNil)
-			So(len(recvSuppList), ShouldEqual, 14)
+			So(len(recvSuppList), ShouldEqual, 2)
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, false)
 			}
 		})
 		Convey("运单号为1010590009008的运单应该在CSL入库", func() {
-			etl := DistributionETL{}.New("2019-07-01 00:00:00", "2019-07-31 23:59:59")
+			receiptLocationCode := "CEGP"
+			waybillNo := "1010590009008"
+			etl := DistributionETL{}.New()
 			err := etl.Run(context.Background())
 			So(err, ShouldBeNil)
-			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009008")
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", receiptLocationCode, waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 14)
 			for _, recvSupp := range recvSuppList {
@@ -117,6 +137,7 @@ func TestDistributionETL(t *testing.T) {
 				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
+			syncedShouldBeTrue(receiptLocationCode, waybillNo)
 		})
 		Convey("运单号为1010590009008的运单应该存在有误差的商品", func() {
 			// SPYC949H2159095 4, 5 +1
@@ -149,7 +170,9 @@ func TestDistributionETL(t *testing.T) {
 		})
 
 		Convey("运单号为1010590009014的运单应该在CSL入库", func() {
-			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CFGY", "1010590009014")
+			receiptLocationCode := "CFGY"
+			waybillNo := "1010590009014"
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", receiptLocationCode, waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 11)
 			for _, recvSupp := range recvSuppList {
@@ -159,9 +182,10 @@ func TestDistributionETL(t *testing.T) {
 				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
+			syncedShouldBeTrue(receiptLocationCode, waybillNo)
 		})
 
-		Convey("CEGP的子卖场CJC1运单号为1010590009009的运单应该存在CSL入库", func() {
+		Convey("CEGP的子卖场CJC1运单号为1010590009009的运单应该在CSL入库", func() {
 			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("Q3", "CJC1", "1010590009009")
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 5)
@@ -172,6 +196,9 @@ func TestDistributionETL(t *testing.T) {
 				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
+			receiptLocationCode := "CEGP"
+			waybillNo := "1010590009009"
+			syncedShouldBeTrue(receiptLocationCode, waybillNo)
 		})
 	})
 }

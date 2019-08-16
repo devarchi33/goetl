@@ -3,14 +3,14 @@ package repositories
 import (
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
-	"time"
+	"log"
 )
 
 // StockDistributionRepository P2-brand 物流分配入库单仓库
 type StockDistributionRepository struct{}
 
-// GetDistributionOrdersByCreateAt 获取某一时间段的分配入库数据
-func (StockDistributionRepository) GetDistributionOrdersByCreateAt(start, end time.Time) ([]map[string]string, error) {
+// GetUnsyncedDistributionOrders 获取同步过的分配入库数据
+func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string]string, error) {
 	sql := `
 		SELECT
 			sdi.brand_code,
@@ -30,15 +30,35 @@ func (StockDistributionRepository) GetDistributionOrdersByCreateAt(start, end ti
 			JOIN pangpang_common_colleague_employee.employees AS emp
 				ON emp.id = sd.colleague_id
 		WHERE sd.tenant_code = 'pangpang'
-			AND sd.type = 'IN'
-			AND sd.created_at BETWEEN ? AND ?
+			AND sd.synced = false
 			;
 	`
 
-	result, err := factory.GetP2BrandEngine().Query(sql, start.Format("2006-01-02 15:04:05"), end.Format("2006-01-02 15:04:05"))
+	result, err := factory.GetP2BrandEngine().Query(sql)
 	if err != nil {
 		return nil, err
 	}
 
 	return infra.ConvertByteResult(result), nil
+}
+
+// MarkWaybillSynced 标记某个运单已经同步过
+func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybillNo string) error {
+	sql := `
+		UPDATE pangpang_brand_sku_location.stock_distribute sd
+		JOIN pangpang_brand_place_management.store AS store
+			ON store.id = sd.receipt_location_id
+		SET sd.synced = TRUE
+			WHERE sd.tenant_code = 'pangpang'
+			AND store.code = ?
+			AND sd.waybill_no = ?
+		;
+	`
+	_, err := factory.GetP2BrandEngine().Exec(sql, receiptLocationCode, waybillNo)
+	if err != nil {
+		log.Printf("MarkWaybillSynced error: %v", err)
+		return err
+	}
+
+	return nil
 }

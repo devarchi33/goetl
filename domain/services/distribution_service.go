@@ -12,20 +12,11 @@ import (
 )
 
 // DistributionETL 入库 p2-brand -> CSL
-type DistributionETL struct {
-	StartDateTime time.Time
-	EndDateTime   time.Time
-}
+type DistributionETL struct{}
 
 // New 创建DistributionETL对象，从Clearance到CSL
-func (DistributionETL) New(startDatetime, endDateTime string) *goetl.ETL {
-	local, _ := time.LoadLocation("Local")
-	start, _ := time.ParseInLocation("2006-01-02 15:04:05", startDatetime, local)
-	end, _ := time.ParseInLocation("2006-01-02 15:04:05", endDateTime, local)
-	distributionETL := DistributionETL{
-		StartDateTime: start,
-		EndDateTime:   end,
-	}
+func (DistributionETL) New() *goetl.ETL {
+	distributionETL := DistributionETL{}
 
 	etl := goetl.New(distributionETL)
 	etl.Before(DistributionETL{}.buildDistributionOrders)
@@ -36,7 +27,7 @@ func (DistributionETL) New(startDatetime, endDateTime string) *goetl.ETL {
 
 // Extract ...
 func (etl DistributionETL) Extract(ctx context.Context) (interface{}, error) {
-	result, err := repositories.StockDistributionRepository{}.GetDistributionOrdersByCreateAt(etl.StartDateTime, etl.EndDateTime)
+	result, err := repositories.StockDistributionRepository{}.GetUnsyncedDistributionOrders()
 	if err != nil {
 		return nil, err
 	}
@@ -154,6 +145,13 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 			log.Printf(err.Error())
 		}
 		etl.writeDownStockMiss(order)
+
+		// 更新状态的时候需要使用主卖场的Code
+		err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ShopCode, order.WaybillNo)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+		log.Printf("运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShopCode, order.BrandCode)
 	}
 
 	return nil
