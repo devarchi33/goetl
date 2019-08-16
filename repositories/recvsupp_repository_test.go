@@ -72,6 +72,8 @@ func TestAddReturnToWarehouseOrderItem(t *testing.T) {
 	})
 }
 
+var TransferOrderRecvSuppNp string
+
 func TestCreateTransferOrder(t *testing.T) {
 	Convey("测试CreateTransferOrder", t, func() {
 		brandCode := "SA"
@@ -95,6 +97,7 @@ func TestCreateTransferOrder(t *testing.T) {
 			So(len(masters), ShouldEqual, 1)
 			So(masters[0].TargetShopCode, ShouldEqual, receiptLocationCode)
 			So(masters[0].RecvSuppStatusCode, ShouldEqual, "R")
+			TransferOrderRecvSuppNp = recvSuppNo
 		})
 		Convey("Waybill表中应该存在运单号为20190815001的数据", func() {
 			sql := `
@@ -128,7 +131,7 @@ func TestAddTransferOrderItem(t *testing.T) {
 	Convey("测试AddTransferOrderItem", t, func() {
 		brandCode := "SA"
 		shipmentLocationCode := "CEGP"
-		recvSuppNo := "CEGP1908150002"
+		recvSuppNo := TransferOrderRecvSuppNp
 		empID := "7000028260"
 		waybillNo := "20190815001"
 		Convey("SA-CEGP卖场运单号为20190815001的调货单，添加两个商品，SPWJ948S2255070的数量应该为1，SPYS949H2250100的商品数量应该为2", func() {
@@ -144,6 +147,42 @@ func TestAddTransferOrderItem(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(recvSupp), ShouldEqual, 2)
 			for _, v := range recvSupp {
+				if v.ProdCode == "SPWJ948S2255070" {
+					So(v.RecvSuppQty, ShouldEqual, 1)
+				}
+				if v.ProdCode == "SPYS949H2250100" {
+					So(v.RecvSuppQty, ShouldEqual, 2)
+				}
+			}
+		})
+	})
+}
+
+func TestConfirmTransferOrder(t *testing.T) {
+	Convey("测试ConfirmTransferOrder", t, func() {
+		brandCode := "SA"
+		receiptLocationCode := "CJ2F"
+		shipmentLocationCode := "CEGP"
+		roundRecvSuppNo := TransferOrderRecvSuppNp
+		empID := "7000028260"
+		waybillNo := "20190815001"
+		boxNo := "20190815001-1"
+		Convey("SA-CJ2F卖场应该有对运单号为20190815001的调货单有确认记录，并且SPWJ948S2255070的数量应该为1，SPYS949H2250100的商品数量应该为2", func() {
+			recvSuppNo, err := RecvSuppRepository{}.ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
+			So(err, ShouldBeNil)
+			So(strings.HasPrefix(recvSuppNo, receiptLocationCode), ShouldEqual, true)
+			masters := make([]models.RecvSuppMst, 0)
+			err = factory.GetCSLEngine().Where("RecvSuppNo = ?", recvSuppNo).Find(&masters)
+			So(err, ShouldBeNil)
+			So(len(masters), ShouldEqual, 1)
+			So(masters[0].ShopCode, ShouldEqual, receiptLocationCode)
+			So(masters[0].TargetShopCode, ShouldEqual, shipmentLocationCode)
+			So(masters[0].WayBillNo, ShouldEqual, waybillNo)
+			So(masters[0].RecvSuppStatusCode, ShouldEqual, "F")
+			details := make([]models.RecvSuppDtl, 0)
+			err = factory.GetCSLEngine().Where("RecvSuppNo = ?", recvSuppNo).Find(&details)
+			So(err, ShouldBeNil)
+			for _, v := range details {
 				if v.ProdCode == "SPWJ948S2255070" {
 					So(v.RecvSuppQty, ShouldEqual, 1)
 				}

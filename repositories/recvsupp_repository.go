@@ -218,3 +218,30 @@ func (RecvSuppRepository) AddTransferOrderItem(brandCode, shopCode, recvSuppNo, 
 
 	return nil
 }
+
+// ConfirmTransferOrder 调进确认
+func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
+	sql := `
+		EXEC [dbo].[up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance]
+			@BrandCode			= ?
+			,@ShopCode			= ?
+			,@TargetShopCode	= ?
+			,@WayBillNo			= ?
+			,@BoxNo				= ?
+			,@RoundRecvSuppNo  	= ?
+			,@EmpID 			= ?
+	`
+
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
+	if err != nil {
+		return "", err
+	}
+
+	master := infra.ConvertByteResult(result)
+	if len(master) == 0 {
+		return "", errors.New("exec up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance failed")
+	}
+	recvSuppNo := master[0]["RecvSuppNo"]
+
+	return recvSuppNo, nil
+}
