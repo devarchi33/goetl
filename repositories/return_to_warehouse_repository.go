@@ -3,14 +3,14 @@ package repositories
 import (
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
-	"time"
+	"log"
 )
 
 // ReturnToWarehouseRepository p2-brand 卖场退仓单仓库
 type ReturnToWarehouseRepository struct{}
 
-// GetReturnToWarehouseOrdersByCreateAt 获取某一时间段的退仓数据
-func (ReturnToWarehouseRepository) GetReturnToWarehouseOrdersByCreateAt(start, end time.Time) ([]map[string]string, error) {
+// GetUnsyncedReturnToWarehouseOrders 获取同步过的退仓数据
+func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseOrders() ([]map[string]string, error) {
 	sql := `
 		SELECT
 			rtwi.brand_code,
@@ -31,14 +31,35 @@ func (ReturnToWarehouseRepository) GetReturnToWarehouseOrdersByCreateAt(start, e
 				ON emp.id = rtw.colleague_id
 		WHERE rtw.tenant_code = 'pangpang'
 			AND rtw.status = 'R'
-			AND rtw.created_at BETWEEN ? AND ?
+			AND rtw.synced = false
 		;
 	`
 
-	result, err := factory.GetP2BrandEngine().Query(sql, start.Format("2006-01-02 15:04:05"), end.Format("2006-01-02 15:04:05"))
+	result, err := factory.GetP2BrandEngine().Query(sql)
 	if err != nil {
 		return nil, err
 	}
 
 	return infra.ConvertByteResult(result), nil
+}
+
+// MarkWaybillSynced 标记某个运单已经同步过
+func (ReturnToWarehouseRepository) MarkWaybillSynced(shipmentLocationCode, waybillNo string) error {
+	sql := `
+		UPDATE pangpang_brand_sku_location.return_to_warehouse rtw
+		JOIN pangpang_brand_place_management.store AS store
+			ON store.id = rtw.shipment_location_id
+		SET rtw.synced = true
+			WHERE rtw.tenant_code = 'pangpang'
+			AND store.code = ?
+			AND rtw.waybill_no = ?
+		;
+	`
+	_, err := factory.GetP2BrandEngine().Exec(sql, shipmentLocationCode, waybillNo)
+	if err != nil {
+		log.Printf("MarkWaybillSynced error: %v", err)
+		return err
+	}
+
+	return nil
 }

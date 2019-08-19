@@ -7,27 +7,16 @@ import (
 	"errors"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/pangpanglabs/goetl"
 )
 
 // ReturnToWarehouseETL 退仓 p2-brand -> CSL
-type ReturnToWarehouseETL struct {
-	StartDateTime time.Time
-	EndDateTime   time.Time
-}
+type ReturnToWarehouseETL struct{}
 
 // New 创建 ReturnToWarehouseETL 对象，从Clearance到CSL
-func (ReturnToWarehouseETL) New(startDatetime, endDateTime string) *goetl.ETL {
-	local, _ := time.LoadLocation("Local")
-	start, _ := time.ParseInLocation("2006-01-02 15:04:05", startDatetime, local)
-	end, _ := time.ParseInLocation("2006-01-02 15:04:05", endDateTime, local)
-	returnToWarehouseETL := ReturnToWarehouseETL{
-		StartDateTime: start,
-		EndDateTime:   end,
-	}
-
+func (ReturnToWarehouseETL) New() *goetl.ETL {
+	returnToWarehouseETL := ReturnToWarehouseETL{}
 	etl := goetl.New(returnToWarehouseETL)
 
 	return etl
@@ -35,7 +24,7 @@ func (ReturnToWarehouseETL) New(startDatetime, endDateTime string) *goetl.ETL {
 
 // Extract ...
 func (etl ReturnToWarehouseETL) Extract(ctx context.Context) (interface{}, error) {
-	result, err := repositories.ReturnToWarehouseRepository{}.GetReturnToWarehouseOrdersByCreateAt(etl.StartDateTime, etl.EndDateTime)
+	result, err := repositories.ReturnToWarehouseRepository{}.GetUnsyncedReturnToWarehouseOrders()
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +98,13 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 			}(v, &wg)
 		}
 		wg.Wait()
+
+		// 更新状态的时候需要使用主卖场的Code
+		err = repositories.ReturnToWarehouseRepository{}.MarkWaybillSynced(order.ShipmentLocationCode, order.WaybillNo)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+		log.Printf("运单号为：%v 的退仓单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShipmentLocationCode, order.BrandCode)
 	}
 
 	return nil

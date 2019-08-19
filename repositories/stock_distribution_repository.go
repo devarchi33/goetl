@@ -48,7 +48,7 @@ func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybil
 		UPDATE pangpang_brand_sku_location.stock_distribute sd
 		JOIN pangpang_brand_place_management.store AS store
 			ON store.id = sd.receipt_location_id
-		SET sd.synced = TRUE
+		SET sd.synced = true
 			WHERE sd.tenant_code = 'pangpang'
 			AND store.code = ?
 			AND sd.waybill_no = ?
