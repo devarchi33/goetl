@@ -2,21 +2,44 @@ package repositories
 
 import (
 	"testing"
-	"time"
 
+	"clearance-adapter/factory"
+	"clearance-adapter/infra"
 	_ "clearance-adapter/test"
 
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestGetReturnToWarehouseOrdersByCreateAt(t *testing.T) {
-	Convey("测试GetReturnToWarehouseOrdersByCreateAt", t, func() {
+// TesRTWtMarkWaybillSynced 退仓单标记为已同步
+func TesRTWtMarkWaybillSynced(t *testing.T) {
+	Convey("CEGP卖场的20190819001运单，应该标记为已同步", t, func() {
+		shipmentLocationCode := "CEGP"
+		waybillNo := "1010590009008"
+		err := StockDistributionRepository{}.MarkWaybillSynced(shipmentLocationCode, waybillNo)
+		So(err, ShouldBeNil)
+		sql := `
+			SELECT
+				rtw.synced
+			FROM pangpang_brand_sku_location.return_to_warehouse AS rtw
+				JOIN pangpang_brand_place_management.store AS store
+					ON store.id = rtw.shipment_location_id
+			WHERE rtw.tenant_code = 'pangpang'
+				AND store.code = ?
+				AND rtw.waybill_no = ?
+		`
+		result, err := factory.GetP2BrandEngine().Query(sql, shipmentLocationCode, waybillNo)
+		So(err, ShouldBeNil)
+		So(len(result), ShouldEqual, 1)
+		distList := infra.ConvertByteResult(result)
+		So(distList[0]["synced"], ShouldEqual, "1")
+	})
+}
+
+func TestGetUnsyncedReturnToWarehouseOrders(t *testing.T) {
+	Convey("测试GetUnsyncedReturnToWarehouseOrders", t, func() {
 		Convey("应该返回[]map[string]string类型的结果, 并且包含brand_code, shipment_location_code, waybill_no, status_code, emp_id, sku_code, qty字段", func() {
-			local, _ := time.LoadLocation("Local")
-			start, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-08-01 00:00:00", local)
-			end, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-08-31 23:59:59", local)
-			result, err := ReturnToWarehouseRepository{}.GetReturnToWarehouseOrdersByCreateAt(start, end)
+			result, err := ReturnToWarehouseRepository{}.GetUnsyncedReturnToWarehouseOrders()
 			So(err, ShouldBeNil)
 			So(len(result), ShouldEqual, 4)
 			for _, item := range result {

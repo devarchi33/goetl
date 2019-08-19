@@ -49,7 +49,8 @@ func createStockDistributeTable() {
 			created_at DATETIME,
 			colleague_id BIGINT(20),
 			version VARCHAR(255),
-			synced TINYINT(1)
+			synced TINYINT(1),
+			last_updated_at DATETIME
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
@@ -59,12 +60,12 @@ func createStockDistributeTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.stock_distribute 
-		(tenant_code, brand_code, type, box_no, waybill_no, shipment_location_id, receipt_location_id, created_at, colleague_id, version, synced) 
+		(tenant_code, brand_code, type, box_no, waybill_no, shipment_location_id, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at) 
 		VALUES 
-		('pangpang', 'SA', 'IN', '1010590009008', '1010590009008', 1, 2, '2019-07-30 10:56:43', 1, NULL, false),
-		('pangpang', 'SA', 'IN', '1010590009014', '1010590009014', 1, 3, '2019-07-30 10:56:43', 1, NULL, false),
-		('pangpang', 'Q3', 'IN', '1010590009009', '1010590009009', 1, 2, '2019-07-30 10:56:43', 1, NULL, false),
-		('pangpang', 'SA', 'IN', '1010590009007', '1010590009007', 1, 2, '2019-07-30 10:56:43', 1, NULL, true);
+		('pangpang', 'SA', 'IN', '1010590009008', '1010590009008', 1, 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
+		('pangpang', 'SA', 'IN', '1010590009014', '1010590009014', 1, 3, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
+		('pangpang', 'Q3', 'IN', '1010590009009', '1010590009009', 1, 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
+		('pangpang', 'SA', 'IN', '1010590009007', '1010590009007', 1, 2, '2019-07-30 10:56:43', 1, NULL, true, '2019-07-30 10:56:43');
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockDistributeTable error: %v", err.Error())
@@ -161,7 +162,8 @@ func createReturnToWarehouseTable() {
 			created_at DATETIME,
 			last_updated_at DATETIME,
 			colleague_id BIGINT(20),
-			receipt_location_code VARCHAR(255)
+			receipt_location_code VARCHAR(255),
+			synced TINYINT(1) DEFAULT '0' NOT NULL
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
@@ -171,10 +173,11 @@ func createReturnToWarehouseTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.return_to_warehouse 
-		(tenant_code, brand_code, status, waybill_no, shipment_location_id, created_at, last_updated_at, colleague_id, receipt_location_code) 
+		(tenant_code, brand_code, status, waybill_no, shipment_location_id, created_at, last_updated_at, colleague_id, receipt_location_code, synced) 
 		VALUES
-		('pangpang', 'SA', 'R', '20190813001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES'),
-		('pangpang', 'Q3', 'R', '20190814001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES');
+		('pangpang', 'SA', 'R', '20190813001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false),
+		('pangpang', 'Q3', 'R', '20190814001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES', false),
+		('pangpang', 'SA', 'R', '20190819001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES', true);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createReturnToWarehouseTable error: %v", err.Error())
@@ -219,7 +222,9 @@ func createReturnToWarehouseItemTable() {
 		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
 		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
 		(2, 6, 'Q3', 45, 'Q3AFAFDU6S2100230', 2, '2019-08-14 09:09:13', 1, '2019-08-14 09:09:18', 1),
-		(2, 6, 'Q3', 46, 'Q3AFAFDU6S2100240', 3, '2019-08-14 09:10:08', 1, '2019-08-14 09:10:11', 1);
+		(2, 6, 'Q3', 46, 'Q3AFAFDU6S2100240', 3, '2019-08-14 09:10:08', 1, '2019-08-14 09:10:11', 1),
+		(3, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
+		(3, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createReturnToWarehouseItemTable error: %v", err.Error())

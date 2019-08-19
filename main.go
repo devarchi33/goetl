@@ -13,9 +13,9 @@ func main() {
 	flag.Parse()
 	factory.Init()
 
-	start := time.Now().Format("2006-01-02") + " 00:00:00"
-	end := time.Now().Format("2006-01-02") + " 23:59:59"
-	log.Printf("起始日期: %s, 结束日期: %s \n", start, end)
+	start := time.Now().Format("2006-01-02 15:04:05")
+	end := time.Now().Format("2006-01-02 15:04:05")
+	log.Printf("开始同步: %s \n", start)
 
 	distributionETL := services.DistributionETL{}.New()
 	err := distributionETL.Run(context.Background())
@@ -23,9 +23,11 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	returnToWarehouseETL := services.ReturnToWarehouseETL{}.New(start, end)
+	returnToWarehouseETL := services.ReturnToWarehouseETL{}.New()
 	err = returnToWarehouseETL.Run(context.Background())
 	if err != nil {
 		log.Println(err.Error())
 	}
+
+	log.Printf("结束同步: %s \n", end)
 }
