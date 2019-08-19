@@ -41,7 +41,6 @@ func createStockDistributeTable() {
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
 			tenant_code VARCHAR(255),
 			brand_code VARCHAR(255),
-			type VARCHAR(255),
 			box_no VARCHAR(255),
 			waybill_no VARCHAR(255),
 			shipment_location_id BIGINT(20),
@@ -60,13 +59,13 @@ func createStockDistributeTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.stock_distribute 
-		(tenant_code, brand_code, type, box_no, waybill_no, shipment_location_id, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at) 
+		(tenant_code, brand_code, box_no, waybill_no, shipment_location_id, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at) 
 		VALUES 
-		('pangpang', 'SA', 'IN', '1010590009008', '1010590009008', 1, 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
-		('pangpang', 'SA', 'IN', '1010590009014', '1010590009014', 1, 3, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
-		('pangpang', 'Q3', 'IN', '1010590009009', '1010590009009', 1, 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
-		('pangpang', 'SA', 'IN', '1010590009007', '1010590009007', 1, 2, '2019-07-30 10:56:43', 1, NULL, true, '2019-07-30 10:56:43'),
-		('pangpang', 'SA', 'IN', '1010590009015', '1010590009015', 1, 3, '2019-08-19 10:56:43', 1, NULL, false, '2019-08-19 10:56:43');
+		('pangpang', 'SA', '1010590009008', '1010590009008', 1, 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
+		('pangpang', 'SA', '1010590009014', '1010590009014', 1, 3, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
+		('pangpang', 'Q3', '1010590009009', '1010590009009', 1, 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
+		('pangpang', 'SA', '1010590009007', '1010590009007', 1, 2, '2019-07-30 10:56:43', 1, NULL, true, '2019-07-30 10:56:43'),
+		('pangpang', 'SA', '1010590009015', '1010590009015', 1, 3, '2019-08-19 10:56:43', 1, NULL, false, '2019-08-19 10:56:43');
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockDistributeTable error: %v", err.Error())
