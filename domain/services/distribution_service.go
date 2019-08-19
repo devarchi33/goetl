@@ -1,6 +1,7 @@
 package services
 
 import (
+	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/repositories"
 	"context"
@@ -81,13 +82,13 @@ func (etl DistributionETL) validateDistribution(distribution entities.Distributi
 		return false, errors.New("there is no outbound order which waybill no is: " + distribution.WaybillNo + ", shop is: " + distribution.BrandCode + "-" + distribution.ShopCode)
 	}
 
-	ok := true
+	ok := false
 	for _, v := range recvSupp {
-		ok = ok && (v.RecvSuppStatusCode == "R") // v.RecvSuppStatusCode == "R"的是ok的
+		ok = ok || (v.RecvSuppStatusCode == cslConst.StsSentOut) // 同一个运单号中只有有一条数据的v.RecvSuppStatusCode == "R" 就是ok的
 	}
 
 	for _, v := range recvSupp {
-		ok = ok && (v.RecvChk == false) // v.RecvChk == false 的都是ok的
+		ok = ok || (v.RecvChk == false) // 同一个运单号中只有有一条数据的 v.RecvChk == false 就是ok的
 	}
 
 	if !ok {

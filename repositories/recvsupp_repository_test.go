@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	cslConst "clearance-adapter/domain/csl-constants"
 	"strings"
 	"testing"
 	"time"
@@ -96,7 +97,7 @@ func TestCreateTransferOrder(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(masters), ShouldEqual, 1)
 			So(masters[0].TargetShopCode, ShouldEqual, receiptLocationCode)
-			So(masters[0].RecvSuppStatusCode, ShouldEqual, "R")
+			So(masters[0].RecvSuppStatusCode, ShouldEqual, cslConst.StsSentOut)
 			TransferOrderRecvSuppNp = recvSuppNo
 		})
 		Convey("Waybill表中应该存在运单号为20190815001的数据", func() {
@@ -178,7 +179,7 @@ func TestConfirmTransferOrder(t *testing.T) {
 			So(masters[0].ShopCode, ShouldEqual, receiptLocationCode)
 			So(masters[0].TargetShopCode, ShouldEqual, shipmentLocationCode)
 			So(masters[0].WayBillNo, ShouldEqual, waybillNo)
-			So(masters[0].RecvSuppStatusCode, ShouldEqual, "F")
+			So(masters[0].RecvSuppStatusCode, ShouldEqual, cslConst.StsConfirmed)
 			details := make([]models.RecvSuppDtl, 0)
 			err = factory.GetCSLEngine().Where("RecvSuppNo = ?", recvSuppNo).Find(&details)
 			So(err, ShouldBeNil)
