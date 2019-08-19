@@ -1,6 +1,7 @@
 package services
 
 import (
+	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
@@ -9,6 +10,8 @@ import (
 	"context"
 	"log"
 	"testing"
+
+	p2bConst "clearance-adapter/domain/p2brand-constants"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
@@ -23,7 +26,7 @@ func TestTransform(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009008",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPWJ948S2255070",
 					"qty":                    "2",
 					"emp_id":                 "7000028260",
@@ -31,7 +34,7 @@ func TestTransform(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009008",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPWJ948S2256070",
 					"qty":                    "3",
 					"emp_id":                 "7000028260",
@@ -40,7 +43,7 @@ func TestTransform(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009009",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPYC949H2130095",
 					"qty":                    "4",
 					"emp_id":                 "7000028260",
@@ -48,7 +51,7 @@ func TestTransform(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009009",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPYC949H2130100",
 					"qty":                    "5",
 					"emp_id":                 "7000028260",
@@ -67,7 +70,7 @@ func TestTransform(t *testing.T) {
 			So(len(orders), ShouldEqual, 2)
 			for _, order := range orders {
 				if order.BrandCode == "SA" && order.ShipmentLocationCode == "CEGP" && order.WaybillNo == "1010590009008" {
-					So(order.StatusCode, ShouldEqual, "R")
+					So(order.StatusCode, ShouldEqual, p2bConst.StsSentOut)
 					So(order.EmpID, ShouldEqual, "7000028260")
 					So(order.Items, ShouldNotBeNil)
 					So(len(order.Items), ShouldEqual, 2)
@@ -76,7 +79,7 @@ func TestTransform(t *testing.T) {
 					So(order.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
 					So(order.Items[1].Qty, ShouldEqual, 3)
 				} else if order.BrandCode == "SA" && order.ShipmentLocationCode == "CEGP" && order.WaybillNo == "1010590009009" {
-					So(order.StatusCode, ShouldEqual, "R")
+					So(order.StatusCode, ShouldEqual, p2bConst.StsSentOut)
 					So(order.EmpID, ShouldEqual, "7000028260")
 					So(order.Items, ShouldNotBeNil)
 					So(len(order.Items), ShouldEqual, 2)
@@ -130,7 +133,7 @@ func TestReturnToWarehouseETL(t *testing.T) {
 				So(recvSupp.RecvChk, ShouldEqual, false)
 				So(recvSupp.ShippingTypeCode, ShouldEqual, "41")
 				So(recvSupp.RecvSuppType, ShouldEqual, "S")
-				So(recvSupp.RecvSuppStatusCode, ShouldEqual, "R")
+				So(recvSupp.RecvSuppStatusCode, ShouldEqual, cslConst.StsSentOut)
 				So(recvSupp.SuppEmpID, ShouldEqual, "7000028260")
 				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
 				So(recvSupp.RecvSuppMst.InUserID, ShouldEqual, "shi.yanxun")
@@ -153,7 +156,7 @@ func TestReturnToWarehouseETL(t *testing.T) {
 				So(recvSupp.RecvChk, ShouldEqual, false)
 				So(recvSupp.ShippingTypeCode, ShouldEqual, "41")
 				So(recvSupp.RecvSuppType, ShouldEqual, "S")
-				So(recvSupp.RecvSuppStatusCode, ShouldEqual, "R")
+				So(recvSupp.RecvSuppStatusCode, ShouldEqual, cslConst.StsSentOut)
 				So(recvSupp.SuppEmpID, ShouldEqual, "7000028260")
 				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
 				So(recvSupp.RecvSuppMst.InUserID, ShouldEqual, "shi.yanxun")

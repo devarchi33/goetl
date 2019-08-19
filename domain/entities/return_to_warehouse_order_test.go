@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	p2bConst "clearance-adapter/domain/p2brand-constants"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -15,7 +17,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009008",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPWJ948S2255070",
 					"qty":                    "2",
 					"emp_id":                 "7000028260",
@@ -24,7 +26,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009008",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPWJ948S2256070",
 					"qty":                    "3",
 					"emp_id":                 "7000028260",
@@ -36,7 +38,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 			So(order.BrandCode, ShouldEqual, "SA")
 			So(order.ShipmentLocationCode, ShouldEqual, "CEGP")
 			So(order.WaybillNo, ShouldEqual, "1010590009008")
-			So(order.StatusCode, ShouldEqual, "R")
+			So(order.StatusCode, ShouldEqual, p2bConst.StsSentOut)
 			So(order.EmpID, ShouldEqual, "7000028260")
 			So(order.DeliveryOrderNo, ShouldEqual, "456")
 			So(order.Items, ShouldNotBeNil)
@@ -67,7 +69,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
 					"waybill_no":             "1010590009008",
-					"status_code":            "R",
+					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPWJ948S2255070",
 					"emp_id":                 "7000028260",
 					"delivery_order_no":      "456",

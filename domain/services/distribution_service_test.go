@@ -200,5 +200,21 @@ func TestDistributionETL(t *testing.T) {
 			waybillNo := "1010590009009"
 			syncedShouldBeTrue(receiptLocationCode, waybillNo)
 		})
+
+		Convey("CFGY卖场，运单号为1010590009015的运单应该在CSL入库", func() {
+			receiptLocationCode := "CFGY"
+			waybillNo := "1010590009015"
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", receiptLocationCode, waybillNo)
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 11)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, true)
+				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
+			}
+			syncedShouldBeTrue(receiptLocationCode, waybillNo)
+		})
 	})
 }
