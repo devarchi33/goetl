@@ -7,7 +7,6 @@ type StockDistribute struct {
 	ID                 int64     `xorm:"bigint not null autoincr pk 'id'"`
 	TenantCode         string    `xorm:"varchar(50)"`
 	BrandCode          string    `xorm:"varchar(50)"`
-	Type               string    `xorm:"varchar(8) not null"`
 	BoxNo              string    `xorm:"varchar(50) not null default ''"`
 	WaybillNo          string    `xorm:"varchar(50) not null default ''"`
 	ShipmentLocationID int64     `xorm:"bigint 'shipment_location_Id'"`
