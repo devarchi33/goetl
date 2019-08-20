@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"testing"
+	"time"
 
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
@@ -37,7 +38,8 @@ func TestMarkWaybillSynced(t *testing.T) {
 		So(err, ShouldBeNil)
 		sql := `
 			SELECT
-				sd.synced
+				sd.synced,
+				sd.last_updated_at
 			FROM pangpang_brand_sku_location.stock_distribute AS sd
 				JOIN pangpang_brand_place_management.store AS store
 					ON store.id = sd.receipt_location_id
@@ -50,5 +52,8 @@ func TestMarkWaybillSynced(t *testing.T) {
 		So(len(result), ShouldEqual, 1)
 		distList := infra.ConvertByteResult(result)
 		So(distList[0]["synced"], ShouldEqual, "1")
+		now := time.Now()
+		utc, _ := time.LoadLocation("")
+		So(distList[0]["last_updated_at"], ShouldEqual, now.In(utc).Format("2006-01-02T15:04:05Z"))
 	})
 }
