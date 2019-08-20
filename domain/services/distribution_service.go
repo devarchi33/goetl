@@ -231,9 +231,11 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 			stockMissMap[key] = stockMiss
 		}
 	}
+
 	if len(stockMissMap) > 0 {
 		for _, v := range stockMissMap {
 			if v.OutQty != v.InQty {
+				log.Printf("运单号：%v, 有误差，参数：%v", v.WaybillNo, v)
 				err := repositories.RecvSuppRepository{}.WriteDownStockMiss(v.BrandCode, v.ShopCode, v.InDate, v.WaybillNo, v.SkuCode, v.EmpID, v.OutQty, v.InQty)
 				if err != nil {
 					log.Printf(err.Error())

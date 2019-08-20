@@ -8,6 +8,7 @@ import (
 	_ "clearance-adapter/test"
 	"context"
 	"log"
+	"strconv"
 	"testing"
 	"time"
 
@@ -115,10 +116,10 @@ func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 
 func TestDistributionETL(t *testing.T) {
 	Convey("测试DistributionETL的Run方法", t, func() {
+		etl := DistributionETL{}.New()
+		err := etl.Run(context.Background())
+		So(err, ShouldBeNil)
 		Convey("运单号为1010590009007的出库单synced=true，所以应该不会同步到CSL入库", func() {
-			etl := DistributionETL{}.New()
-			err := etl.Run(context.Background())
-			So(err, ShouldBeNil)
 			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "1010590009007")
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 2)
@@ -220,6 +221,35 @@ func TestDistributionETL(t *testing.T) {
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 			}
 			syncedShouldBeTrue(receiptLocationCode, waybillNo)
+		})
+
+		Convey("CFGY卖场，运单号为1010590009016的运单存在两个master，并且master中的商品是相同的，如果该商品存在误差应该合并数量后再登记", func() {
+			/*
+				sku					出			入			误差
+				SPWJ948S2255075		2（1+1）	6（3+3）	4
+			*/
+			sql := `
+				SELECT * FROM CSL.dbo.StockMisDtl
+				WHERE BrandCode = ?
+				AND ShopCode = ?
+				AND WayBillNo01 = ?
+			`
+			result, _ := factory.GetCSLEngine().Query(sql, "SA", "CFGY", "1010590009016")
+			So(len(result), ShouldBeGreaterThanOrEqualTo, 1)
+			stockMissList := infra.ConvertByteResult(result)
+			outQty := 0
+			missQty := 0
+			for _, stockMiss := range stockMissList {
+				skuCode := stockMiss["ProdCode"]
+				if skuCode == "SPWJ948S2255075" {
+					recvSuppQty, _ := strconv.Atoi(stockMiss["RecvSuppQty"])
+					outQty += recvSuppQty
+					stockMisQty, _ := strconv.Atoi(stockMiss["StockMisQty"])
+					missQty += stockMisQty
+				}
+			}
+			So(outQty, ShouldEqual, 1)
+			So(missQty, ShouldEqual, 4)
 		})
 	})
 }
