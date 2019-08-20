@@ -10,6 +10,7 @@ import (
 	"context"
 	"log"
 	"testing"
+	"time"
 
 	p2bConst "clearance-adapter/domain/p2brand-constants"
 
@@ -96,7 +97,8 @@ func TestTransform(t *testing.T) {
 func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, shouldBeTrue bool) {
 	sql := `
 		SELECT
-			rtw.synced
+			rtw.synced,
+			rtw.last_updated_at
 		FROM pangpang_brand_sku_location.return_to_warehouse AS rtw
 			JOIN pangpang_brand_place_management.store AS store
 				ON store.id = rtw.shipment_location_id
@@ -113,6 +115,9 @@ func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, should
 	} else {
 		So(distList[0]["synced"], ShouldEqual, "0")
 	}
+	now := time.Now()
+	utc, _ := time.LoadLocation("")
+	So(distList[0]["last_updated_at"], ShouldEqual, now.In(utc).Format("2006-01-02T15:04:05Z"))
 }
 
 func TestReturnToWarehouseETL(t *testing.T) {

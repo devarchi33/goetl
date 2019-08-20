@@ -49,7 +49,8 @@ func (ReturnToWarehouseRepository) MarkWaybillSynced(shipmentLocationCode, waybi
 		UPDATE pangpang_brand_sku_location.return_to_warehouse rtw
 		JOIN pangpang_brand_place_management.store AS store
 			ON store.id = rtw.shipment_location_id
-		SET rtw.synced = true
+		SET rtw.synced = true,
+			rtw.last_updated_at = now()
 			WHERE rtw.tenant_code = 'pangpang'
 			AND store.code = ?
 			AND rtw.waybill_no = ?
