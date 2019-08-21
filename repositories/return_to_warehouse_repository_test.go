@@ -17,7 +17,7 @@ func TesRTWtMarkWaybillSynced(t *testing.T) {
 	Convey("CEGP卖场的20190819001运单，应该标记为已同步", t, func() {
 		shipmentLocationCode := "CEGP"
 		waybillNo := "1010590009008"
-		err := StockDistributionRepository{}.MarkWaybillSynced(shipmentLocationCode, waybillNo)
+		err := ReturnToWarehouseRepository{}.MarkWaybillSynced(shipmentLocationCode, waybillNo)
 		So(err, ShouldBeNil)
 		sql := `
 			SELECT

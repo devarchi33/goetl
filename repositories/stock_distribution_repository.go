@@ -9,7 +9,7 @@ import (
 // StockDistributionRepository P2-brand 物流分配入库单仓库
 type StockDistributionRepository struct{}
 
-// GetUnsyncedDistributionOrders 获取同步过的分配入库数据
+// GetUnsyncedDistributionOrders 获取未同步过的分配入库数据
 func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string]string, error) {
 	sql := `
 		SELECT
@@ -29,12 +29,12 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 				ON store.id = sd.receipt_location_id
 			JOIN pangpang_common_colleague_employee.employees AS emp
 				ON emp.id = sd.colleague_id
-		WHERE sd.tenant_code = 'pangpang'
+		WHERE sd.tenant_code = ?
 			AND sd.synced = false
 			;
 	`
 
-	result, err := factory.GetP2BrandEngine().Query(sql)
+	result, err := factory.GetP2BrandEngine().Query(sql, getTenantCode())
 	if err != nil {
 		return nil, err
 	}
@@ -50,12 +50,12 @@ func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybil
 			ON store.id = sd.receipt_location_id
 		SET sd.synced = true,
 			sd.last_updated_at = now()
-			WHERE sd.tenant_code = 'pangpang'
+			WHERE sd.tenant_code = ?
 			AND store.code = ?
 			AND sd.waybill_no = ?
 		;
 	`
-	_, err := factory.GetP2BrandEngine().Exec(sql, receiptLocationCode, waybillNo)
+	_, err := factory.GetP2BrandEngine().Exec(sql, getTenantCode(), receiptLocationCode, waybillNo)
 	if err != nil {
 		log.Printf("MarkWaybillSynced error: %v", err)
 		return err
