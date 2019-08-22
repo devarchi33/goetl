@@ -4,9 +4,12 @@ import (
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
+	"clearance-adapter/repositories/entities"
 	"errors"
 	"log"
 	"time"
+
+	"github.com/go-xorm/xorm"
 )
 
 // RecvSuppRepository RecvSupp仓库，包括Master和Detail
@@ -153,6 +156,11 @@ func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, rec
 
 // CreateTransferOrder 创建调货出库单
 func (RecvSuppRepository) CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
+	session := factory.GetCSLEngine().NewSession()
+	return RecvSuppRepository{}.createTransferOrder(session, brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
+}
+
+func (RecvSuppRepository) createTransferOrder(session *xorm.Session, brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance]
 			@BrandCode				= ?
@@ -178,7 +186,7 @@ func (RecvSuppRepository) CreateTransferOrder(brandCode, shipmentLocationCode, r
 	today := time.Now().Format("20060102")
 	result, err := factory.GetCSLEngine().Query(sql, brandCode, shipmentLocationCode, receiptLocationCode, today, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
 	if err != nil {
-		return "", err
+		return "", errors.New("exec up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance failed " + err.Error())
 	}
 
 	master := infra.ConvertByteResult(result)
@@ -192,6 +200,11 @@ func (RecvSuppRepository) CreateTransferOrder(brandCode, shipmentLocationCode, r
 
 // AddTransferOrderItem 向调货出库单中添加商品
 func (RecvSuppRepository) AddTransferOrderItem(brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
+	session := factory.GetCSLEngine().NewSession()
+	return RecvSuppRepository{}.addTransferOrderItem(session, brandCode, shopCode, recvSuppNo, skuCode, qty, empID)
+}
+
+func (RecvSuppRepository) addTransferOrderItem(session *xorm.Session, brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertRotationOuterReg_RecvSuppDtl_C1_Clearance]
 			@RecvSuppNo   	= ?
@@ -221,6 +234,11 @@ func (RecvSuppRepository) AddTransferOrderItem(brandCode, shopCode, recvSuppNo, 
 
 // ConfirmTransferOrder 调进确认
 func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
+	session := factory.GetCSLEngine().NewSession()
+	return RecvSuppRepository{}.confirmTransferOrder(session, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
+}
+
+func (RecvSuppRepository) confirmTransferOrder(session *xorm.Session, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance]
 			@BrandCode			= ?
@@ -234,7 +252,7 @@ func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, s
 
 	result, err := factory.GetCSLEngine().Query(sql, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
 	if err != nil {
-		return "", err
+		return "", errors.New("exec up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance failed " + err.Error())
 	}
 
 	master := infra.ConvertByteResult(result)
@@ -247,4 +265,45 @@ func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, s
 }
 
 // CreateTransferOrderSet 创建调货出库单 + 调货入库确认
-// func (RecvSuppRepository) CreateTransferOrderSet()
+func (RecvSuppRepository) CreateTransferOrderSet(order entities.TransferOrderSet) error {
+	session := factory.GetCSLEngine().NewSession()
+	defer session.Close()
+
+	if err := session.Begin(); err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	outRecvSuppNo, err := RecvSuppRepository{}.createTransferOrder(session, order.BrandCode, order.ShipmentShopCode, order.ReceiptShopCode, order.WaybillNo,
+		order.BoxNo, order.ShippingCompanyCode, order.DeliveryOrderNo, order.OutEmpID)
+	if err != nil {
+		session.Rollback()
+		log.Println(err.Error())
+		return err
+	}
+
+	for _, item := range order.Items {
+		err = RecvSuppRepository{}.addTransferOrderItem(session, order.BrandCode, order.ShipmentShopCode, outRecvSuppNo, item.SkuCode, item.Qty, order.OutEmpID)
+		if err != nil {
+			session.Rollback()
+			log.Println(err.Error())
+			return err
+		}
+	}
+
+	inRecvSuppNo, err := RecvSuppRepository{}.confirmTransferOrder(session, order.BrandCode, order.ReceiptShopCode, order.ShipmentShopCode, order.WaybillNo, order.BoxNo, outRecvSuppNo, order.InEmpID)
+	if err != nil {
+		session.Rollback()
+		log.Println(err.Error())
+		return err
+	}
+
+	if err = session.Commit(); err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	log.Printf("运单号为：%v 的调货单同步完成，调出登记的RecvSuppNo为：%v，调入确认的RecvSuppNo为：%v", order.WaybillNo, outRecvSuppNo, inRecvSuppNo)
+
+	return nil
+}
