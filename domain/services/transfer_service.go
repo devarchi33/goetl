@@ -3,6 +3,7 @@ package services
 import (
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/repositories"
+	repoEntities "clearance-adapter/repositories/entities"
 	"context"
 	"errors"
 	"log"
@@ -31,9 +32,10 @@ func (etl TransferETL) Extract(ctx context.Context) (interface{}, error) {
 	return result, nil
 }
 
-// Transform ...
-func (etl TransferETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
+func (etl TransferETL) buildTransferOrders(ctx context.Context, source interface{}) (interface{}, error) {
 	data, ok := source.([]map[string]string)
+
+	// fmt.Println(len(data))
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
@@ -61,19 +63,14 @@ func (etl TransferETL) Transform(ctx context.Context, source interface{}) (inter
 	return orders, nil
 }
 
-// Load ...
-func (etl TransferETL) Load(ctx context.Context, source interface{}) error {
+func (etl TransferETL) buildTransferOrderSets(ctx context.Context, source interface{}) (interface{}, error) {
 	orders, ok := source.([]entities.TransferOrder)
 	if !ok {
-		return errors.New("Convert Failed")
+		return nil, errors.New("Convert to TransferOrders failed")
 	}
 
+	orderSets := make([]repoEntities.TransferOrderSet, 0)
 	for _, order := range orders {
-		if len(order.Items) == 0 {
-			log.Printf("运单号为: %v 的调货单没有商品", order.WaybillNo)
-			continue
-		}
-
 		shipmentShopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShipmentLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
@@ -84,32 +81,76 @@ func (etl TransferETL) Load(ctx context.Context, source interface{}) error {
 			log.Printf(err.Error())
 		}
 
-		deliveryOrderNo := ""
-		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateTransferOrder(order.BrandCode, shipmentShopCode, receiptShopCode, order.WaybillNo, order.BoxNo, order.ShippingCompanyCode, deliveryOrderNo, order.OutEmpID)
-		if err != nil {
-			log.Printf(err.Error())
+		orderSet := repoEntities.TransferOrderSet{
+			BrandCode:            order.BrandCode,
+			ShipmentLocationCode: order.ShipmentLocationCode,
+			ShipmentShopCode:     shipmentShopCode,
+			ReceiptLocationCode:  order.ReceiptLocationCode,
+			ReceiptShopCode:      receiptShopCode,
+			WaybillNo:            order.WaybillNo,
+			BoxNo:                order.BoxNo,
+			ShippingCompanyCode:  order.ShippingCompanyCode,
+			DeliveryOrderNo:      "",
+			OutDate:              order.OutDate,
+			InDate:               order.InDate,
+			OutEmpID:             order.OutEmpID,
+			InEmpID:              order.InEmpID,
+			Items:                make([]repoEntities.TransferOrderSetItem, 0),
 		}
-		log.Printf("运单号：%v 的出库单RecvSuppNo：%v", order.WaybillNo, recvSuppNo)
-
 		for _, item := range order.Items {
-			err := repositories.RecvSuppRepository{}.AddTransferOrderItem(order.BrandCode, shipmentShopCode, recvSuppNo, item.SkuCode, item.Qty, order.OutEmpID)
-			if err != nil {
-				log.Printf(err.Error())
-			}
+			orderSet.Items = append(orderSet.Items, repoEntities.TransferOrderSetItem{
+				SkuCode: item.SkuCode,
+				Qty:     item.Qty,
+			})
+		}
+		orderSets = append(orderSets, orderSet)
+	}
+
+	return orderSets, nil
+}
+
+// Transform ...
+func (etl TransferETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
+	orders, err := TransferETL{}.buildTransferOrders(ctx, source)
+	if err != nil {
+		return nil, errors.New("Build TransferOrders Failed " + err.Error())
+	}
+
+	orderSets, err := TransferETL{}.buildTransferOrderSets(ctx, orders)
+	if err != nil {
+		return nil, errors.New("Build TransferOrderSets Failed " + err.Error())
+	}
+
+	return orderSets, nil
+}
+
+// Load ...
+func (etl TransferETL) Load(ctx context.Context, source interface{}) error {
+	orderSets, ok := source.([]repoEntities.TransferOrderSet)
+	if !ok {
+		return errors.New("Convert to TransferOrderSets failed")
+	}
+
+	for _, orderSet := range orderSets {
+		if len(orderSet.Items) == 0 {
+			log.Printf("运单号为: %v 的调货单没有商品", orderSet.WaybillNo)
+			continue
 		}
 
-		confirmRecvSuppNo, err := repositories.RecvSuppRepository{}.ConfirmTransferOrder(order.BrandCode, receiptShopCode, shipmentShopCode, order.WaybillNo, order.BoxNo, recvSuppNo, order.InEmpID)
+		err := repositories.RecvSuppRepository{}.CreateTransferOrderSet(orderSet)
 		if err != nil {
 			log.Printf(err.Error())
+			return err
 		}
-		log.Printf("运单号：%v 的入库确认RecvSuppNo：%v", order.WaybillNo, confirmRecvSuppNo)
 
 		// 更新状态的时候需要使用主卖场的Code
-		err = repositories.StockRoundRepository{}.MarkWaybillSynced(order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo)
+		err = repositories.StockRoundRepository{}.MarkWaybillSynced(orderSet.ShipmentLocationCode, orderSet.ReceiptLocationCode, orderSet.WaybillNo)
 		if err != nil {
 			log.Printf(err.Error())
+			return err
 		}
-		log.Printf("运单号为：%v 的调货单（出库卖场：%v，入库卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShipmentLocationCode, order.ReceiptLocationCode, order.BrandCode)
+
+		log.Printf("运单号为：%v 的调货单（出库卖场：%v，入库卖场：%v，品牌：%v）已经同步完成。", orderSet.WaybillNo, orderSet.ShipmentLocationCode, orderSet.ReceiptLocationCode, orderSet.BrandCode)
 	}
 
 	return nil
