@@ -9,7 +9,7 @@ import (
 // ReturnToWarehouseRepository p2-brand 卖场退仓单仓库
 type ReturnToWarehouseRepository struct{}
 
-// GetUnsyncedReturnToWarehouseOrders 获取同步过的退仓数据
+// GetUnsyncedReturnToWarehouseOrders 获取未同步过的退仓数据
 func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseOrders() ([]map[string]string, error) {
 	sql := `
 		SELECT
@@ -29,13 +29,13 @@ func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseOrders() ([]map[s
 				ON store.id = rtw.shipment_location_id
 			JOIN pangpang_common_colleague_employee.employees AS emp
 				ON emp.id = rtw.colleague_id
-		WHERE rtw.tenant_code = 'pangpang'
+		WHERE rtw.tenant_code = ?
 			AND rtw.status = 'R'
 			AND rtw.synced = false
 		;
 	`
 
-	result, err := factory.GetP2BrandEngine().Query(sql)
+	result, err := factory.GetP2BrandEngine().Query(sql, getTenantCode())
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +51,12 @@ func (ReturnToWarehouseRepository) MarkWaybillSynced(shipmentLocationCode, waybi
 			ON store.id = rtw.shipment_location_id
 		SET rtw.synced = true,
 			rtw.last_updated_at = now()
-			WHERE rtw.tenant_code = 'pangpang'
+			WHERE rtw.tenant_code = ?
 			AND store.code = ?
 			AND rtw.waybill_no = ?
 		;
 	`
-	_, err := factory.GetP2BrandEngine().Exec(sql, shipmentLocationCode, waybillNo)
+	_, err := factory.GetP2BrandEngine().Exec(sql, getTenantCode(), shipmentLocationCode, waybillNo)
 	if err != nil {
 		log.Printf("MarkWaybillSynced error: %v", err)
 		return err

@@ -13,6 +13,9 @@ func initLocation() {
 	// 退仓的表
 	createReturnToWarehouseTable()
 	createReturnToWarehouseItemTable()
+	// 调货的表
+	createStockRoundTable()
+	createStockRoundItemTable()
 }
 
 func createLocationDB() {
@@ -240,6 +243,97 @@ func createReturnToWarehouseItemTable() {
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createReturnToWarehouseItemTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createStockRoundTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createStockRoundTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE stock_round
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			tenant_code VARCHAR(255),
+			brand_code VARCHAR(255),
+			box_no VARCHAR(255),
+			waybill_no VARCHAR(255),
+			shipment_location_id BIGINT(20),
+			receipt_location_id BIGINT(20),
+			synced TINYINT(1),
+			created_at DATETIME,
+			last_updated_at DATETIME,
+			colleague_id BIGINT(20),
+			status VARCHAR(255),
+			in_created_at DATETIME,
+			out_created_at DATETIME,
+			in_colleague_id BIGINT(20),
+			out_colleague_id BIGINT(20),
+			shipping_company_code VARCHAR(255)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createStockRoundTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.stock_round 
+		(tenant_code, brand_code, box_no, waybill_no, shipment_location_id, receipt_location_id, synced, created_at, last_updated_at, colleague_id, status, in_created_at, out_created_at, in_colleague_id, out_colleague_id, shipping_company_code) 
+		VALUES 
+		('pangpang', 'SA', '20190821001', '20190821001', 2, 3, 0, '2019-08-20 13:42:13', '2019-08-20 15:02:09', 1, 'F', '2019-08-20 22:02:09', '2019-08-20 20:02:09', 1, 1, 'SR');
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createStockRoundTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createStockRoundItemTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createStockRoundItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE stock_round_item
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			stock_round_id BIGINT(20),
+			product_id BIGINT(20),
+			brand_code VARCHAR(255),
+			sku_id BIGINT(20),
+			barcode VARCHAR(255),
+			quantity BIGINT(20),
+			created_at DATETIME,
+			created_colleague_id BIGINT(20),
+			updated_at DATETIME,
+			updated_colleague_id BIGINT(20)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createStockRoundItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.stock_round_item 
+		(stock_round_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id)
+		VALUES 
+		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-21 13:42:13', 1, '2019-08-21 13:42:13', 1),
+		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-21 13:42:13', 1, '2019-08-21 13:42:13', 1);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createStockRoundItemTable error: %v", err.Error())
 		log.Println()
 	}
 }

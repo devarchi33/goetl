@@ -245,3 +245,6 @@ func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, s
 
 	return recvSuppNo, nil
 }
+
+// CreateTransferOrderSet 创建调货出库单 + 调货入库确认
+// func (RecvSuppRepository) CreateTransferOrderSet()
