@@ -853,208 +853,190 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 
 	sql := `
 		CREATE PROCEDURE [dbo].[up_CSLK_IOM_UpdateStockInEnterConfirmSave_RecvSuppMst_R1_Clearance_By_WaybillNo]
-		@BrandCode VARCHAR(4),   -- 브랜드 코드
-		@ShopCode CHAR(4),       -- 主卖场
-		@WaybillNo VARCHAR(13),  -- 운송장번호
-		@EmpID CHAR(10)      -- 入库人EmpNo
-		AS
-		--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-		SET XACT_ABORT ON;
-		SET NOCOUNT ON;
-		BEGIN
+			@BrandCode VARCHAR(4),   -- 브랜드 코드
+			@ShopCode CHAR(4),       -- 主卖场
+			@WaybillNo VARCHAR(13),  -- 운송장번호
+			@InDate CHAR(8),			-- 入库时间
+			@EmpID CHAR(10)      -- 入库人EmpNo
+			AS
+			--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+			SET XACT_ABORT ON;
+			SET NOCOUNT ON;
+			BEGIN
 
-			DECLARE @RecvSuppNo CHAR(14);
-			DECLARE @SENDF CHAR(1);
-			DECLARE @SendFlag CHAR(1);
-			DECLARE @TempRecvSuppStatusCode CHAR(1);
-			DECLARE @ErrorCode NVARCHAR(1000) = '';
-			DECLARE @ErrorParam1 NVARCHAR(4000) = '';
-			DECLARE @ErrorParam2 NVARCHAR(4000) = '';
-			DECLARE @CurrDate CHAR(8);
-			DECLARE @RecvEmpName NVARCHAR(200);
-			DECLARE @UserID VARCHAR(20);
+				DECLARE @RecvSuppNo CHAR(14);
+				DECLARE @SENDF CHAR(1);
+				DECLARE @SendFlag CHAR(1);
+				DECLARE @TempRecvSuppStatusCode CHAR(1);
+				DECLARE @ErrorCode NVARCHAR(1000) = '';
+				DECLARE @ErrorParam1 NVARCHAR(4000) = '';
+				DECLARE @ErrorParam2 NVARCHAR(4000) = '';
+				DECLARE @RecvEmpName NVARCHAR(200);
+				DECLARE @UserID VARCHAR(20);
 
-			BEGIN TRY
-				-- 마감체크
-				IF (
-					LEFT(dbo.udf_CSLK_MonthlyClosingChk('01', 'Zn'), 1) = 1
-				)
-				BEGIN
-					SELECT @ErrorCode
-						= SUBSTRING(
-							dbo.udf_CSLK_MonthlyClosingChk('01', 'Zn'), 2, 510
-								);
-					EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
-				END;
-
-
-	-- 				SELECT @ShopCode = ShopCode
-	-- 				FROM ComplexShopMapping
-	-- 				WHERE BrandCode = @BrandCode
-	-- 				AND ChiefShopCode = @ChiefShopCode
-	-- 				AND DelChk = 0
-	--
-	-- 				IF @ShopCode IS NULL
-	-- 				BEGIN
-	-- 					PRINT ('ShopCode is null')
-	-- 					EXEC [up_CSLK_ComonRaiseError] 'ShopCode is null', @ErrorParam1, @ErrorParam2;
-	-- 				END
-
-				--Query Start
-				PRINT ('@RecvSuppNo1');
-				SELECT TOP 1
-					@RecvSuppNo = RecvSuppNo
-				FROM RecvSuppMst
-				WHERE BrandCode = @BrandCode
-					AND ShopCode = @ShopCode
-					AND WayBillNo = @WaybillNo
-					AND ShippingTypeCode IN ( '01', '66', '16' ) --wangpengda 20100203
-					AND DelChk = '0'; --20091210 WangPengDa \=-
-				PRINT ('@RecvSuppNo2');
-				PRINT (@RecvSuppNo);
-
-
-		SELECT @RecvEmpName = EmpName
-		FROM Employee
-		WHERE EmpID = @EmpID
-
-
-		SELECT @UserID = UserID
-		FROM UserInfo
-		WHERE EmpID = @EmpID
-
-
-				SELECT @CurrDate = CONVERT(CHAR(8), GETDATE(), 112);
-				-- 인터페이스 실시간 처리 확인
-				EXEC [up_CSLK_IF_CHK_RecvSupp] @p_RECVSUPPNO = @RecvSuppNo,
-					@o_SENDF = @SENDF OUTPUT;
-
-				/* 수신 시스템 체크
-				R : 등록/수정된 상태, 전송 전 ( 수정 불가능 )
-				I : 전송 중 ( 수정불가능 )
-				S : 전송 후 ( 수정가능 )
-				*/
-				IF (
-					@SENDF = 'S'
-				)
-				BEGIN
-
-					-- 이미 입고확인 되었을경우 입고불가
-
-					SELECT @TempRecvSuppStatusCode = RecvSuppStatusCode
-					FROM RecvSuppMst
-					WHERE RecvSuppNo = @RecvSuppNo;
-
-					IF @TempRecvSuppStatusCode != 'F'
+				BEGIN TRY
+					-- 마감체크
+					IF (
+						LEFT(dbo.udf_CSLK_MonthlyClosingChk('01', 'Zn'), 1) = 1
+					)
 					BEGIN
-						--SET @ErrorCode = 'IOM119';
-						--SET @ErrorParam1 = '';
-						--SET @ErrorParam2 = '';
-						--EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
-						--注释by wang.wanyue 已入库不再是错误，直接查询数据
+						SELECT @ErrorCode
+							= SUBSTRING(
+								dbo.udf_CSLK_MonthlyClosingChk('01', 'Zn'), 2, 510
+									);
+						EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
+					END;
 
-						-- SAP진행상황 체크
-						SELECT @SendFlag = SendFlag
+
+					IF(@InDate = '' OR @InDate IS NULL)
+					BEGIN
+						SET @InDate = CONVERT(CHAR(8),GETDATE(),112)
+					END
+
+					--Query Start
+					PRINT ('@RecvSuppNo1');
+
+					SELECT TOP 1
+						@RecvSuppNo = RecvSuppNo
+					FROM RecvSuppMst
+					WHERE BrandCode = @BrandCode
+						AND ShopCode = @ShopCode
+						AND WayBillNo = @WaybillNo
+						AND ShippingTypeCode IN ( '01', '66', '16' )
+						AND DelChk = '0';
+
+					PRINT ('@RecvSuppNo2');
+					PRINT (@RecvSuppNo);
+
+
+			SELECT @RecvEmpName = EmpName
+			FROM Employee
+			WHERE EmpID = @EmpID
+
+
+			SELECT @UserID = UserID
+			FROM UserInfo
+			WHERE EmpID = @EmpID
+
+					-- 인터페이스 실시간 처리 확인
+					EXEC [up_CSLK_IF_CHK_RecvSupp] @p_RECVSUPPNO = @RecvSuppNo,
+						@o_SENDF = @SENDF OUTPUT;
+
+					/* 수신 시스템 체크
+					R : 등록/수정된 상태, 전송 전 ( 수정 불가능 )
+					I : 전송 중 ( 수정불가능 )
+					S : 전송 후 ( 수정가능 )
+					*/
+					IF (
+						@SENDF = 'S'
+					)
+					BEGIN
+
+						-- 이미 입고확인 되었을경우 입고불가
+
+						SELECT @TempRecvSuppStatusCode = RecvSuppStatusCode
 						FROM RecvSuppMst
 						WHERE RecvSuppNo = @RecvSuppNo;
 
-						-- R:등록  I:전송중  S:완료
-						IF (
-							@SendFlag = 'I'
-						)
-						BEGIN
-							SET @ErrorCode = 'COM100';
-							SET @ErrorParam1 = '';
-							SET @ErrorParam2 = '';
-							EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
-						END;
-
-						SELECT TOP 1
-							@SendFlag = SendFlag
-						FROM RecvSuppDtl
-						WHERE RecvSuppNo = @RecvSuppNo;
-						--	   AND RecvSuppSeqNo = @RecvSuppSeqNo
-
-						-- R:등록  I:전송중  S:완료
-						IF (
-							@SendFlag = 'I'
-						)
+						IF @TempRecvSuppStatusCode != 'F'
 						BEGIN
 
-							SET @ErrorCode = 'COM100';
-							SET @ErrorParam1 = '';
-							SET @ErrorParam2 = '';
-							EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
-						END;
-						ELSE
-						BEGIN
-							--위는 다 SAP에서 하는 체크.
-							UPDATE RecvSuppMst
-							SET RecvChk = 1,                  -- 매장입고여부  조회할때 RecvChk 만 보고  RecvSuppStatusCode = 'F'	는 안본다. RecvChk = 0 ,RecvSuppStatusCode = 'F' 면 데이터 꼬인것.
-								ShopSuppRecvDate = @CurrDate, -- 매장입고일자
-								RecvSuppStatusCode = 'F',     -- 입고확정
-								RecvEmpID = @EmpID,           -- 입고자사번
-								RecvEmpName = @RecvEmpName,   -- 입고자명
-								ModiUserID = @UserID,
-								ModiDateTime = GETDATE(),
-								SendFlag = 'R',
-								InvtBaseDate = @CurrDate,     -- 재고기준일자.
-								Channel = 'Clearance'
-							WHERE BrandCode = @BrandCode
-								AND ShopCode = @ShopCode
-								--AND RecvSuppNo=@RecvSuppNo
-								--MODIFY BY SHEN.XUE 20140806 同箱号,同运单号,允许入库 --
-								AND WayBillNo = @WaybillNo
-								AND BoxNo = @WaybillNo
-								AND ShippingTypeCode IN ( '01', '66', '16' ); --wangpengda 20100203
+							-- SAP진행상황 체크
+							SELECT @SendFlag = SendFlag
+							FROM RecvSuppMst
+							WHERE RecvSuppNo = @RecvSuppNo;
 
-							UPDATE RecvSuppDtl
-							SET RecvSuppFixedQty = RecvSuppQty, -- 출고수량과 입고수량을 동일하게 맞춤
-								ModiUserID = @UserID,
-								ModiDateTime = GETDATE(),
-								SendFlag = 'R'
-							FROM
-							(
-								SELECT Mst.RecvSuppNo,
-									Dtl.RecvSuppSeqNo
-								FROM RecvSuppMst AS Mst
-									INNER JOIN RecvSuppDtl AS Dtl
-										ON (Mst.RecvSuppNo = Dtl.RecvSuppNo)
-								WHERE Mst.BrandCode = @BrandCode
-									AND Mst.ShopCode = @ShopCode
+							-- R:등록  I:전송중  S:완료
+							IF (
+								@SendFlag = 'I'
+							)
+							BEGIN
+								SET @ErrorCode = 'COM100';
+								SET @ErrorParam1 = '';
+								SET @ErrorParam2 = '';
+								EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
+							END;
 
-									--AND MST.RecvSuppNo=@RecvSuppNo --modify by shen.xue 20140806 同箱号，同款号，允许入库
+							SELECT TOP 1
+								@SendFlag = SendFlag
+							FROM RecvSuppDtl
+							WHERE RecvSuppNo = @RecvSuppNo;
+
+							-- R:등록  I:전송중  S:완료
+							IF (
+								@SendFlag = 'I'
+							)
+							BEGIN
+								SET @ErrorCode = 'COM100';
+								SET @ErrorParam1 = '';
+								SET @ErrorParam2 = '';
+								EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
+							END;
+							ELSE
+							BEGIN
+								--위는 다 SAP에서 하는 체크.
+								UPDATE RecvSuppMst
+								SET RecvChk = 1,                  -- 매장입고여부  조회할때 RecvChk 만 보고  RecvSuppStatusCode = 'F'	는 안본다. RecvChk = 0 ,RecvSuppStatusCode = 'F' 면 데이터 꼬인것.
+									ShopSuppRecvDate = @InDate, -- 매장입고일자
+									RecvSuppStatusCode = 'F',     -- 입고확정
+									RecvEmpID = @EmpID,           -- 입고자사번
+									RecvEmpName = @RecvEmpName,   -- 입고자명
+									ModiUserID = @UserID,
+									ModiDateTime = GETDATE(),
+									SendFlag = 'R',
+									InvtBaseDate = @InDate,     -- 재고기준일자.
+									Channel = 'Clearance'
+								WHERE BrandCode = @BrandCode
+									AND ShopCode = @ShopCode
 									AND WayBillNo = @WaybillNo
 									AND BoxNo = @WaybillNo
-									AND ShippingTypeCode IN ( '01', '66', '16' ) --wangpengda 20100203
-									AND Mst.RecvChk = 1 /* add by li.guolin 20150930 20151012 */
-							) AS A
-							WHERE RecvSuppDtl.RecvSuppNo = A.RecvSuppNo
-								AND RecvSuppDtl.RecvSuppSeqNo = A.RecvSuppSeqNo;
-						END;
-					END;
-					SELECT * FROM dbo.RecvSuppMst
-						WHERE BrandCode = @BrandCode
-						AND ShopCode = @ShopCode
-						AND WayBillNo = @WaybillNo
-						AND BoxNo = @WaybillNo
-						AND ShippingTypeCode IN ( '01', '66', '16' );
-				END;
-				ELSE
-				BEGIN
+									AND ShippingTypeCode IN ( '01', '66', '16' ); --wangpengda 20100203
 
-					-- 본사 수정중입니다.
-					SET @ErrorCode = 'IOM132';
-					SET @ErrorParam1 = '';
-					SET @ErrorParam2 = '';
+								UPDATE RecvSuppDtl
+								SET RecvSuppFixedQty = RecvSuppQty, -- 출고수량과 입고수량을 동일하게 맞춤
+									ModiUserID = @UserID,
+									ModiDateTime = GETDATE(),
+									SendFlag = 'R'
+								FROM
+								(
+									SELECT Mst.RecvSuppNo,
+										Dtl.RecvSuppSeqNo
+									FROM RecvSuppMst AS Mst
+										INNER JOIN RecvSuppDtl AS Dtl
+											ON (Mst.RecvSuppNo = Dtl.RecvSuppNo)
+									WHERE Mst.BrandCode = @BrandCode
+										AND Mst.ShopCode = @ShopCode
+										AND WayBillNo = @WaybillNo
+										AND BoxNo = @WaybillNo
+										AND ShippingTypeCode IN ( '01', '66', '16' )
+										AND Mst.RecvChk = 1
+								) AS A
+								WHERE RecvSuppDtl.RecvSuppNo = A.RecvSuppNo
+									AND RecvSuppDtl.RecvSuppSeqNo = A.RecvSuppSeqNo;
+							END;
+						END;
+						SELECT * FROM dbo.RecvSuppMst
+							WHERE BrandCode = @BrandCode
+							AND ShopCode = @ShopCode
+							AND WayBillNo = @WaybillNo
+							AND BoxNo = @WaybillNo
+							AND ShippingTypeCode IN ( '01', '66', '16' );
+					END;
+					ELSE
+					BEGIN
+
+						-- 본사 수정중입니다.
+						SET @ErrorCode = 'IOM132';
+						SET @ErrorParam1 = '';
+						SET @ErrorParam2 = '';
+						EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
+					END;
+				--Query End
+				END TRY
+				BEGIN CATCH
 					EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
-				END;
-			--Query End
-			END TRY
-			BEGIN CATCH
-				EXEC [up_CSLK_ComonRaiseError] @ErrorCode, @ErrorParam1, @ErrorParam2;
-			END CATCH;
-		END;
+				END CATCH;
+			END;
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo error: %v", err.Error())

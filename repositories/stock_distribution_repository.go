@@ -19,6 +19,7 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 			sd.box_no,
 			sku.code AS sku_code,
 			sdi.quantity AS qty,
+			sd.created_at AS in_date,
 			emp.employee_no AS emp_id
 		FROM pangpang_brand_sku_location.stock_distribute AS sd
 			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi

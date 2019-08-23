@@ -11,6 +11,7 @@ type DistributionOrder struct {
 	ShopCode  string
 	WaybillNo string
 	BoxNo     string
+	InDate    string
 	EmpID     string
 	Items     []DistributionOrderItem
 }
@@ -29,7 +30,7 @@ func (DistributionOrder) Create(data []map[string]string) (DistributionOrder, er
 	}
 
 	orderData := data[0]
-	err := checkRequirement(orderData, "brand_code", "shop_code", "waybill_no", "box_no", "emp_id")
+	err := checkRequirement(orderData, "brand_code", "shop_code", "waybill_no", "box_no", "in_date", "emp_id")
 	if err != nil {
 		return order, err
 	}
@@ -38,6 +39,7 @@ func (DistributionOrder) Create(data []map[string]string) (DistributionOrder, er
 	order.ShopCode = orderData["shop_code"]
 	order.WaybillNo = orderData["waybill_no"]
 	order.BoxNo = orderData["box_no"]
+	order.InDate = infra.Parse8BitsDate(orderData["in_date"], nil)
 	order.EmpID = orderData["emp_id"]
 	order.Items = make([]DistributionOrderItem, 0)
 
