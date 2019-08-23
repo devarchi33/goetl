@@ -16,15 +16,16 @@ import (
 type RecvSuppRepository struct{}
 
 // PutInStorage 入库
-func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, empID string) error {
+func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, inDate, empID string) error {
 	sql := `
 		EXEC [up_CSLK_IOM_UpdateStockInEnterConfirmSave_RecvSuppMst_R1_Clearance_By_WaybillNo]
 				@BrandCode = ?,
 				@ShopCode = ?,
 				@WaybillNo = ?,
+				@InDate = ?,
 				@EmpID = ?
 		`
-	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, empID)
+	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, inDate, empID)
 	if err != nil {
 		return err
 	}

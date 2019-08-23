@@ -28,6 +28,7 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 					"box_no":     "1010590009008",
 					"sku_code":   "SPWJ948S2255070",
 					"qty":        "2",
+					"in_date":    "20190823",
 					"emp_id":     "7000028260",
 				}, map[string]string{
 					"brand_code": "SA",
@@ -36,6 +37,7 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 					"box_no":     "1010590009008",
 					"sku_code":   "SPWJ948S2256070",
 					"qty":        "3",
+					"in_date":    "20190823",
 					"emp_id":     "7000028260",
 				},
 				map[string]string{
@@ -45,6 +47,7 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 					"box_no":     "1010590009009",
 					"sku_code":   "SPYC949H2130095",
 					"qty":        "4",
+					"in_date":    "20190823",
 					"emp_id":     "7000028260",
 				}, map[string]string{
 					"brand_code": "SA",
@@ -53,6 +56,7 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 					"box_no":     "1010590009009",
 					"sku_code":   "SPYC949H2130100",
 					"qty":        "5",
+					"in_date":    "20190823",
 					"emp_id":     "7000028260",
 				},
 			}
@@ -219,6 +223,8 @@ func TestDistributionETL(t *testing.T) {
 				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
+				So(recvSupp.ShopSuppRecvDate, ShouldEqual, "20190820")
+				So(recvSupp.InvtBaseDate, ShouldEqual, "20190820")
 			}
 			syncedShouldBeTrue(receiptLocationCode, waybillNo)
 		})

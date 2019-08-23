@@ -141,7 +141,7 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 		if err != nil {
 			log.Printf(err.Error())
 		}
-		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.EmpID)
+		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.EmpID)
 		if err != nil {
 			log.Printf(err.Error())
 		}
