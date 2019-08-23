@@ -18,7 +18,7 @@ func TestGetUnsyncedDistributionOrders(t *testing.T) {
 			result, err := StockDistributionRepository{}.GetUnsyncedDistributionOrders()
 			So(err, ShouldBeNil)
 			for _, item := range result {
-				requiredKeys := [7]string{"brand_code", "shop_code", "waybill_no", "box_no", "emp_id", "sku_code", "qty"}
+				requiredKeys := [8]string{"brand_code", "shop_code", "waybill_no", "box_no", "emp_id", "sku_code", "qty", "in_date"}
 				isOk := true
 				for _, key := range requiredKeys {
 					_, ok := item[key]

@@ -163,318 +163,303 @@ func createReturnToWarehouseMasterSP() {
 
 	sql := `
 		CREATE PROCEDURE [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppMst_C1_Clearance]
-				@BrandCode			VARCHAR(4)  = NULL   
-				,@ShopCode				CHAR(4)		= NULL
-				,@Dates						char(8) = null -- 登记日期
-				,@WayBillNo			VARCHAR(13) = NULL
-				,@ShippingTypeCode		CHAR(2)		= NULL   -- 출하유형
-				,@ShippingCompanyCode  CHAR(2)     = NULL
-				,@EmpID	CHAR(10) = NULL	 -- 등록자
-				,@DeliveryID VARCHAR(250)=NULL -- 春风的billno moidfy by li.guolin 20170811
-				,@DeliveryOrderNo VARCHAR(250)=NULL -- 春风的orderno moidfy by li.guolin 20170811
-			AS     
-			--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED        
-			SET XACT_ABORT ON     
-			SET NOCOUNT ON  
-			BEGIN  
-				DECLARE @NewRecvSuppNo		CHAR(14)
-				DECLARE @NewSeq			INT
-				DECLARE @OrderControlNo    CHAR(12)
-				DECLARE @SendState			VARCHAR(2)
-				DECLARE @SendFlag			CHAR(1)
-				DECLARE @PlantCode			CHAR(4)    -- 물류창고
-				DECLARE @RecvSuppType		CHAR(1)    -- 입출고구분
-				DECLARE @SAPMenuType		CHAR(1)
-				DECLARE @UserID VARCHAR(20);
-				DECLARE @EmpName NVARCHAR(200);
-				DECLARE @ErrorCode			NVARCHAR(1000) = '';
-				DECLARE @ErrorParam1		NVARCHAR(4000) = '';
-				DECLARE @ErrorParam2		NVARCHAR(4000) = '';
-				DECLARE @ShopSuppRecvDate		CHAR(8)
-				DECLARE @TransTypeCode		CHAR(1)
-				DECLARE @RecvSuppStatusCode	CHAR(1)
-				DECLARE @NormalProductType	CHAR(1)
-				DECLARE @CurrDate				CHAR(8)=NULL
-				DECLARE @BrandSuppRecvDate	VARCHAR(8)	= NULL
-				DECLARE @VolumeType NVARCHAR(20)=N'中箱子' --moidfy by li.guolin 20170811
-				DECLARE @VolumesSize VARCHAR(20)='0.09486' --moidfy by li.guolin 20170811
-				DECLARE @VolumesUnit NVARCHAR(10)=N'm³' --moidfy by li.guolin 20170811
-				DECLARE @BoxAmount  int=1 --moidfy by li.guolin 20170811
-				DECLARE @BoxType CHAR(2)='MB'  --moidfy by li.guolin 20171009
-			
-			BEGIN TRY   
-			--ADD BY ZHANG.XINSHUAI 2018-1-29 16:20:04
-			IF(@Dates = '' OR @Dates IS NULL)   --WANGPENGDA 20091126
-			BEGIN 
-				SET @CurrDate = CONVERT(CHAR(8),GETDATE(),112) 
+			@BrandCode			VARCHAR(4)  = NULL   
+			,@ShopCode				CHAR(4)		= NULL
+			,@OutDate						CHAR(8) = null -- 退仓出库日期
+			,@WayBillNo			VARCHAR(13) = NULL
+			,@ShippingTypeCode		CHAR(2)		= NULL   -- 출하유형
+			,@ShippingCompanyCode  CHAR(2)     = NULL
+			,@EmpID	CHAR(10) = NULL	 -- 등록자
+			,@DeliveryID VARCHAR(250)=NULL -- 春风的billno moidfy by li.guolin 20170811
+			,@DeliveryOrderNo VARCHAR(250)=NULL -- 春风的orderno moidfy by li.guolin 20170811
+		AS     
+		--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED        
+		SET XACT_ABORT ON     
+		SET NOCOUNT ON  
+		BEGIN  
+			DECLARE @NewRecvSuppNo		CHAR(14)
+			DECLARE @NewSeq			INT
+			DECLARE @OrderControlNo    CHAR(12)
+			DECLARE @SendState			VARCHAR(2)
+			DECLARE @SendFlag			CHAR(1)
+			DECLARE @PlantCode			CHAR(4)    -- 물류창고
+			DECLARE @RecvSuppType		CHAR(1)    -- 입출고구분
+			DECLARE @SAPMenuType		CHAR(1)
+			DECLARE @UserID VARCHAR(20);
+			DECLARE @EmpName NVARCHAR(200);
+			DECLARE @ErrorCode			NVARCHAR(1000) = '';
+			DECLARE @ErrorParam1		NVARCHAR(4000) = '';
+			DECLARE @ErrorParam2		NVARCHAR(4000) = '';
+			DECLARE @TransTypeCode		CHAR(1)
+			DECLARE @RecvSuppStatusCode	CHAR(1)
+			DECLARE @NormalProductType	CHAR(1)
+			DECLARE @BrandSuppRecvDate	VARCHAR(8)	= NULL
+			DECLARE @VolumeType NVARCHAR(20)=N'中箱子' --moidfy by li.guolin 20170811
+			DECLARE @VolumesSize VARCHAR(20)='0.09486' --moidfy by li.guolin 20170811
+			DECLARE @VolumesUnit NVARCHAR(10)=N'm³' --moidfy by li.guolin 20170811
+			DECLARE @BoxAmount  int=1 --moidfy by li.guolin 20170811
+			DECLARE @BoxType CHAR(2)='MB'  --moidfy by li.guolin 20171009
+		
+		BEGIN TRY
+		
+		IF(@OutDate = '' OR @OutDate IS NULL)
+		BEGIN 
+			SET @OutDate = CONVERT(CHAR(8),GETDATE(),112)
+		END
+		
+			IF(@ShippingTypeCode = '47')
+				BEGIN
+					SET @NormalProductType='B'
+				END
+			ELSE
+				BEGIN
+					SET @NormalProductType='A'
+				END
+		
+			IF (@ShippingCompanyCode = 'SR')
+				BEGIN
+					SET @VolumeType = N'中箱子'
+					SET @VolumesSize = '0.09486'
+					SET @VolumesUnit = N'm³' --
+					SET @BoxAmount  = 1 --moidfy by li.g
+					SET @BoxType = 'MB'  --moidfy by
 			END
 			ELSE
-			BEGIN
-				SET @CurrDate = @Dates
-			END
-			
-				IF(@ShippingTypeCode = '47')
-					BEGIN
-						SET @NormalProductType='B'
-					END
-				ELSE
-					BEGIN
-						SET @NormalProductType='A'
-					END
-			
-				IF (@ShippingCompanyCode = 'SR')
-					BEGIN
-						SET @VolumeType = N'中箱子'
-						SET @VolumesSize = '0.09486'
-						SET @VolumesUnit = N'm³' --
-						SET @BoxAmount  = 1 --moidfy by li.g
-						SET @BoxType = 'MB'  --moidfy by
+				BEGIN
+					SET @VolumeType = NULL
+					SET @VolumesSize = NULL
+					SET @VolumesUnit = NULL --
+					SET @BoxAmount  = 1 --moidfy by li.g
+					SET @BoxType = NULL  --moidfy by
 				END
-				ELSE
-					BEGIN
-						SET @VolumeType = NULL
-						SET @VolumesSize = NULL
-						SET @VolumesUnit = NULL --
-						SET @BoxAmount  = 1 --moidfy by li.g
-						SET @BoxType = NULL  --moidfy by
-					END
-			
-			
-				-- 마감 체크  
-				IF (left(dbo.udf_CSLK_MonthlyClosingChk('02','Zn'),1) = 1)  
-				BEGIN  
-					SELECT @ErrorCode = SUBSTRING(dbo.udf_CSLK_MonthlyClosingChk('02','Zn'),2,510)  
-						EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
-					
-				END  
-				
-										
-				IF @ShippingCompanyCode=''
-					SET @ShippingCompanyCode=NULL;
-			
-			
-				--zhang.fengcheng
-				--同一运单号下的箱号不能超过999
-				IF (SELECT COUNT(DISTINCT BoxNo) FROM RecvSuppMst WITH(NOLOCK) WHERE  WayBillNo = @WayBillNo AND DelChk = 0)>=999 	
-				BEGIN  
-					SET @ErrorCode = 'IOM184'  
-					SET @ErrorParam1 = 'ReturnGoodReservation'  
+		
+		
+			-- 마감 체크  
+			IF (left(dbo.udf_CSLK_MonthlyClosingChk('02','Zn'),1) = 1)  
+			BEGIN  
+				SELECT @ErrorCode = SUBSTRING(dbo.udf_CSLK_MonthlyClosingChk('02','Zn'),2,510)  
 					EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
-				END 
-			
-				-- 순번 생성
-				SELECT @NewSeq = IsNull(MAX(SeqNo),0) + 1  
-					FROM RecvSuppMst 
-				WHERE BrandCode = @BrandCode  
-					AND ShopCode = @ShopCode  
-					AND Dates = @CurrDate  
-					AND SeqNo <6000  			--2015年6月29日14:05:35翟  
-					
-				--ShopCode(4)+yymmdd+9999(14자리)     
-				SET @NewRecvSuppNo = @ShopCode + Right(@CurrDate,6)+ Right(replicate('0',4) + convert(varchar,@NewSeq),4)  
-			
-			/*
-				임시 저장 모드로 내용 변경
-			*/
-				SET @RecvSuppType = 'S'   -- 입출고구분 S:출고/ R:입고  
-				SET @TransTypeCode = '5'  -- 운송타입  
-				SET @RecvSuppStatusCode = 'R' -- 卖场退仓确定
-				SET @CurrDate = CONVERT(CHAR(8),GETDATE(),112)  
 				
-				
-				-- 통제번호/반품통제 창고 가져오기  
-				SELECT @OrderControlNo = OrderControlNo  
-					, @PlantCode = PlantCode  
-					FROM OrderControl  WITH(NOLOCK)
-				WHERE ShippingTypeCode = @ShippingTypeCode  
-					AND BrandCode = @BrandCode  
-					AND StartDate <=  @CurrDate  
-					AND EndDate >= @CurrDate  
-					AND DelChk = 0
-				
-				-- 창고코드 : 통제에 창고코드가 없는경우   
-				IF @PlantCode IS NULL OR @PlantCode = ''  
-				BEGIN  
-					SELECT @PlantCode = PlantCode  
-						FROM Brand  WITH(NOLOCK)
-					WHERE BrandCode = @BrandCode  
-				END   
-				
-				-- 통제대상 여부 확인  
-				IF @OrderControlNo IS NULL OR @OrderControlNo = ''  
-				BEGIN  
-					print '1'
-					SET @ErrorCode = 'COM051'  
-					SET @ErrorParam1 = 'ReturnGoodReservation'  
-					EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
-				END   
-				--날짜  
-				IF @Dates IS NULL OR @Dates = ''  
-				SET @Dates = @CurrDate  
+			END  
 			
-				SET @ShopSuppRecvDate = @CurrDate  
-			
-			/*
-				임시 저장 모드로 내용 변경
-			*/  
-				-- SAP관련세팅  
-				SET @SendFlag = 'R'		-- SAP 인터 페이스 방지
-				SET @SendState = ''   
-				SET @SAPMenuType = '3'		-- 반품:3  
-			
-			
-				SELECT @EmpName = EmpName
-					FROM Employee
-					WHERE EmpID = @EmpID
-			
-			
-					SELECT @UserID = UserID
-					FROM UserInfo
-					WHERE EmpID = @EmpID
-			
-			
-					IF EXISTS ( SELECT 1 FROM RecvSuppMst  WITH(NOLOCK)
-											WHERE BrandCode = @BrandCode 
-												AND ShopCode = @ShopCode
-												AND WayBillNo = @WayBillNo
-												AND BoxNo = RTRIM(@WayBillNo)
-												AND ShippingCompanyCode=@ShippingCompanyCode
-												AND DelChk = 0
-												--AND RecvSuppStatusCode<> 'T'
-												)
-					BEGIN  
-						SELECT 
-							RecvSuppNo AS RecvSuppNo 
-						FROM RecvSuppMst WITH(NOLOCK)
-							WHERE BrandCode = @BrandCode 
-							AND ShopCode = @ShopCode
-							AND WayBillNo = @WayBillNo
-							AND BoxNo = RTRIM(@WayBillNo)
-							AND ShippingCompanyCode=@ShippingCompanyCode
-							AND DelChk = 0
-						RETURN
-					END
-			
-				-- 입출고 공통 (반품Master)  
-				INSERT INTO RecvSuppMst  
-							(
-								RecvSuppNo
-							,BrandCode
-							,ShopCode
-							,Dates
-							,SeqNo
-							,RecvSuppType
-							,NormalProductType
-							,ShopSuppRecvDate
-							,TransTypeCode
-							,ShippingTypeCode
-							,WayBillNo
-							,RecvSuppStatusCode
-							,BoxNo
-							,PlantCode
-							,OrderControlNo
-							,RecvEmpID
-							,RecvEmpName
-							,SuppEmpID
-							,SuppEmpName
-							,InUserID
-							,InDateTime
-							,ModiUserID
-							,ModiDateTime
-							,BrandSuppRecvDate
-							,SAPMenuType
-							,SendFlag
-							,InvtBaseDate
-							,ShippingCompanyCode --add by li.guolin 20170214
-							,DeliveryID
-							,DeliveryOrderNo
-							,VolumeType
-							,VolumesSize
-							,VolumesUnit
-							,BoxAmount
-							,ProvinceCode
-							,CityCode
-							,DistrictCode
-							,Area
-							,ShopManagerName
-							,MobilePhone
-							,BoxType
-							,Channel --add by zhang.xinshuai 2018-1-26 13:41:57
-							)  
-					VALUES(
-								@NewRecvSuppNo
-								,@BrandCode
-								,@ShopCode
-								,@Dates
-								,@NewSeq
-								,@RecvSuppType
-								,@NormalProductType
-								,@ShopSuppRecvDate
-								,@TransTypeCode
-								,@ShippingTypeCode
-								,@WayBillNo
-								,@RecvSuppStatusCode
-								,@WayBillNo
-								,@PlantCode
-								,@OrderControlNo
-								,''
-								,''
-								,@EmpID
-								,@EmpName
-								,@UserID     -- 등록자
-								,GETDATE()
-								,@UserID     -- 수정자
-								,GETDATE()
-								,@BrandSuppRecvDate
-								,@SAPMenuType
-								,@SendFlag
-								,@CurrDate
-								,@ShippingCompanyCode --add by li.guolin 20170214
-								,@DeliveryID
-								,@DeliveryOrderNo
-								,@VolumeType
-								,@VolumesSize
-								,@VolumesUnit
-								,@BoxAmount
-								,'SHH'
-								,'SHH01'
-								,'SHH01015'
-								,N'莲花南路3130号 衣恋物流中心'
-								,N'张殿利'
-								,'13917778786'
-								,@BoxType
-								,'Clearance'
-							)    -- 재고기준일자  
-			
-				/*
-				添加物流信息
-				*/
-					IF NOT EXISTS(
-						SELECT 1
-						FROM WayBillNo
-						WHERE ShippingCompanyCode=@ShippingCompanyCode
-						AND WayBillNo=@WayBillNo
-					)
-					BEGIN
-						INSERT INTO WayBillNo
-						(
-							ShippingCompanyCode, WayBillNo, AllowDulpChk, InUserID, InDateTime, ModiUserID, ModiDateTime
-						)
-						VALUES
-						(
-							@ShippingCompanyCode,@WayBillNo,0,@UserID,GETDATE(),@UserID,GETDATE()
-						)
-					END
-			
-				SELECT @NewRecvSuppNo AS RecvSuppNo   
-				
-			END TRY  
-			BEGIN CATCH  
-				
+									
+			IF @ShippingCompanyCode=''
+				SET @ShippingCompanyCode=NULL;
+		
+		
+			--zhang.fengcheng
+			--同一运单号下的箱号不能超过999
+			IF (SELECT COUNT(DISTINCT BoxNo) FROM RecvSuppMst WITH(NOLOCK) WHERE  WayBillNo = @WayBillNo AND DelChk = 0)>=999 	
+			BEGIN  
+				SET @ErrorCode = 'IOM184'  
+				SET @ErrorParam1 = 'ReturnGoodReservation'  
 				EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
+			END 
+		
+			-- 순번 생성
+			SELECT @NewSeq = IsNull(MAX(SeqNo),0) + 1  
+				FROM RecvSuppMst 
+			WHERE BrandCode = @BrandCode  
+				AND ShopCode = @ShopCode  
+				AND Dates = @OutDate
+				AND SeqNo <6000  			--2015年6月29日14:05:35翟  
 				
-			END CATCH   
+			--ShopCode(4)+yymmdd+9999(14자리)     
+			SET @NewRecvSuppNo = @ShopCode + Right(@OutDate,6)+ Right(replicate('0',4) + convert(varchar,@NewSeq),4)
+		
+		/*
+			임시 저장 모드로 내용 변경
+		*/
+			SET @RecvSuppType = 'S'   -- 입출고구분 S:출고/ R:입고  
+			SET @TransTypeCode = '5'  -- 운송타입  
+			SET @RecvSuppStatusCode = 'R' -- 卖场退仓确定
+			
+			-- 통제번호/반품통제 창고 가져오기  
+			SELECT @OrderControlNo = OrderControlNo  
+				, @PlantCode = PlantCode  
+				FROM OrderControl  WITH(NOLOCK)
+			WHERE ShippingTypeCode = @ShippingTypeCode  
+				AND BrandCode = @BrandCode  
+				AND StartDate <=  @OutDate
+				AND EndDate >= @OutDate
+				AND DelChk = 0
+			
+			-- 창고코드 : 통제에 창고코드가 없는경우   
+			IF @PlantCode IS NULL OR @PlantCode = ''  
+			BEGIN  
+				SELECT @PlantCode = PlantCode  
+					FROM Brand  WITH(NOLOCK)
+				WHERE BrandCode = @BrandCode  
+			END   
+			
+			-- 통제대상 여부 확인  
+			IF @OrderControlNo IS NULL OR @OrderControlNo = ''  
+			BEGIN  
+				print '1'
+				SET @ErrorCode = 'COM051'  
+				SET @ErrorParam1 = 'ReturnGoodReservation'  
+				EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
 			END
+		
+		/*
+			임시 저장 모드로 내용 변경
+		*/  
+			-- SAP관련세팅  
+			SET @SendFlag = 'R'		-- SAP 인터 페이스 방지
+			SET @SendState = ''   
+			SET @SAPMenuType = '3'		-- 반품:3  
+		
+		
+			SELECT @EmpName = EmpName
+				FROM Employee
+				WHERE EmpID = @EmpID
+		
+		
+				SELECT @UserID = UserID
+				FROM UserInfo
+				WHERE EmpID = @EmpID
+		
+		
+				IF EXISTS ( SELECT 1 FROM RecvSuppMst  WITH(NOLOCK)
+										WHERE BrandCode = @BrandCode 
+											AND ShopCode = @ShopCode
+											AND WayBillNo = @WayBillNo
+											AND BoxNo = RTRIM(@WayBillNo)
+											AND ShippingCompanyCode=@ShippingCompanyCode
+											AND DelChk = 0
+											--AND RecvSuppStatusCode<> 'T'
+											)
+				BEGIN
+					SELECT RecvSuppNo AS RecvSuppNo FROM RecvSuppMst  WITH(NOLOCK)
+										WHERE BrandCode = @BrandCode
+											AND ShopCode = @ShopCode
+											AND WayBillNo = @WayBillNo
+											AND BoxNo = RTRIM(@WayBillNo)
+											AND ShippingCompanyCode=@ShippingCompanyCode
+											AND DelChk = 0
+					RETURN
+				END
+		
+			-- 입출고 공통 (반품Master)  
+			INSERT INTO RecvSuppMst  
+						(
+							RecvSuppNo
+						,BrandCode
+						,ShopCode
+						,Dates
+						,SeqNo
+						,RecvSuppType
+						,NormalProductType
+						,ShopSuppRecvDate
+						,TransTypeCode
+						,ShippingTypeCode
+						,WayBillNo
+						,RecvSuppStatusCode
+						,BoxNo
+						,PlantCode
+						,OrderControlNo
+						,RecvEmpID
+						,RecvEmpName
+						,SuppEmpID
+						,SuppEmpName
+						,InUserID
+						,InDateTime
+						,ModiUserID
+						,ModiDateTime
+						,BrandSuppRecvDate
+						,SAPMenuType
+						,SendFlag
+						,InvtBaseDate
+						,ShippingCompanyCode --add by li.guolin 20170214
+						,DeliveryID
+						,DeliveryOrderNo
+						,VolumeType
+						,VolumesSize
+						,VolumesUnit
+						,BoxAmount
+						,ProvinceCode
+						,CityCode
+						,DistrictCode
+						,Area
+						,ShopManagerName
+						,MobilePhone
+						,BoxType
+						,Channel --add by zhang.xinshuai 2018-1-26 13:41:57
+						)  
+				VALUES(
+							@NewRecvSuppNo
+							,@BrandCode
+							,@ShopCode
+							,@OutDate
+							,@NewSeq
+							,@RecvSuppType
+							,@NormalProductType
+							,@OutDate
+							,@TransTypeCode
+							,@ShippingTypeCode
+							,@WayBillNo
+							,@RecvSuppStatusCode
+							,@WayBillNo
+							,@PlantCode
+							,@OrderControlNo
+							,''
+							,''
+							,@EmpID
+							,@EmpName
+							,@UserID     -- 등록자
+							,GETDATE()
+							,@UserID     -- 수정자
+							,GETDATE()
+							,@BrandSuppRecvDate
+							,@SAPMenuType
+							,@SendFlag
+							,@OutDate
+							,@ShippingCompanyCode --add by li.guolin 20170214
+							,@DeliveryID
+							,@DeliveryOrderNo
+							,@VolumeType
+							,@VolumesSize
+							,@VolumesUnit
+							,@BoxAmount
+							,'SHH'
+							,'SHH01'
+							,'SHH01015'
+							,N'莲花南路3130号 衣恋物流中心'
+							,N'张殿利'
+							,'13917778786'
+							,@BoxType
+							,'Clearance'
+						)    -- 재고기준일자  
+		
+			/*
+			添加物流信息
+			*/
+				IF NOT EXISTS(
+					SELECT 1
+					FROM WayBillNo
+					WHERE ShippingCompanyCode=@ShippingCompanyCode
+					AND WayBillNo=@WayBillNo
+				)
+				BEGIN
+					INSERT INTO WayBillNo
+					(
+						ShippingCompanyCode, WayBillNo, AllowDulpChk, InUserID, InDateTime, ModiUserID, ModiDateTime
+					)
+					VALUES
+					(
+						@ShippingCompanyCode,@WayBillNo,0,@UserID,GETDATE(),@UserID,GETDATE()
+					)
+				END
+		
+			SELECT @NewRecvSuppNo AS RecvSuppNo   
+			
+		END TRY  
+		BEGIN CATCH  
+			
+			EXEC [up_CSLK_ComonRaiseError] @ErrorCode,@ErrorParam1,@ErrorParam2  
+			
+		END CATCH   
+		END
 	`
 
 	if _, err := session.Exec(sql); err != nil {

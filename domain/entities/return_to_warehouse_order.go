@@ -12,6 +12,7 @@ type ReturnToWarehouseOrder struct {
 	WaybillNo            string
 	StatusCode           string
 	EmpID                string
+	OutDate              string
 	DeliveryOrderNo      string
 	Items                []ReturnToWarehouseOrderItem
 }
@@ -30,7 +31,7 @@ func (ReturnToWarehouseOrder) Create(data []map[string]string) (ReturnToWarehous
 	}
 
 	orderData := data[0]
-	err := checkRequirement(orderData, "brand_code", "shipment_location_code", "waybill_no", "status_code", "emp_id")
+	err := checkRequirement(orderData, "brand_code", "shipment_location_code", "waybill_no", "status_code", "emp_id", "out_date")
 	if err != nil {
 		return order, err
 	}
@@ -40,6 +41,7 @@ func (ReturnToWarehouseOrder) Create(data []map[string]string) (ReturnToWarehous
 	order.WaybillNo = orderData["waybill_no"]
 	order.StatusCode = orderData["status_code"]
 	order.EmpID = orderData["emp_id"]
+	order.OutDate = infra.Parse8BitsDate(orderData["out_date"], nil)
 	order.DeliveryOrderNo = orderData["delivery_order_no"]
 	order.Items = make([]ReturnToWarehouseOrderItem, 0)
 

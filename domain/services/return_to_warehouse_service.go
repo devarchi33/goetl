@@ -80,7 +80,7 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 			log.Printf(err.Error())
 		}
 
-		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseOrder(order.BrandCode, shopCode, order.WaybillNo, order.EmpID, order.DeliveryOrderNo)
+		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseOrder(order.BrandCode, shopCode, order.WaybillNo, order.OutDate, order.EmpID, order.DeliveryOrderNo)
 		if err != nil {
 			log.Printf(err.Error())
 			continue
@@ -90,7 +90,7 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 		wg.Add(len(order.Items))
 		for _, v := range order.Items {
 			go func(item entities.ReturnToWarehouseOrderItem, wg *sync.WaitGroup) {
-				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseOrderItem(order.BrandCode, shopCode, recvSuppNo, item.SkuCode, item.Qty, order.EmpID)
+				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseOrderItem(order.BrandCode, shopCode, order.OutDate, recvSuppNo, item.SkuCode, item.Qty, order.EmpID)
 				if err != nil {
 					log.Printf(err.Error())
 				}

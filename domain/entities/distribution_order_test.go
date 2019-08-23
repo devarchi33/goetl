@@ -19,6 +19,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 					"sku_code":   "SPWJ948S2255070",
 					"qty":        "2",
 					"emp_id":     "7000028260",
+					"in_date":    "2019-08-18T19:03:13Z",
 				}, map[string]string{
 					"brand_code": "SA",
 					"shop_code":  "CEGP",
@@ -27,6 +28,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 					"sku_code":   "SPWJ948S2256070",
 					"qty":        "3",
 					"emp_id":     "7000028260",
+					"in_date":    "2019-08-18T19:03:13Z",
 				},
 			}
 			order, err := DistributionOrder{}.Create(data)
@@ -52,6 +54,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 					"sku_code":   "SPWJ948S2255070",
 					"qty":        "2",
 					"emp_id":     "7000028260",
+					"in_date":    "2019-08-18T19:03:13Z",
 				},
 			}
 			_, err := DistributionOrder{}.Create(data)
@@ -67,6 +70,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 					"box_no":     "1010590009008",
 					"sku_code":   "SPWJ948S2255070",
 					"emp_id":     "7000028260",
+					"in_date":    "2019-08-18T19:03:13Z",
 				},
 			}
 			_, err := DistributionOrder{}.Create(data)
