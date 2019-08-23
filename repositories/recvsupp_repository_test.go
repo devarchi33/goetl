@@ -35,7 +35,7 @@ func TestGetByWaybillNo(t *testing.T) {
 
 func TestCreateReturnToWarehouseOrder(t *testing.T) {
 	Convey("测试CreateReturnToWarehouseOrder", t, func() {
-		recvSuppNo, err := RecvSuppRepository{}.CreateReturnToWarehouseOrder("SA", "CEGP", "2010590009008", "7000028260", "456")
+		recvSuppNo, err := RecvSuppRepository{}.CreateReturnToWarehouseOrder("SA", "CEGP", "2010590009008", "20190823", "7000028260", "456")
 		Convey("SA-CEGP卖场应该有一个运单号为2010590009008的退仓订单", func() {
 			So(err, ShouldBeNil)
 			So(strings.HasPrefix(recvSuppNo, "CEGP"), ShouldEqual, true)
@@ -57,12 +57,13 @@ func TestAddReturnToWarehouseOrderItem(t *testing.T) {
 	brandCode := "SA"
 	shopCode := "CEGP"
 	waybillNo := "2010590009008"
+	outDate := "20190823"
 	empID := "7000028260"
 	skuCode := "SPWJ948S2255070"
 	Convey("测试AddReturnToWarehouseOrderItem", t, func() {
-		recvSuppNo, err := RecvSuppRepository{}.CreateReturnToWarehouseOrder(brandCode, shopCode, waybillNo, empID, "456")
+		recvSuppNo, err := RecvSuppRepository{}.CreateReturnToWarehouseOrder(brandCode, shopCode, waybillNo, outDate, empID, "456")
 		So(err, ShouldBeNil)
-		err = RecvSuppRepository{}.AddReturnToWarehouseOrderItem(brandCode, shopCode, recvSuppNo, skuCode, 1, empID)
+		err = RecvSuppRepository{}.AddReturnToWarehouseOrderItem(brandCode, shopCode, outDate, recvSuppNo, skuCode, 1, empID)
 		So(err, ShouldBeNil)
 		Convey("SA-CEGP卖场运单号为2010590009008的退仓订单中应该有一个商品代码为SPWJ948S2255070的商品，并且出库数量为1", func() {
 			recvSupp, err := RecvSuppRepository{}.GetByWaybillNo(brandCode, shopCode, waybillNo)

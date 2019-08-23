@@ -95,12 +95,12 @@ func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, 
 }
 
 // CreateReturnToWarehouseOrder 创建退仓订单，返回RecvSuppNo
-func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, waybillNo, empID, deliveryOrderNo string) (string, error) {
+func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, waybillNo, outDate, empID, deliveryOrderNo string) (string, error) {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppMst_C1_Clearance]
 			@BrandCode				= ?
 			,@ShopCode				= ?
-			,@Dates					= ?
+			,@OutDate				= ?
 			,@WayBillNo				= ?
 			,@ShippingTypeCode		= '41'
 			,@ShippingCompanyCode  	= 'SR'
@@ -108,8 +108,8 @@ func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, wayb
 			,@DeliveryID 			= ?
 			,@DeliveryOrderNo 		= ?
 	`
-	today := time.Now().Format("20060102")
-	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, today, waybillNo, empID, waybillNo, deliveryOrderNo)
+
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, outDate, waybillNo, empID, waybillNo, deliveryOrderNo)
 	if err != nil {
 		return "", err
 	}
@@ -124,7 +124,7 @@ func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, wayb
 }
 
 // AddReturnToWarehouseOrderItem 向退仓单中添加商品
-func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
+func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, outDate, recvSuppNo, skuCode string, qty int, empID string) error {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance]
 			@RecvSuppNo			        = ?
@@ -139,14 +139,14 @@ func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, rec
 			,@AbnormalChkCode    		= 0
 			,@AbnormalSerialNo   		= NULL
 	`
-	today := time.Now().Format("20060102")
-	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, today, skuCode, qty, empID)
+
+	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, outDate, skuCode, qty, empID)
 	if err != nil {
 		log.Println("up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance params:")
 		log.Printf("recvSuppNo: %v", recvSuppNo)
 		log.Printf("brandCode: %v", brandCode)
 		log.Printf("shopCode: %v", shopCode)
-		log.Printf("today: %v", today)
+		log.Printf("outDate: %v", outDate)
 		log.Printf("skuCode: %v", skuCode)
 
 		return err

@@ -19,7 +19,8 @@ func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseOrders() ([]map[s
 			rtw.status AS status_code,
 			sku.code AS sku_code,
 			rtwi.quantity AS qty,
-			emp.employee_no AS emp_id
+			emp.employee_no AS emp_id,
+			rtw.out_created_at AS out_date
 		FROM pangpang_brand_sku_location.return_to_warehouse AS rtw
 			JOIN pangpang_brand_sku_location.return_to_warehouse_item AS rtwi
 				ON rtw.id = rtwi.return_to_warehouse_id

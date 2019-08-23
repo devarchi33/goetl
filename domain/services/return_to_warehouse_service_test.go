@@ -31,6 +31,7 @@ func TestTransform(t *testing.T) {
 					"sku_code":               "SPWJ948S2255070",
 					"qty":                    "2",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-22T19:01:01Z",
 				}, map[string]string{
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
@@ -39,6 +40,7 @@ func TestTransform(t *testing.T) {
 					"sku_code":               "SPWJ948S2256070",
 					"qty":                    "3",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-22T19:01:01Z",
 				},
 				map[string]string{
 					"brand_code":             "SA",
@@ -48,6 +50,7 @@ func TestTransform(t *testing.T) {
 					"sku_code":               "SPYC949H2130095",
 					"qty":                    "4",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-22T19:01:01Z",
 				}, map[string]string{
 					"brand_code":             "SA",
 					"shipment_location_code": "CEGP",
@@ -56,6 +59,7 @@ func TestTransform(t *testing.T) {
 					"sku_code":               "SPYC949H2130100",
 					"qty":                    "5",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-22T19:01:01Z",
 				},
 			}
 
@@ -73,6 +77,7 @@ func TestTransform(t *testing.T) {
 				if order.BrandCode == "SA" && order.ShipmentLocationCode == "CEGP" && order.WaybillNo == "1010590009008" {
 					So(order.StatusCode, ShouldEqual, p2bConst.StsSentOut)
 					So(order.EmpID, ShouldEqual, "7000028260")
+					So(order.OutDate, ShouldEqual, "20190823")
 					So(order.Items, ShouldNotBeNil)
 					So(len(order.Items), ShouldEqual, 2)
 					So(order.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
@@ -166,6 +171,9 @@ func TestReturnToWarehouseETL(t *testing.T) {
 				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
 				So(recvSupp.RecvSuppMst.InUserID, ShouldEqual, "shi.yanxun")
 				So(recvSupp.RecvSuppDtl.InUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppMst.Dates, ShouldEqual, "20190814")
+				So(recvSupp.ShopSuppRecvDate, ShouldEqual, "20190814")
+				So(recvSupp.InvtBaseDate, ShouldEqual, "20190814")
 				if recvSupp.ProdCode == "Q3AFAFDU6S2100230" {
 					So(recvSupp.RecvSuppQty, ShouldEqual, 2)
 				}

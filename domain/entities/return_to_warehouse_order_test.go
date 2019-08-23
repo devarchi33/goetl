@@ -21,6 +21,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"sku_code":               "SPWJ948S2255070",
 					"qty":                    "2",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-18T19:03:13Z",
 					"delivery_order_no":      "456",
 				}, map[string]string{
 					"brand_code":             "SA",
@@ -30,6 +31,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"sku_code":               "SPWJ948S2256070",
 					"qty":                    "3",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-18T19:03:13Z",
 					"delivery_order_no":      "456",
 				},
 			}
@@ -40,6 +42,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 			So(order.WaybillNo, ShouldEqual, "1010590009008")
 			So(order.StatusCode, ShouldEqual, p2bConst.StsSentOut)
 			So(order.EmpID, ShouldEqual, "7000028260")
+			So(order.OutDate, ShouldEqual, "20190819")
 			So(order.DeliveryOrderNo, ShouldEqual, "456")
 			So(order.Items, ShouldNotBeNil)
 			So(len(order.Items), ShouldEqual, 2)
@@ -56,6 +59,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"sku_code":          "SPWJ948S2255070",
 					"qty":               "2",
 					"emp_id":            "7000028260",
+					"out_date":          "2019-08-18T19:03:13Z",
 					"delivery_order_no": "456",
 				},
 			}
@@ -72,6 +76,7 @@ func TestCreateReturnToWarehouse(t *testing.T) {
 					"status_code":            p2bConst.StsSentOut,
 					"sku_code":               "SPWJ948S2255070",
 					"emp_id":                 "7000028260",
+					"out_date":               "2019-08-18T19:03:13Z",
 					"delivery_order_no":      "456",
 				},
 			}
