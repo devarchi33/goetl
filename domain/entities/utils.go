@@ -4,7 +4,7 @@ import "errors"
 
 func checkRequirement(data map[string]string, requiredKeys ...string) error {
 	for _, key := range requiredKeys {
-		if _, ok := data[key]; !ok {
+		if v, ok := data[key]; !ok || len(v) == 0 {
 			return errors.New(key + " is required")
 		}
 	}
