@@ -29,5 +29,11 @@ func main() {
 		log.Println(err.Error())
 	}
 
+	transferETL := services.TransferETL{}.New()
+	err = transferETL.Run(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	log.Printf("结束同步: %s \n", end)
 }

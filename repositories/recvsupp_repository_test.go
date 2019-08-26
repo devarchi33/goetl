@@ -4,7 +4,6 @@ import (
 	cslConst "clearance-adapter/domain/csl-constants"
 	"strings"
 	"testing"
-	"time"
 
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
@@ -69,7 +68,7 @@ func TestAddReturnToWarehouseOrderItem(t *testing.T) {
 			recvSupp, err := RecvSuppRepository{}.GetByWaybillNo(brandCode, shopCode, waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSupp), ShouldEqual, 1)
-			So(recvSupp[0].RecvSuppMst.Dates, ShouldEqual, time.Now().Format("20060102"))
+			So(recvSupp[0].RecvSuppMst.Dates, ShouldEqual, outDate)
 			So(recvSupp[0].ProdCode, ShouldEqual, skuCode)
 			So(recvSupp[0].RecvSuppQty, ShouldEqual, 1)
 		})
@@ -88,9 +87,10 @@ func TestCreateTransferOrder(t *testing.T) {
 		shippingCompanyCode := "SR"
 		deliveryOrderNo := "456"
 		empID := "7000028260"
+		outDate := "20190826"
 
 		Convey("SA-CEGP卖场应该有一个运单号为20190815001的调货单，调给SA-CJ2F，并且不是跨广域支社调货", func() {
-			recvSuppNo, err := RecvSuppRepository{}.CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
+			recvSuppNo, err := RecvSuppRepository{}.CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
 			So(err, ShouldBeNil)
 			So(strings.HasPrefix(recvSuppNo, shipmentLocationCode), ShouldEqual, true)
 			masters := make([]models.RecvSuppMst, 0)
@@ -116,7 +116,8 @@ func TestCreateTransferOrder(t *testing.T) {
 			waybillNo := "20190815002"
 			boxNo := "20190815002-1"
 			receiptLocationCode = "CFGY"
-			recvSuppNo, err := RecvSuppRepository{}.CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
+			outDate := "20190826"
+			recvSuppNo, err := RecvSuppRepository{}.CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
 			So(err, ShouldBeNil)
 			So(strings.HasPrefix(recvSuppNo, shipmentLocationCode), ShouldEqual, true)
 			masters := make([]models.RecvSuppMst, 0)
@@ -138,14 +139,15 @@ func TestAddTransferOrderItem(t *testing.T) {
 		recvSuppNo := TransferOrderRecvSuppNp
 		empID := "7000028260"
 		waybillNo := "20190815001"
+		outDate := "20190826"
 		Convey("SA-CEGP卖场运单号为20190815001的调货单，添加两个商品，SPWJ948S2255070的数量应该为1，SPYS949H2250100的商品数量应该为2", func() {
 			skuCode := "SPWJ948S2255070"
 			qty := 1
-			err := RecvSuppRepository{}.AddTransferOrderItem(brandCode, shipmentLocationCode, recvSuppNo, skuCode, qty, empID)
+			err := RecvSuppRepository{}.AddTransferOrderItem(brandCode, shipmentLocationCode, outDate, recvSuppNo, skuCode, qty, empID)
 			So(err, ShouldBeNil)
 			skuCode = "SPYS949H2250100"
 			qty = 2
-			err = RecvSuppRepository{}.AddTransferOrderItem(brandCode, shipmentLocationCode, recvSuppNo, skuCode, qty, empID)
+			err = RecvSuppRepository{}.AddTransferOrderItem(brandCode, shipmentLocationCode, outDate, recvSuppNo, skuCode, qty, empID)
 			So(err, ShouldBeNil)
 			recvSupp, err := RecvSuppRepository{}.GetByWaybillNo(brandCode, shipmentLocationCode, waybillNo)
 			So(err, ShouldBeNil)
@@ -171,8 +173,9 @@ func TestConfirmTransferOrder(t *testing.T) {
 		empID := "7000028260"
 		waybillNo := "20190815001"
 		boxNo := "20190815001-1"
+		inDate := "20190826"
 		Convey("SA-CJ2F卖场应该有对运单号为20190815001的调货单有确认记录，并且SPWJ948S2255070的数量应该为1，SPYS949H2250100的商品数量应该为2", func() {
-			recvSuppNo, err := RecvSuppRepository{}.ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
+			recvSuppNo, err := RecvSuppRepository{}.ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, inDate, waybillNo, boxNo, roundRecvSuppNo, empID)
 			So(err, ShouldBeNil)
 			So(strings.HasPrefix(recvSuppNo, receiptLocationCode), ShouldEqual, true)
 			masters := make([]models.RecvSuppMst, 0)
@@ -244,6 +247,8 @@ func TestCreateTransferOrderSet(t *testing.T) {
 				Find(&masters)
 			So(err, ShouldBeNil)
 			So(len(masters), ShouldEqual, 1)
+			So(masters[0].Dates, ShouldEqual, outDate)
+			So(masters[0].ShopSuppRecvDate, ShouldEqual, outDate)
 			So(masters[0].TargetShopCode, ShouldEqual, receiptLocationCode)
 			So(masters[0].RecvSuppStatusCode, ShouldEqual, cslConst.StsConfirmed)
 		})
@@ -266,6 +271,8 @@ func TestCreateTransferOrderSet(t *testing.T) {
 			So(masters[0].TargetShopCode, ShouldEqual, shipmentLocationCode)
 			So(masters[0].WayBillNo, ShouldEqual, waybillNo)
 			So(masters[0].RecvSuppStatusCode, ShouldEqual, cslConst.StsConfirmed)
+			So(masters[0].Dates, ShouldEqual, inDate)
+			So(masters[0].ShopSuppRecvDate, ShouldEqual, inDate)
 			details := make([]models.RecvSuppDtl, 0)
 			err = factory.GetCSLEngine().Where("RecvSuppNo = ?", masters[0].RecvSuppNo).Find(&details)
 			So(err, ShouldBeNil)

@@ -3,8 +3,6 @@ package entities
 import (
 	"clearance-adapter/infra"
 	"errors"
-	"fmt"
-	"time"
 )
 
 // TransferOrder 以StockRound为主的信息，会把id替换成code
@@ -47,9 +45,9 @@ func (TransferOrder) Create(data []map[string]string) (TransferOrder, error) {
 	order.WaybillNo = orderData["waybill_no"]
 	order.BoxNo = orderData["box_no"]
 	order.OutEmpID = orderData["out_emp_id"]
-	order.OutDate = TransferOrder{}.parseDate(orderData["out_date"])
+	order.OutDate = infra.Parse8BitsDate(orderData["out_date"], nil)
 	order.InEmpID = orderData["in_emp_id"]
-	order.InDate = TransferOrder{}.parseDate(orderData["in_date"])
+	order.InDate = infra.Parse8BitsDate(orderData["in_date"], nil)
 	order.ShippingCompanyCode = orderData["shipping_company_code"]
 	order.Items = make([]TransferOrderItem, 0)
 
@@ -65,16 +63,4 @@ func (TransferOrder) Create(data []map[string]string) (TransferOrder, error) {
 	}
 
 	return order, nil
-}
-
-func (TransferOrder) parseDate(datetime string) string {
-	date, err := time.Parse("2006-01-02T15:04:05Z", datetime)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-	zone := "Asia/Shanghai"
-	local, _ := time.LoadLocation(zone)
-
-	return date.In(local).Format("20060102")
 }
