@@ -291,7 +291,7 @@ func createStockRoundTable() {
 		INSERT INTO pangpang_brand_sku_location.stock_round 
 		(tenant_code, brand_code, box_no, waybill_no, shipment_location_id, receipt_location_id, synced, created_at, last_updated_at, colleague_id, status, in_created_at, out_created_at, in_colleague_id, out_colleague_id, shipping_company_code) 
 		VALUES 
-		('pangpang', 'SA', '20190821001', '20190821001', 2, 3, 0, '2019-08-20 13:42:13', '2019-08-20 15:02:09', 1, 'F', '2019-08-20 22:02:09', '2019-08-20 20:02:09', 1, 1, 'SR');
+		('pangpang', 'SA', '20190821001', '20190821001', 2, 3, 0, '2019-08-20 13:42:13', '2019-08-20 15:02:09', 1, 'F', '2019-08-21 22:02:09', '2019-08-20 22:02:09', 1, 1, 'SR');
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockRoundTable error: %v", err.Error())

@@ -52,12 +52,15 @@ func TestTransferETL(t *testing.T) {
 		receiptLocationCode := "CFGY"
 		waybillNo := "20190821001"
 
-		Convey("CEGP卖场调到CFGY卖场的运单为20190821001的调货单同步后，应该在CSL有调出数据", func() {
+		Convey("CEGP卖场调到CFGY卖场的运单为20190821001的调货单同步后，应该在CSL有调出数据，出库日期为20190821", func() {
 			recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(brandCode, shipmentLocationCode, waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSupp), ShouldEqual, 2)
 			for _, v := range recvSupp {
 				So(v.RecvSuppStatusCode, ShouldEqual, cslConst.StsConfirmed)
+				So(v.RecvSuppMst.Dates, ShouldEqual, "20190821")
+				So(v.RecvSuppDtl.Dates, ShouldEqual, "20190821")
+				So(v.ShopSuppRecvDate, ShouldEqual, "20190821")
 				if v.ProdCode == "SPWJ948S2255070" {
 					So(v.RecvSuppQty, ShouldEqual, 4)
 				}
@@ -66,12 +69,15 @@ func TestTransferETL(t *testing.T) {
 				}
 			}
 		})
-		Convey("CEGP卖场调到CFGY卖场的运单为20190821001的调货单同步后，应该在CSL有调入数据", func() {
+		Convey("CEGP卖场调到CFGY卖场的运单为20190821001的调货单同步后，应该在CSL有调入数据，入库日期为20190822", func() {
 			recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(brandCode, receiptLocationCode, waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSupp), ShouldEqual, 2)
 			for _, v := range recvSupp {
 				So(v.RecvSuppStatusCode, ShouldEqual, cslConst.StsConfirmed)
+				So(v.RecvSuppMst.Dates, ShouldEqual, "20190822")
+				So(v.RecvSuppDtl.Dates, ShouldEqual, "20190822")
+				So(v.ShopSuppRecvDate, ShouldEqual, "20190822")
 				if v.ProdCode == "SPWJ948S2255070" {
 					So(v.RecvSuppFixedQty, ShouldEqual, 4)
 				}

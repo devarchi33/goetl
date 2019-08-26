@@ -7,7 +7,6 @@ import (
 	"clearance-adapter/repositories/entities"
 	"errors"
 	"log"
-	"time"
 
 	"github.com/go-xorm/xorm"
 )
@@ -156,18 +155,18 @@ func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, out
 }
 
 // CreateTransferOrder 创建调货出库单
-func (RecvSuppRepository) CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
+func (RecvSuppRepository) CreateTransferOrder(brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
 	session := factory.GetCSLEngine().NewSession()
-	return RecvSuppRepository{}.createTransferOrder(session, brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
+	return RecvSuppRepository{}.createTransferOrder(session, brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
 }
 
-func (RecvSuppRepository) createTransferOrder(session *xorm.Session, brandCode, shipmentLocationCode, receiptLocationCode, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
+func (RecvSuppRepository) createTransferOrder(session *xorm.Session, brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID string) (string, error) {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance]
 			@BrandCode				= ?
 			,@ShopCode				= ?
 			,@TargetShopCode		= ?
-			,@Dates					= ?
+			,@OutDate				= ?
 			,@WayBillNo				= ?
 			,@BoxNo					= ?
 			,@ShippingCompanyCode  	= ?
@@ -184,8 +183,8 @@ func (RecvSuppRepository) createTransferOrder(session *xorm.Session, brandCode, 
 			,@ShopManagerName 		= NULL
 			,@MobilePhone 			= NULL
 	`
-	today := time.Now().Format("20060102")
-	result, err := factory.GetCSLEngine().Query(sql, brandCode, shipmentLocationCode, receiptLocationCode, today, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
+
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
 	if err != nil {
 		return "", errors.New("exec up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance failed " + err.Error())
 	}
@@ -200,31 +199,31 @@ func (RecvSuppRepository) createTransferOrder(session *xorm.Session, brandCode, 
 }
 
 // AddTransferOrderItem 向调货出库单中添加商品
-func (RecvSuppRepository) AddTransferOrderItem(brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
+func (RecvSuppRepository) AddTransferOrderItem(brandCode, shopCode, outDate, recvSuppNo, skuCode string, qty int, empID string) error {
 	session := factory.GetCSLEngine().NewSession()
-	return RecvSuppRepository{}.addTransferOrderItem(session, brandCode, shopCode, recvSuppNo, skuCode, qty, empID)
+	return RecvSuppRepository{}.addTransferOrderItem(session, brandCode, shopCode, outDate, recvSuppNo, skuCode, qty, empID)
 }
 
-func (RecvSuppRepository) addTransferOrderItem(session *xorm.Session, brandCode, shopCode, recvSuppNo, skuCode string, qty int, empID string) error {
+func (RecvSuppRepository) addTransferOrderItem(session *xorm.Session, brandCode, shopCode, outDate, recvSuppNo, skuCode string, qty int, empID string) error {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertRotationOuterReg_RecvSuppDtl_C1_Clearance]
 			@RecvSuppNo   	= ?
 			,@RecvSuppSeqNo	= NULL
 			,@BrandCode  	= ?
 			,@ShopCode  	= ?
-			,@Dates  		= ?
+			,@OutDate  		= ?
 			,@ProdCode    	= ?
 			,@RecvSuppQty 	=  ?
 			,@EmpID 		= ?
 	`
-	today := time.Now().Format("20060102")
-	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, today, skuCode, qty, empID)
+
+	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, outDate, skuCode, qty, empID)
 	if err != nil {
 		log.Println("up_CSLK_IOM_InsertRotationOuterReg_RecvSuppDtl_C1_Clearance params:")
 		log.Printf("recvSuppNo: %v", recvSuppNo)
 		log.Printf("brandCode: %v", brandCode)
 		log.Printf("shopCode: %v", shopCode)
-		log.Printf("today: %v", today)
+		log.Printf("outDate: %v", outDate)
 		log.Printf("skuCode: %v", skuCode)
 
 		return err
@@ -234,24 +233,25 @@ func (RecvSuppRepository) addTransferOrderItem(session *xorm.Session, brandCode,
 }
 
 // ConfirmTransferOrder 调进确认
-func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
+func (RecvSuppRepository) ConfirmTransferOrder(brandCode, receiptLocationCode, shipmentLocationCode, inDate, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
 	session := factory.GetCSLEngine().NewSession()
-	return RecvSuppRepository{}.confirmTransferOrder(session, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
+	return RecvSuppRepository{}.confirmTransferOrder(session, brandCode, receiptLocationCode, shipmentLocationCode, inDate, waybillNo, boxNo, roundRecvSuppNo, empID)
 }
 
-func (RecvSuppRepository) confirmTransferOrder(session *xorm.Session, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
+func (RecvSuppRepository) confirmTransferOrder(session *xorm.Session, brandCode, receiptLocationCode, shipmentLocationCode, inDate, waybillNo, boxNo, roundRecvSuppNo, empID string) (string, error) {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance]
 			@BrandCode			= ?
 			,@ShopCode			= ?
 			,@TargetShopCode	= ?
+			,@InDate			= ?
 			,@WayBillNo			= ?
 			,@BoxNo				= ?
 			,@RoundRecvSuppNo  	= ?
 			,@EmpID 			= ?
 	`
 
-	result, err := factory.GetCSLEngine().Query(sql, brandCode, receiptLocationCode, shipmentLocationCode, waybillNo, boxNo, roundRecvSuppNo, empID)
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, receiptLocationCode, shipmentLocationCode, inDate, waybillNo, boxNo, roundRecvSuppNo, empID)
 	if err != nil {
 		return "", errors.New("exec up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance failed " + err.Error())
 	}
@@ -275,7 +275,7 @@ func (RecvSuppRepository) CreateTransferOrderSet(order entities.TransferOrderSet
 		return err
 	}
 
-	outRecvSuppNo, err := RecvSuppRepository{}.createTransferOrder(session, order.BrandCode, order.ShipmentShopCode, order.ReceiptShopCode, order.WaybillNo,
+	outRecvSuppNo, err := RecvSuppRepository{}.createTransferOrder(session, order.BrandCode, order.ShipmentShopCode, order.ReceiptShopCode, order.OutDate, order.WaybillNo,
 		order.BoxNo, order.ShippingCompanyCode, order.DeliveryOrderNo, order.OutEmpID)
 	if err != nil {
 		session.Rollback()
@@ -284,7 +284,7 @@ func (RecvSuppRepository) CreateTransferOrderSet(order entities.TransferOrderSet
 	}
 
 	for _, item := range order.Items {
-		err = RecvSuppRepository{}.addTransferOrderItem(session, order.BrandCode, order.ShipmentShopCode, outRecvSuppNo, item.SkuCode, item.Qty, order.OutEmpID)
+		err = RecvSuppRepository{}.addTransferOrderItem(session, order.BrandCode, order.ShipmentShopCode, order.OutDate, outRecvSuppNo, item.SkuCode, item.Qty, order.OutEmpID)
 		if err != nil {
 			session.Rollback()
 			log.Println(err.Error())
@@ -292,7 +292,7 @@ func (RecvSuppRepository) CreateTransferOrderSet(order entities.TransferOrderSet
 		}
 	}
 
-	inRecvSuppNo, err := RecvSuppRepository{}.confirmTransferOrder(session, order.BrandCode, order.ReceiptShopCode, order.ShipmentShopCode, order.WaybillNo, order.BoxNo, outRecvSuppNo, order.InEmpID)
+	inRecvSuppNo, err := RecvSuppRepository{}.confirmTransferOrder(session, order.BrandCode, order.ReceiptShopCode, order.ShipmentShopCode, order.InDate, order.WaybillNo, order.BoxNo, outRecvSuppNo, order.InEmpID)
 	if err != nil {
 		session.Rollback()
 		log.Println(err.Error())
