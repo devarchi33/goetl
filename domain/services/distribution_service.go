@@ -68,7 +68,7 @@ func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source i
 
 // validateDistributions 验证distribution是否可以入库
 func (etl DistributionETL) validateDistribution(distribution entities.DistributionOrder) (bool, error) {
-	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ShopCode, distribution.BrandCode)
+	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 	if err != nil {
 		log.Printf(err.Error())
 	}
@@ -79,7 +79,7 @@ func (etl DistributionETL) validateDistribution(distribution entities.Distributi
 	}
 
 	if len(recvSupp) == 0 {
-		return false, errors.New("there is no outbound order which waybill no is: " + distribution.WaybillNo + ", shop is: " + distribution.BrandCode + "-" + distribution.ShopCode)
+		return false, errors.New("there is no outbound order which waybill no is: " + distribution.WaybillNo + ", shop is: " + distribution.BrandCode + "-" + distribution.ReceiptLocationCode)
 	}
 
 	ok := false
@@ -137,22 +137,22 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 	}
 
 	for _, order := range orders {
-		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShopCode, order.BrandCode)
+		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
 		}
-		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.EmpID)
+		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.InEmpID)
 		if err != nil {
 			log.Printf(err.Error())
 		}
 		etl.writeDownStockMiss(order)
 
 		// 更新状态的时候需要使用主卖场的Code
-		err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ShopCode, order.WaybillNo)
+		err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
 		if err != nil {
 			log.Printf(err.Error())
 		}
-		log.Printf("运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShopCode, order.BrandCode)
+		log.Printf("运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 	}
 
 	return nil
@@ -160,7 +160,7 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 
 // 记录误差
 func (etl DistributionETL) writeDownStockMiss(distribution entities.DistributionOrder) error {
-	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ShopCode, distribution.BrandCode)
+	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 	if err != nil {
 		log.Printf(err.Error())
 	}
@@ -183,7 +183,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 
 	stockMissMap := make(map[string]StockMiss, 0)
 	for _, v := range recvSupp {
-		key := distribution.BrandCode + "-" + distribution.ShopCode + "-" + recvSupp[0].ShopSuppRecvDate + "-" + distribution.WaybillNo + "-" + v.ProdCode
+		key := distribution.BrandCode + "-" + distribution.ReceiptLocationCode + "-" + recvSupp[0].ShopSuppRecvDate + "-" + distribution.WaybillNo + "-" + v.ProdCode
 		_, ok := stockMissMap[key]
 		if ok {
 			stockMiss := stockMissMap[key]
@@ -206,15 +206,15 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 	}
 
 	for _, v := range distribution.Items {
-		key := distribution.BrandCode + "-" + distribution.ShopCode + "-" + recvSupp[0].ShopSuppRecvDate + "-" + distribution.WaybillNo + "-" + v.SkuCode
+		key := distribution.BrandCode + "-" + distribution.ReceiptLocationCode + "-" + recvSupp[0].ShopSuppRecvDate + "-" + distribution.WaybillNo + "-" + v.SkuCode
 		_, ok := stockMissMap[key]
 		if ok {
 			stockMiss := stockMissMap[key]
 			stockMiss.InQty += v.Qty
-			stockMiss.EmpID = distribution.EmpID
+			stockMiss.EmpID = distribution.InEmpID
 			stockMissMap[key] = stockMiss
 		} else {
-			shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ShopCode, distribution.BrandCode)
+			shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 			if err != nil {
 				log.Printf(err.Error())
 			}
@@ -223,7 +223,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 				ShopCode:  shopCode,
 				InDate:    time.Now().Format("20061012"),
 				WaybillNo: distribution.WaybillNo,
-				EmpID:     distribution.EmpID,
+				EmpID:     distribution.InEmpID,
 				SkuCode:   v.SkuCode,
 				OutQty:    0,
 				InQty:     v.Qty,

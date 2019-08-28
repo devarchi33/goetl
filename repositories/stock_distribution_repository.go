@@ -14,13 +14,13 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 	sql := `
 		SELECT
 			sdi.brand_code,
-			store.code AS shop_code,
+			store.code AS receipt_location_code,
 			sd.waybill_no,
 			sd.box_no,
 			sku.code AS sku_code,
 			sdi.quantity AS qty,
 			sd.created_at AS in_date,
-			emp.employee_no AS emp_id
+			emp.employee_no AS in_emp_id
 		FROM pangpang_brand_sku_location.stock_distribute AS sd
 			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
 				ON sd.id = sdi.stock_distribute_id

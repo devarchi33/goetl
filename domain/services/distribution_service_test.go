@@ -22,42 +22,42 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 		Convey("源数据中包含多个运单号的数据，应该能够根据运单号生成DistributionOrder", func() {
 			data := []map[string]string{
 				map[string]string{
-					"brand_code": "SA",
-					"shop_code":  "CEGP",
-					"waybill_no": "1010590009008",
-					"box_no":     "1010590009008",
-					"sku_code":   "SPWJ948S2255070",
-					"qty":        "2",
-					"in_date":    "20190823",
-					"emp_id":     "7000028260",
+					"brand_code":            "SA",
+					"receipt_location_code": "CEGP",
+					"waybill_no":            "1010590009008",
+					"box_no":                "1010590009008",
+					"sku_code":              "SPWJ948S2255070",
+					"qty":                   "2",
+					"in_date":               "2019-08-23T13:29:05Z",
+					"in_emp_id":             "7000028260",
 				}, map[string]string{
-					"brand_code": "SA",
-					"shop_code":  "CEGP",
-					"waybill_no": "1010590009008",
-					"box_no":     "1010590009008",
-					"sku_code":   "SPWJ948S2256070",
-					"qty":        "3",
-					"in_date":    "20190823",
-					"emp_id":     "7000028260",
+					"brand_code":            "SA",
+					"receipt_location_code": "CEGP",
+					"waybill_no":            "1010590009008",
+					"box_no":                "1010590009008",
+					"sku_code":              "SPWJ948S2256070",
+					"qty":                   "3",
+					"in_date":               "2019-08-23T13:29:05Z",
+					"in_emp_id":             "7000028260",
 				},
 				map[string]string{
-					"brand_code": "SA",
-					"shop_code":  "CEGP",
-					"waybill_no": "1010590009009",
-					"box_no":     "1010590009009",
-					"sku_code":   "SPYC949H2130095",
-					"qty":        "4",
-					"in_date":    "20190823",
-					"emp_id":     "7000028260",
+					"brand_code":            "SA",
+					"receipt_location_code": "CEGP",
+					"waybill_no":            "1010590009009",
+					"box_no":                "1010590009009",
+					"sku_code":              "SPYC949H2130095",
+					"qty":                   "4",
+					"in_date":               "2019-08-23T13:29:05Z",
+					"in_emp_id":             "7000028260",
 				}, map[string]string{
-					"brand_code": "SA",
-					"shop_code":  "CEGP",
-					"waybill_no": "1010590009009",
-					"box_no":     "1010590009009",
-					"sku_code":   "SPYC949H2130100",
-					"qty":        "5",
-					"in_date":    "20190823",
-					"emp_id":     "7000028260",
+					"brand_code":            "SA",
+					"receipt_location_code": "CEGP",
+					"waybill_no":            "1010590009009",
+					"box_no":                "1010590009009",
+					"sku_code":              "SPYC949H2130100",
+					"qty":                   "5",
+					"in_date":               "2019-08-23T13:29:05Z",
+					"in_emp_id":             "7000028260",
 				},
 			}
 
@@ -72,18 +72,18 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 			}
 			So(len(orders), ShouldEqual, 2)
 			for _, order := range orders {
-				if order.BrandCode == "SA" && order.ShopCode == "CEGP" && order.WaybillNo == "1010590009008" {
+				if order.BrandCode == "SA" && order.ReceiptLocationCode == "CEGP" && order.WaybillNo == "1010590009008" {
 					So(order.BoxNo, ShouldEqual, "1010590009008")
-					So(order.EmpID, ShouldEqual, "7000028260")
+					So(order.InEmpID, ShouldEqual, "7000028260")
 					So(order.Items, ShouldNotBeNil)
 					So(len(order.Items), ShouldEqual, 2)
 					So(order.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
 					So(order.Items[0].Qty, ShouldEqual, 2)
 					So(order.Items[1].SkuCode, ShouldEqual, "SPWJ948S2256070")
 					So(order.Items[1].Qty, ShouldEqual, 3)
-				} else if order.BrandCode == "SA" && order.ShopCode == "CEGP" && order.WaybillNo == "1010590009009" {
+				} else if order.BrandCode == "SA" && order.ReceiptLocationCode == "CEGP" && order.WaybillNo == "1010590009009" {
 					So(order.BoxNo, ShouldEqual, "1010590009009")
-					So(order.EmpID, ShouldEqual, "7000028260")
+					So(order.InEmpID, ShouldEqual, "7000028260")
 					So(order.Items, ShouldNotBeNil)
 					So(len(order.Items), ShouldEqual, 2)
 					So(order.Items[0].SkuCode, ShouldEqual, "SPYC949H2130095")
