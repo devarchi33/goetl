@@ -1,9 +1,12 @@
 package repositories
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
+	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
 	_ "clearance-adapter/test"
@@ -14,11 +17,12 @@ import (
 
 func TestGetUnsyncedDistributionOrders(t *testing.T) {
 	Convey("测试GetUnsyncedDistributionOrders", t, func() {
-		Convey("应该返回[]map[string]string类型的结果, 并且包含brand_code, shop_code, waybill_no, box_no, emp_id, sku_code, qty字段", func() {
+		requiredKeys := append(entities.DistributionOrder{}.RequiredKeys(), entities.DistributionOrderItem{}.RequiredKeys()...)
+		title := fmt.Sprintf("应该返回[]map[string]string类型的结果, 并且包含%v字段", strings.Join(requiredKeys, " ,"))
+		Convey(title, func() {
 			result, err := StockDistributionRepository{}.GetUnsyncedDistributionOrders()
 			So(err, ShouldBeNil)
 			for _, item := range result {
-				requiredKeys := [8]string{"brand_code", "shop_code", "waybill_no", "box_no", "emp_id", "sku_code", "qty", "in_date"}
 				isOk := true
 				for _, key := range requiredKeys {
 					_, ok := item[key]
