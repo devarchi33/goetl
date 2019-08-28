@@ -78,6 +78,7 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShipmentLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 
 		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseOrder(order.BrandCode, shopCode, order.WaybillNo, order.OutDate, order.EmpID, order.DeliveryOrderNo)
@@ -103,6 +104,7 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 		err = repositories.ReturnToWarehouseRepository{}.MarkWaybillSynced(order.ShipmentLocationCode, order.WaybillNo)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 		log.Printf("运单号为：%v 的退仓单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShipmentLocationCode, order.BrandCode)
 	}
