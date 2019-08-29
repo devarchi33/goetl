@@ -71,6 +71,7 @@ func (etl DistributionETL) validateDistribution(distribution entities.Distributi
 	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 	if err != nil {
 		log.Printf(err.Error())
+		return false, err
 	}
 	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(distribution.BrandCode, shopCode, distribution.WaybillNo)
 	if err != nil {
@@ -140,10 +141,12 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.InEmpID)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 		etl.writeDownStockMiss(order)
 
@@ -151,6 +154,7 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 		err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 		log.Printf("运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 	}
@@ -163,6 +167,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 	if err != nil {
 		log.Printf(err.Error())
+		return err
 	}
 	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(distribution.BrandCode, shopCode, distribution.WaybillNo)
 	if err != nil {
@@ -217,6 +222,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 			shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 			if err != nil {
 				log.Printf(err.Error())
+				continue
 			}
 			stockMiss := StockMiss{
 				BrandCode: distribution.BrandCode,

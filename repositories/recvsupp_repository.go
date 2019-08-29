@@ -26,7 +26,7 @@ func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, inDate, e
 		`
 	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, inDate, empID)
 	if err != nil {
-		return err
+		return errors.New("PutInStorage error: " + err.Error())
 	}
 
 	return nil
@@ -67,7 +67,7 @@ func (RecvSuppRepository) WriteDownStockMiss(brandCode, shopCode, inDate, waybil
 
 	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, skuCode, outQty, inQty, empID, inDate)
 	if err != nil {
-		return err
+		return errors.New("WriteDownStockMiss error: " + err.Error())
 	}
 
 	return nil
@@ -81,11 +81,24 @@ func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, 
 		WHERE BrandCode = ?
 		AND ChiefShopCode = ?
 		AND DelChk = 0
+
+		UNION
+
+		SELECT ShopCode
+		FROM Shop
+		WHERE BrandCode = ?
+		AND  ShopCode = ?
 	`
 
-	result, err := factory.GetCSLEngine().Query(sql, brandCode, chiefShopCode)
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, chiefShopCode, brandCode, chiefShopCode)
 	if err != nil {
 		return "", err
+	}
+
+	if result == nil || len(result) == 0 {
+		log.Printf("brandCode: %v", brandCode)
+		log.Printf("chiefShopCode: %v", chiefShopCode)
+		return "", errors.New("result is nil, get sub shop code failed")
 	}
 
 	shop := infra.ConvertByteResult(result)[0]["ShopCode"]
@@ -110,12 +123,16 @@ func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, wayb
 
 	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, outDate, waybillNo, empID, waybillNo, deliveryOrderNo)
 	if err != nil {
-		return "", err
+		log.Printf("brandCode: %v", brandCode)
+		log.Printf("shopCode: %v", shopCode)
+		log.Printf("outDate: %v", outDate)
+		log.Printf("waybillNo: %v", waybillNo)
+		return "", errors.New("CreateReturnToWarehouseOrder error: " + err.Error())
 	}
 
 	master := infra.ConvertByteResult(result)
 	if len(master) == 0 {
-		return "", errors.New("exec up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppMst_C1_Clearance failed")
+		return "", errors.New("CreateReturnToWarehouseOrder error(master is nil): " + err.Error())
 	}
 	recvSuppNo := master[0]["RecvSuppNo"]
 
@@ -148,7 +165,7 @@ func (RecvSuppRepository) AddReturnToWarehouseOrderItem(brandCode, shopCode, out
 		log.Printf("outDate: %v", outDate)
 		log.Printf("skuCode: %v", skuCode)
 
-		return err
+		return errors.New("AddReturnToWarehouseOrderItem error: " + err.Error())
 	}
 
 	return nil
@@ -186,12 +203,12 @@ func (RecvSuppRepository) createTransferOrder(session *xorm.Session, brandCode, 
 
 	result, err := factory.GetCSLEngine().Query(sql, brandCode, shipmentLocationCode, receiptLocationCode, outDate, waybillNo, boxNo, shippingCompanyCode, deliveryOrderNo, empID)
 	if err != nil {
-		return "", errors.New("exec up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance failed " + err.Error())
+		return "", errors.New("createTransferOrder error: " + err.Error())
 	}
 
 	master := infra.ConvertByteResult(result)
 	if len(master) == 0 {
-		return "", errors.New("exec up_CSLK_IOM_InsertRotationOuterReg_RecvSuppMst_C1_Clearance failed")
+		return "", errors.New("createTransferOrder error(master is nil): " + err.Error())
 	}
 	recvSuppNo := master[0]["RecvSuppNo"]
 
@@ -226,7 +243,7 @@ func (RecvSuppRepository) addTransferOrderItem(session *xorm.Session, brandCode,
 		log.Printf("outDate: %v", outDate)
 		log.Printf("skuCode: %v", skuCode)
 
-		return err
+		return errors.New("addTransferOrderItem error: " + err.Error())
 	}
 
 	return nil
@@ -253,12 +270,12 @@ func (RecvSuppRepository) confirmTransferOrder(session *xorm.Session, brandCode,
 
 	result, err := factory.GetCSLEngine().Query(sql, brandCode, receiptLocationCode, shipmentLocationCode, inDate, waybillNo, boxNo, roundRecvSuppNo, empID)
 	if err != nil {
-		return "", errors.New("exec up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance failed " + err.Error())
+		return "", errors.New("confirmTransferOrder error: " + err.Error())
 	}
 
 	master := infra.ConvertByteResult(result)
 	if len(master) == 0 {
-		return "", errors.New("exec up_CSLK_IOM_InsertRotationEnterConfirm_RecvSuppMst_C1_Clearance failed")
+		return "", errors.New("confirmTransferOrder error(master is nil): " + err.Error())
 	}
 	recvSuppNo := master[0]["RecvSuppNo"]
 

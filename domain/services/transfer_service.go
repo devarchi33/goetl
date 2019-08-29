@@ -74,11 +74,13 @@ func (etl TransferETL) buildTransferOrderSets(ctx context.Context, source interf
 		shipmentShopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShipmentLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 
 		receiptShopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
 			log.Printf(err.Error())
+			continue
 		}
 
 		orderSet := repoEntities.TransferOrderSet{
