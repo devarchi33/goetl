@@ -4,3 +4,5 @@ cslConnString: "server=localhost;user id=SA;password=yourStrong(!)Password;datab
 clrConnString: "root:1111@tcp(localhost:3306)/clearance?charset=utf8&parseTime=True&loc=UTC"
 
 p2brandConnString: "root:1111@tcp(localhost:3306)/pangpang_brand_sku_location?charset=utf8&parseTime=True&loc=UTC"
+
+p2brandAPIRoot: "http://localhost:5000"

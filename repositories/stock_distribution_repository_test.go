@@ -9,6 +9,7 @@ import (
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
+	repoEntities "clearance-adapter/repositories/entities"
 	_ "clearance-adapter/test"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -59,5 +60,25 @@ func TestMarkWaybillSynced(t *testing.T) {
 		now := time.Now()
 		utc, _ := time.LoadLocation("")
 		So(distList[0]["last_updated_at"], ShouldEqual, now.In(utc).Format("2006-01-02T15:04:05Z"))
+	})
+}
+
+func TestPutInStorage(t *testing.T) {
+	order := repoEntities.DistributionOrder{
+		BrandCode:           "SA",
+		ReceiptLocationCode: "CEGP",
+		WaybillNo:           "20190829003",
+		BoxNo:               "20190829003",
+		Version:             "1",
+		Items:               make([]repoEntities.DistributionOrderItem, 0),
+	}
+	order.Items = append(order.Items, repoEntities.DistributionOrderItem{
+		SkuCode: "SPYC949S1139085",
+		Qty:     1,
+	})
+	title := fmt.Sprintf("应该在%v卖场，生成运单号为%v的入库单", order.ReceiptLocationCode, order.WaybillNo)
+	Convey(title, t, func() {
+		err := StockDistributionRepository{}.PutInStorage(order)
+		So(err, ShouldBeNil)
 	})
 }
