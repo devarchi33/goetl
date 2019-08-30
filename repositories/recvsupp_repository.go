@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
@@ -13,6 +14,26 @@ import (
 
 // RecvSuppRepository RecvSupp仓库，包括Master和Detail
 type RecvSuppRepository struct{}
+
+// GetUnconfirmedDistributionOrdersByDeadline 已到截止日期仍未入库的出库单
+func (RecvSuppRepository) GetUnconfirmedDistributionOrdersByDeadline(deadline string) ([]models.RecvSupp, error) {
+	details := make([]models.RecvSupp, 0)
+	engine := factory.GetCSLEngine()
+	distributionCodes := []string{cslConst.TypLogisticsToShop, cslConst.TypFactoryToShop, cslConst.TypAncillaryProduct}
+	err := engine.Join("INNER", "RecvSuppMst",
+		`RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo 
+		AND RecvSuppMst.BrandCode = RecvSuppDtl.BrandCode 
+		AND RecvSuppMst.ShopCode = RecvSuppDtl.ShopCode`).
+		Where("RecvSuppMst.RecvSuppStatusCode = ? AND RecvSuppMst.RecvChk = 0 AND RecvSuppMst.DelChk = 0 AND RecvSuppMst.BrandSuppRecvDate <= ?",
+			cslConst.StsSentOut, deadline).
+		In("RecvSuppMst.ShippingTypeCode", distributionCodes).
+		Find(&details)
+	if err != nil {
+		return nil, err
+	}
+
+	return details, nil
+}
 
 // PutInStorage 入库
 func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, inDate, empID string) error {

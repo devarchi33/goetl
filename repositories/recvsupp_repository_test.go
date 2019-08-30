@@ -2,6 +2,7 @@ package repositories
 
 import (
 	cslConst "clearance-adapter/domain/csl-constants"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -19,6 +20,20 @@ import (
 func TestInit(t *testing.T) {
 	Convey("测试初始化数据库", t, func() {
 		So(1, ShouldEqual, 1)
+	})
+}
+
+func TestGetUnconfirmedDistributionOrdersByDeadline(t *testing.T) {
+	deadline := "20190801"
+	title := fmt.Sprintf("%v日以前的，为入库的出库单应该有4个", deadline)
+	Convey(title, t, func() {
+		result, err := RecvSuppRepository{}.GetUnconfirmedDistributionOrdersByDeadline(deadline)
+		So(err, ShouldBeNil)
+		orders := make(map[string]string)
+		for _, v := range result {
+			orders[v.RecvSuppMst.WayBillNo] = v.RecvSuppMst.WayBillNo
+		}
+		So(len(orders), ShouldEqual, 4)
 	})
 }
 
