@@ -61,3 +61,13 @@ func GetP2BrandConnString() string {
 	readConfig(*congfigEnv)
 	return viper.Get("p2brandConnString").(string)
 }
+
+// GetP2BrandAPIRoot pangpang-brand API Root
+func GetP2BrandAPIRoot() string {
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("p2brandAPIRoot").(string)
+}

@@ -38,7 +38,7 @@ func setStoreData() {
 		CREATE TABLE store
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			tenant_id BIGINT(20) NOT NULL,
+			tenant_code VARCHAR(50) NOT NULL,
 			code VARCHAR(255) NOT NULL,
 			name VARCHAR(255) NOT NULL,
 			manager VARCHAR(255) NOT NULL,
@@ -61,11 +61,11 @@ func setStoreData() {
 		log.Println()
 	}
 	sql = `
-		INSERT INTO pangpang_brand_place_management.store (tenant_id, code, name, manager, tel_no, area, address, status_code, cashier, contract_no, open_date, close_date, enable, created_at, updated_at, version)
+		INSERT INTO pangpang_brand_place_management.store (tenant_code, code, name, manager, tel_no, area, address, status_code, cashier, contract_no, open_date, close_date, enable, created_at, updated_at, version)
 		VALUES
-		(1, 'PLANT1200', '物流仓库', 'test1', '12345678910', '北京市,市辖区,东城区', 'test12', 'open', 0, '', '2019-06-28', '9999-12-31', 1, '2019-06-28 10:37:33', '2019-07-08 02:27:58', 4),
-		(1, 'CEGP', 'SA-CEGP', 'jxy', '17611242222', '北京市,市辖区,东城区', '恒通商务园', 'open', 1, '', '2009-09-30', '9999-12-31', 1, '2019-07-30 08:38:56', '2019-07-30 08:38:59', 1),
-		(1, 'CFGY', 'SA-CFGY', 'jxy', '17611242222', '北京市,市辖区,东城区', '恒通商务园', 'open', 1, '', '2009-09-30', '9999-12-31', 1, '2019-07-30 08:38:56', '2019-07-30 08:38:59', 1);
+		('pangpang', 'PLANT1200', '物流仓库', 'test1', '12345678910', '北京市,市辖区,东城区', 'test12', 'open', 0, '', '2019-06-28', '9999-12-31', 1, '2019-06-28 10:37:33', '2019-07-08 02:27:58', 4),
+		('pangpang', 'CEGP', 'SA-CEGP', 'jxy', '17611242222', '北京市,市辖区,东城区', '恒通商务园', 'open', 1, '', '2009-09-30', '9999-12-31', 1, '2019-07-30 08:38:56', '2019-07-30 08:38:59', 1),
+		('pangpang', 'CFGY', 'SA-CFGY', 'jxy', '17611242222', '北京市,市辖区,东城区', '恒通商务园', 'open', 1, '', '2009-09-30', '9999-12-31', 1, '2019-07-30 08:38:56', '2019-07-30 08:38:59', 1);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("setStoreData error: %v", err.Error())
