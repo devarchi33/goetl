@@ -1,8 +1,10 @@
 package entities
 
 import (
+	"clearance-adapter/models"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -82,5 +84,54 @@ func TestCreateDistributionOrder(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(err, ShouldResemble, errors.New("qty is required"))
 		})
+	})
+}
+
+func TestCreateByRecvSupp(t *testing.T) {
+	brandCode := "SA"
+	receiptLocationCode := "CEGP"
+	waybillNo := "20190902001"
+	boxNo := "20190902001"
+	sku1 := "SPWJ948S2255070"
+	qty1 := 1
+	sku2 := "SPWJ948S2256070"
+	qty2 := 2
+	Convey("如果源数据类型正确，应该能成确转换", t, func() {
+		recvSupp1 := models.RecvSupp{
+			RecvSuppMst: models.RecvSuppMst{
+				BrandCode: brandCode,
+				ShopCode:  receiptLocationCode,
+				WayBillNo: waybillNo,
+				BoxNo:     boxNo,
+			},
+			RecvSuppDtl: models.RecvSuppDtl{
+				ProdCode:    sku1,
+				RecvSuppQty: qty1,
+			},
+		}
+		recvSupp2 := models.RecvSupp{
+			RecvSuppMst: models.RecvSuppMst{
+				BrandCode: brandCode,
+				ShopCode:  receiptLocationCode,
+				WayBillNo: waybillNo,
+				BoxNo:     boxNo,
+			},
+			RecvSuppDtl: models.RecvSuppDtl{
+				ProdCode:    sku2,
+				RecvSuppQty: qty2,
+			},
+		}
+		data := []models.RecvSupp{recvSupp1, recvSupp2}
+		order, err := DistributionOrder{}.CreateByRecvSupp(data)
+		So(err, ShouldBeNil)
+		So(order.BrandCode, ShouldEqual, brandCode)
+		So(order.ReceiptLocationCode, ShouldEqual, receiptLocationCode)
+		So(order.WaybillNo, ShouldEqual, waybillNo)
+		So(order.BoxNo, ShouldEqual, boxNo)
+		So(order.Version, ShouldEqual, strconv.Itoa(len(data)))
+		So(order.Items[0].SkuCode, ShouldEqual, sku1)
+		So(order.Items[0].Qty, ShouldEqual, qty1)
+		So(order.Items[1].SkuCode, ShouldEqual, sku2)
+		So(order.Items[1].Qty, ShouldEqual, qty2)
 	})
 }

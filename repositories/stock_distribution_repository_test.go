@@ -9,7 +9,6 @@ import (
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
-	repoEntities "clearance-adapter/repositories/entities"
 	_ "clearance-adapter/test"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -64,15 +63,15 @@ func TestMarkWaybillSynced(t *testing.T) {
 }
 
 func TestPutInStorage(t *testing.T) {
-	order := repoEntities.DistributionOrder{
+	order := entities.DistributionOrder{
 		BrandCode:           "SA",
 		ReceiptLocationCode: "CEGP",
 		WaybillNo:           "20190829003",
 		BoxNo:               "20190829003",
 		Version:             "1",
-		Items:               make([]repoEntities.DistributionOrderItem, 0),
+		Items:               make([]entities.DistributionOrderItem, 0),
 	}
-	order.Items = append(order.Items, repoEntities.DistributionOrderItem{
+	order.Items = append(order.Items, entities.DistributionOrderItem{
 		SkuCode: "SPYC949S1139085",
 		Qty:     1,
 	})

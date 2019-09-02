@@ -56,6 +56,8 @@ func setEmployeeData() {
 		INSERT INTO pangpang_common_colleague_employee.employees
 		(name, employee_no, mobile, email, enable, created_at, updated_at, version)
 		VALUES
+		('史妍珣', '7000028260', '1333333333', '33@qq.com', 1, '2019-06-27 08:44:29', '2019-06-27 08:44:31', 1),
+		('史妍珣', '7000028260', '1333333333', '33@qq.com', 1, '2019-06-27 08:44:29', '2019-06-27 08:44:31', 1),
 		('史妍珣', '7000028260', '1333333333', '33@qq.com', 1, '2019-06-27 08:44:29', '2019-06-27 08:44:31', 1);
 	`
 	if _, err := session.Exec(sql); err != nil {

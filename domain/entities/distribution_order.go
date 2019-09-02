@@ -2,7 +2,9 @@ package entities
 
 import (
 	"clearance-adapter/infra"
+	"clearance-adapter/models"
 	"errors"
+	"strconv"
 )
 
 // DistributionOrder 以StockDistribute为主的信息，会把id替换成code
@@ -14,6 +16,7 @@ type DistributionOrder struct {
 	InDate              string
 	InEmpID             string
 	Items               []DistributionOrderItem
+	Version             string // 在p2brand入库时候才用
 }
 
 // RequiredKeys 创建 DistributionOrder 的必须项
@@ -50,6 +53,31 @@ func (DistributionOrder) Create(data []map[string]string) (DistributionOrder, er
 		order.Items = append(order.Items, DistributionOrderItem{
 			SkuCode: item["sku_code"],
 			Qty:     infra.ConvertStringToInt(item["qty"]),
+		})
+	}
+
+	return order, nil
+}
+
+// CreateByRecvSupp 根据[]models.RecvSupp类型的数据转换成 DistributionOrder
+func (DistributionOrder) CreateByRecvSupp(data []models.RecvSupp) (DistributionOrder, error) {
+	order := DistributionOrder{}
+	if data == nil || len(data) == 0 {
+		return order, errors.New("data is empty")
+	}
+
+	orderData := data[0]
+	order.BrandCode = orderData.RecvSuppMst.BrandCode
+	order.ReceiptLocationCode = orderData.RecvSuppMst.ShopCode
+	order.WaybillNo = orderData.WayBillNo
+	order.BoxNo = orderData.BoxNo
+	order.Version = strconv.Itoa(len(data))
+	order.Items = make([]DistributionOrderItem, 0)
+
+	for _, item := range data {
+		order.Items = append(order.Items, DistributionOrderItem{
+			SkuCode: item.ProdCode,
+			Qty:     item.RecvSuppQty,
 		})
 	}
 
