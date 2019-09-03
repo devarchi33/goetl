@@ -37,6 +37,30 @@ func (RecvSuppRepository) GetUnconfirmedDistributionOrdersByDeadline(deadline st
 	return details, nil
 }
 
+// GetUnconfirmedTransferOrdersByDeadline 已到截止日期仍未入库的调货出库单
+func (RecvSuppRepository) GetUnconfirmedTransferOrdersByDeadline(deadline string) ([]models.RecvSupp, error) {
+	details := make([]models.RecvSupp, 0)
+	engine := factory.GetCSLEngine()
+
+	err := engine.Join("INNER", "RecvSuppMst",
+		`RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo 
+		AND RecvSuppMst.BrandCode = RecvSuppDtl.BrandCode 
+		AND RecvSuppMst.ShopCode = RecvSuppDtl.ShopCode`).
+		Where(`RecvSuppMst.RecvSuppStatusCode = ? 
+			AND RecvSuppMst.RecvChk = 0 
+			AND RecvSuppMst.DelChk = 0 
+			AND RecvSuppMst.ShopSuppRecvDate <= ?
+			AND RecvSuppMst.ShippingTypeCode = ?`,
+			cslConst.StsSentOut, deadline, cslConst.TypShopToShop).
+		Find(&details)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return details, nil
+}
+
 // PutInStorage 入库
 func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, inDate, empID string) error {
 	sql := `
