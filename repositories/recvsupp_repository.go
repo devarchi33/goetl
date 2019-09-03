@@ -19,6 +19,7 @@ type RecvSuppRepository struct{}
 func (RecvSuppRepository) GetUnconfirmedDistributionOrdersByDeadline(deadline string) ([]models.RecvSupp, error) {
 	details := make([]models.RecvSupp, 0)
 	engine := factory.GetCSLEngine()
+
 	distributionCodes := []string{cslConst.TypLogisticsToShop, cslConst.TypFactoryToShop, cslConst.TypAncillaryProduct}
 	err := engine.Join("INNER", "RecvSuppMst",
 		`RecvSuppMst.RecvSuppNo = RecvSuppDtl.RecvSuppNo 
@@ -28,6 +29,7 @@ func (RecvSuppRepository) GetUnconfirmedDistributionOrdersByDeadline(deadline st
 			cslConst.StsSentOut, deadline).
 		In("RecvSuppMst.ShippingTypeCode", distributionCodes).
 		Find(&details)
+
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +96,7 @@ func (RecvSuppRepository) WriteDownStockMiss(brandCode, shopCode, inDate, waybil
 	return nil
 }
 
-// GetShopCodeByChiefShopCodeAndBrandCode 根据主卖场Code和品牌获取子卖场的Code
+// GetShopCodeByChiefShopCodeAndBrandCode 根据主卖场Code和子品牌获取子卖场的Code
 func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, brandCode string) (string, error) {
 	sql := `
 		SELECT ShopCode
@@ -123,6 +125,31 @@ func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, 
 	}
 
 	shop := infra.ConvertByteResult(result)[0]["ShopCode"]
+
+	return shop, nil
+}
+
+// GetChiefShopCodeByShopCodeAndBrandCode 根据子卖场Code和子品牌获取主卖场的Code
+func (RecvSuppRepository) GetChiefShopCodeByShopCodeAndBrandCode(shopCode, brandCode string) (string, error) {
+	sql := `
+		SELECT ChiefShopCode
+			FROM ComplexShopMapping
+			WHERE BrandCode = ?
+			AND ShopCode = ?
+			AND DelChk = 0
+	`
+
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode)
+	if err != nil {
+		return "", err
+	}
+
+	// ComplexShopMapping 表中没有结果，说明不是复合卖场
+	if result == nil || len(result) == 0 {
+		return shopCode, nil
+	}
+
+	shop := infra.ConvertByteResult(result)[0]["ChiefShopCode"]
 
 	return shop, nil
 }
