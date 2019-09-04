@@ -4,6 +4,7 @@ import (
 	"clearance-adapter/config"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
+	"clearance-adapter/repositories/proxy"
 	"fmt"
 	"log"
 	"net/http"
@@ -105,7 +106,7 @@ func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptL
 	}
 	receiptLocationID := receiptLocation.ID
 
-	url := fmt.Sprintf("%v/v1/stock-round/%v?status=%v&shipmentLocationId=%v&receiptLocationId=%v", config.GetP2BrandAPIRoot(), waybillNo, cslConst.StsConfirmed, shipmentLocationID, receiptLocationID)
+	url := fmt.Sprintf("%v/stock-round/%v?status=%v&shipmentLocationId=%v&receiptLocationId=%v", config.GetP2BrandSkuLocationAPIRoot(), waybillNo, cslConst.StsConfirmed, shipmentLocationID, receiptLocationID)
 
 	var resp struct {
 		Result  interface{} `json:"result"`
@@ -116,7 +117,13 @@ func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptL
 			Details interface{} `json:"details"`
 		} `json:"error"`
 	}
+	username, passwor := config.GetColleagueClearanceUsernameAndPassword()
+	token, err := proxy.ColleagueServiceProxy{}.GetTokenByUsernameAndPassword(username, passwor)
+	if err != nil {
+		return err
+	}
 	statusCode, err := httpreq.New(http.MethodPut, url, nil).
+		WithToken(token).
 		WithBehaviorLogContext(behaviorlog.FromCtx(nil)).
 		Call(&resp)
 
