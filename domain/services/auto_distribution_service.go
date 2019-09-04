@@ -1,6 +1,7 @@
 package services
 
 import (
+	"clearance-adapter/config"
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
@@ -31,7 +32,8 @@ func (AutoDistributionETL) New() *goetl.ETL {
 func (etl AutoDistributionETL) Extract(ctx context.Context) (interface{}, error) {
 	today := time.Now().UTC()
 	day, _ := time.ParseDuration("-24h")
-	twoWeeksAgo := today.Add(14 * day).Format("2006-01-02T15:04:05Z")
+	autoDistributeDeadlineDays := time.Duration(config.GetAutoDistributeDeadlineDays())
+	twoWeeksAgo := today.Add(autoDistributeDeadlineDays * day).Format("2006-01-02T15:04:05Z")
 	deadline := infra.Parse8BitsDate(twoWeeksAgo, nil)
 
 	result, err := repositories.RecvSuppRepository{}.GetUnconfirmedDistributionOrdersByDeadline(deadline)

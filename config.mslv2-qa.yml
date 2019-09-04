@@ -6,3 +6,7 @@ clrConnString: "mslv2_app:Eland^123@tcp(106.14.242.171:3306)/mslv2_clearance?cha
 p2brandConnString: "pangpang_app:Eland^123@tcp(106.14.242.171:3306)/pangpang_brand_sku_location?charset=utf8&parseTime=True&loc=UTC"
 
 p2brandAPIRoot: "https://qa.p2shop.com.cn/pangpang-brand/sku-location-api"
+
+autoDistributeDeadlineDays: 30
+
+autoTransferInDeadlineDays: 30
