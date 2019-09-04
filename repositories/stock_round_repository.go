@@ -1,9 +1,17 @@
 package repositories
 
 import (
+	"clearance-adapter/config"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
+	"fmt"
 	"log"
+	"net/http"
+
+	cslConst "clearance-adapter/domain/csl-constants"
+
+	"github.com/pangpanglabs/goutils/behaviorlog"
+	"github.com/pangpanglabs/goutils/httpreq"
 )
 
 // StockRoundRepository P2-brand 调货单仓库
@@ -75,4 +83,53 @@ func (StockRoundRepository) MarkWaybillSynced(shipmentLocationCode, receiptLocat
 	}
 
 	return nil
+}
+
+// TransferIn P2Brand 调货入库
+func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptLocationCode string) error {
+	shipmentLocation, has, err := PlaceRepository{}.GetStoreByCode(shipmentLocationCode)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return fmt.Errorf("TransferIn error: 没有找到%v卖场", shipmentLocationCode)
+	}
+	shipmentLocationID := shipmentLocation.ID
+
+	receiptLocation, has, err := PlaceRepository{}.GetStoreByCode(receiptLocationCode)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return fmt.Errorf("TransferIn error: 没有找到%v卖场", receiptLocationCode)
+	}
+	receiptLocationID := receiptLocation.ID
+
+	url := fmt.Sprintf("%v/v1/stock-round/%v?status=%v&shipmentLocationId=%v&receiptLocationId=%v", config.GetP2BrandAPIRoot(), waybillNo, cslConst.StsConfirmed, shipmentLocationID, receiptLocationID)
+
+	var resp struct {
+		Result  interface{} `json:"result"`
+		Success bool        `json:"success"`
+		Error   struct {
+			Code    int         `json:"code"`
+			Message string      `json:"message"`
+			Details interface{} `json:"details"`
+		} `json:"error"`
+	}
+	statusCode, err := httpreq.New(http.MethodPut, url, nil).
+		WithBehaviorLogContext(behaviorlog.FromCtx(nil)).
+		Call(&resp)
+
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+
+	if statusCode >= 200 && statusCode <= 299 {
+		return nil
+	}
+
+	return fmt.Errorf("Call TransferIn API error, status code is %v, error message is: %v ", statusCode, resp)
 }

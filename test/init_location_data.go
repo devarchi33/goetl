@@ -284,7 +284,8 @@ func createStockRoundTable() {
 			out_created_at DATETIME,
 			in_colleague_id BIGINT(20),
 			out_colleague_id BIGINT(20),
-			shipping_company_code VARCHAR(255)
+			shipping_company_code VARCHAR(255),
+			read_check TINYINT(1) COMMENT '0'
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
@@ -294,9 +295,11 @@ func createStockRoundTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.stock_round 
-		(tenant_code, brand_code, box_no, waybill_no, shipment_location_id, receipt_location_id, synced, created_at, last_updated_at, colleague_id, status, in_created_at, out_created_at, in_colleague_id, out_colleague_id, shipping_company_code) 
+		(tenant_code, brand_code, box_no, waybill_no, shipment_location_id, receipt_location_id, synced, created_at, last_updated_at, colleague_id, status, in_created_at, out_created_at, in_colleague_id, out_colleague_id, shipping_company_code, read_check) 
 		VALUES 
-		('pangpang', 'SA', '20190821001', '20190821001', 2, 3, 0, '2019-08-20 13:42:13', '2019-08-20 15:02:09', 1, 'F', '2019-08-21 22:02:09', '2019-08-20 22:02:09', 1, 1, 'SR');
+		('pangpang', 'SA', '20190821001', '20190821001', 2, 3, 0, '2019-08-20 13:42:13', '2019-08-20 15:02:09', 1, 'F', '2019-08-21 22:02:09', '2019-08-20 22:02:09', 1, 1, 'SR', 0),
+		('pangpang', 'Q3', '20190903001', '20190903001', 2, 3, 0, '2019-08-17 13:42:13', '2019-08-17 15:02:09', 1, 'R', null, '2019-08-17 15:02:09', 1, 1, 'SR', 0),
+		('pangpang', 'SA', '20190903002', '20190903002', 4, 2, 0, '2019-08-17 13:42:13', '2019-08-17 15:02:09', 1, 'R', null, '2019-08-17 15:02:09', 1, 1, 'SR', 0);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockRoundTable error: %v", err.Error())
@@ -339,7 +342,9 @@ func createStockRoundItemTable() {
 		(stock_round_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id)
 		VALUES 
 		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-21 13:42:13', 1, '2019-08-21 13:42:13', 1),
-		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-21 13:42:13', 1, '2019-08-21 13:42:13', 1);
+		(1, 1, 'SA', 3, 'SPWJ948S2255075', 1, '2019-08-21 13:42:13', 1, '2019-08-21 13:42:13', 1),
+		(2, 2, 'Q3', 9, 'SPWJ948S2255075', 2, '2019-08-17 13:42:13', 1, '2019-08-17 13:42:13', 1),
+		(3, 2, 'SA', 9, 'SPWJ948S2255075', 3, '2019-08-17 13:42:13', 1, '2019-08-17 13:42:13', 1);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockRoundItemTable error: %v", err.Error())

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -62,5 +63,16 @@ func TestGetUnsyncedTransferInOrders(t *testing.T) {
 				So(isOk, ShouldEqual, true)
 			}
 		})
+	})
+}
+
+func TestTransferIn(t *testing.T) {
+	waybillNo := "20190903001"
+	shipmentLocationCode := "CEGP"
+	receiptLocationCode := "CFGY"
+	title := fmt.Sprintf("从%v卖场到%v卖场，运单号为%v的运单应该已经入库", shipmentLocationCode, receiptLocationCode, waybillNo)
+	Convey(title, t, func() {
+		err := StockRoundRepository{}.TransferIn(waybillNo, shipmentLocationCode, receiptLocationCode)
+		So(err, ShouldBeNil)
 	})
 }

@@ -119,7 +119,6 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 		} `json:"error"`
 	}
 	statusCode, err := httpreq.New(http.MethodPost, url, data).
-		// WithToken("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJjb2xsZWFndWUiLCJjb2xsZWFndWVOYW1lIjoi5L2V5L2z6ZGrIiwiZXhwIjoxNTY3NDQzMzU5LCJpZCI6MywiaXNzIjoiY29sbGVhZ3VlIiwibmJmIjoxNTY3Mzg5MDU5LCJ0ZW5hbnRDb2RlIjoicGFuZ3BhbmciLCJ0ZW5hbnRJZCI6MjAsInVzZXJOYW1lIjoiaGVqaWF4aW4xIn0.kknCJ_ycfbdhtclGVgfeKbT287M3GSScYdrm7qIVMCo").
 		WithBehaviorLogContext(behaviorlog.FromCtx(nil)).
 		Call(&resp)
 

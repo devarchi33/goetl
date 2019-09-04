@@ -2,6 +2,7 @@ package entities
 
 import (
 	"clearance-adapter/infra"
+	"clearance-adapter/models"
 	"errors"
 )
 
@@ -59,6 +60,33 @@ func (TransferOrder) Create(data []map[string]string) (TransferOrder, error) {
 		order.Items = append(order.Items, TransferOrderItem{
 			SkuCode: item["sku_code"],
 			Qty:     infra.ConvertStringToInt(item["qty"]),
+		})
+	}
+
+	return order, nil
+}
+
+// CreateByRecvSupp 根据[]models.RecvSupp类型的数据转换成 DistributionOrder
+func (TransferOrder) CreateByRecvSupp(data []models.RecvSupp) (TransferOrder, error) {
+	order := TransferOrder{}
+	if data == nil || len(data) == 0 {
+		return order, errors.New("data is empty")
+	}
+
+	orderData := data[0]
+	order.BrandCode = orderData.RecvSuppMst.BrandCode
+	order.ShipmentLocationCode = orderData.RecvSuppMst.ShopCode
+	order.ReceiptLocationCode = orderData.RecvSuppMst.TargetShopCode
+	order.WaybillNo = orderData.WayBillNo
+	order.BoxNo = orderData.BoxNo
+	order.OutEmpID = orderData.SuppEmpID
+	order.OutDate = orderData.ShopSuppRecvDate
+	order.Items = make([]TransferOrderItem, 0)
+
+	for _, item := range data {
+		order.Items = append(order.Items, TransferOrderItem{
+			SkuCode: item.ProdCode,
+			Qty:     item.RecvSuppQty,
 		})
 	}
 

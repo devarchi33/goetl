@@ -9,4 +9,7 @@ const (
 
 	// TypAncillaryProduct 销售辅助用品入库
 	TypAncillaryProduct string = "66"
+
+	// TypShopToShop 调货
+	TypShopToShop string = "20"
 )
