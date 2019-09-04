@@ -71,3 +71,23 @@ func GetP2BrandAPIRoot() string {
 	readConfig(*congfigEnv)
 	return viper.Get("p2brandAPIRoot").(string)
 }
+
+// GetAutoDistributeDeadlineDays 自动入库截止日期天数
+func GetAutoDistributeDeadlineDays() int {
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("autoDistributeDeadlineDays").(int)
+}
+
+// GetAutoTransferInDeadlineDays 自动入库截止日期天数
+func GetAutoTransferInDeadlineDays() int {
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("autoTransferInDeadlineDays").(int)
+}
