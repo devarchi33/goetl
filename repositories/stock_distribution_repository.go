@@ -5,6 +5,7 @@ import (
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
+	"clearance-adapter/repositories/proxy"
 	"fmt"
 	"log"
 	"net/http"
@@ -106,7 +107,7 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 	}
 	data["items"] = items
 
-	url := config.GetP2BrandAPIRoot() + "/v1/stock-distribute"
+	url := config.GetP2BrandSkuLocationAPIRoot() + "/stock-distribute"
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/json;charset=utf-8"
 	var resp struct {
@@ -118,7 +119,13 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 			Details interface{} `json:"details"`
 		} `json:"error"`
 	}
+	username, passwor := config.GetColleagueClearanceUsernameAndPassword()
+	token, err := proxy.ColleagueServiceProxy{}.GetTokenByUsernameAndPassword(username, passwor)
+	if err != nil {
+		return err
+	}
 	statusCode, err := httpreq.New(http.MethodPost, url, data).
+		WithToken(token).
 		WithBehaviorLogContext(behaviorlog.FromCtx(nil)).
 		Call(&resp)
 

@@ -62,14 +62,24 @@ func GetP2BrandConnString() string {
 	return viper.Get("p2brandConnString").(string)
 }
 
-// GetP2BrandAPIRoot pangpang-brand API Root
-func GetP2BrandAPIRoot() string {
+// GetP2BrandSkuLocationAPIRoot pangpang-brand sku-location API Root
+func GetP2BrandSkuLocationAPIRoot() string {
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
 	}
 	readConfig(*congfigEnv)
-	return viper.Get("p2brandAPIRoot").(string)
+	return viper.Get("p2brandSkuLocationAPIRoot").(string)
+}
+
+// GetP2BrandColleagueAPIRoot pangpang-brand colleague API Root
+func GetP2BrandColleagueAPIRoot() string {
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("p2brandColleagueAPIRoot").(string)
 }
 
 // GetAutoDistributeDeadlineDays 自动入库截止日期天数
@@ -90,4 +100,14 @@ func GetAutoTransferInDeadlineDays() int {
 	}
 	readConfig(*congfigEnv)
 	return viper.Get("autoTransferInDeadlineDays").(int)
+}
+
+// GetColleagueClearanceUsernameAndPassword 获取Clearance使用的用户名和密码
+func GetColleagueClearanceUsernameAndPassword() (string, string) {
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("colleagueClearanceUsername").(string), viper.Get("colleagueClearancePassword").(string)
 }
