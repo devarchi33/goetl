@@ -4,7 +4,7 @@ import (
 	"clearance-adapter/config"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
-	"clearance-adapter/repositories/proxy"
+	"clearance-adapter/infra/proxy"
 	"fmt"
 	"log"
 	"net/http"
@@ -117,8 +117,8 @@ func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptL
 			Details interface{} `json:"details"`
 		} `json:"error"`
 	}
-	username, passwor := config.GetColleagueClearanceUsernameAndPassword()
-	token, err := proxy.ColleagueServiceProxy{}.GetTokenByUsernameAndPassword(username, passwor)
+	tokenProxy := proxy.TokenProxy{}.GetInstance()
+	token, err := tokenProxy.GetToken()
 	if err != nil {
 		return err
 	}
