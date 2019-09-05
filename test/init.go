@@ -11,6 +11,7 @@ func init() {
 	factory.Init()
 	initCSL()
 	initP2BrandDB()
+	initClearance()
 }
 
 func initP2BrandDB() {
@@ -24,4 +25,5 @@ func initP2BrandDB() {
 func InitTestData() {
 	initCSL()
 	initP2BrandDB()
+	initClearance()
 }
