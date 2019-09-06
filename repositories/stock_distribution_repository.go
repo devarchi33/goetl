@@ -21,6 +21,7 @@ type StockDistributionRepository struct{}
 func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string]string, error) {
 	sql := `
 		SELECT
+			sd.id AS distribution_id,
 			sdi.brand_code,
 			store.code AS receipt_location_code,
 			sd.waybill_no,
