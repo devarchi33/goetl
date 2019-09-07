@@ -1,12 +1,14 @@
 package services
 
 import (
+	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
 	"clearance-adapter/repositories"
 	_ "clearance-adapter/test"
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"testing"
@@ -256,6 +258,18 @@ func TestDistributionETL(t *testing.T) {
 			}
 			So(outQty, ShouldEqual, 1)
 			So(missQty, ShouldEqual, 4)
+		})
+
+		brandCode := "SA"
+		recptLocCode := "CFGY"
+		waybillNo := "20190906001"
+		title := fmt.Sprintf("%v品牌，%v卖场，运单号为：%v的运单应该同步失败并且在error表中有记录", brandCode, recptLocCode, waybillNo)
+		Convey(title, func() {
+			has, distError, err := repositories.StockDistributionErrorRepository{}.GetByWaybillNo(brandCode, recptLocCode, waybillNo)
+			So(has, ShouldEqual, true)
+			So(err, ShouldBeNil)
+			So(distError.Type, ShouldEqual, clrConst.TypStockDistributionError)
+			So(len(distError.ErrorMessage), ShouldBeGreaterThan, 0)
 		})
 	})
 }

@@ -34,13 +34,15 @@ func createStockDistributionErrorTable() {
 		CREATE TABLE stock_distribution_error
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			distribution_id BIGINT(20) NOT NULL DEFAULT 0,
+			brand_code VARCHAR(20) NOT NULL DEFAULT '',
+			receipt_location_code VARCHAR(20) NOT NULL DEFAULT '',
 			waybill_no VARCHAR(30) NOT NULL DEFAULT '',
-			type VARCHAR(20) NOT NULL DEFAULT '',
-			error_message VARCHAR(500) NOT NULL DEFAULT '',
+			type VARCHAR(50) NOT NULL DEFAULT '',
+			error_message VARCHAR(2000) NOT NULL DEFAULT '',
 			is_processed TINYINT(1) NOT NULL DEFAULT 0 ,
 			created_at DATETIME NOT NULL DEFAULT NOW(),
-			created_by VARCHAR(50) NOT NULL DEFAULT ''
+			created_by VARCHAR(50) NOT NULL DEFAULT '',
+			UNIQUE INDEX uidx_waybill_no (brand_code, receipt_location_code, waybill_no)
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {

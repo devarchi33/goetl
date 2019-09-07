@@ -6,24 +6,35 @@ import (
 	"clearance-adapter/repositories"
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/pangpanglabs/goetl"
 )
 
 // DistributionETL 入库 p2-brand -> CSL
-type DistributionETL struct{}
+type DistributionETL struct {
+	ErrorRepository repositories.StockDistributionErrorRepository
+}
 
 // New 创建DistributionETL对象，从Clearance到CSL
 func (DistributionETL) New() *goetl.ETL {
-	distributionETL := DistributionETL{}
+	distributionETL := DistributionETL{
+		ErrorRepository: repositories.StockDistributionErrorRepository{},
+	}
 
 	etl := goetl.New(distributionETL)
 	etl.Before(DistributionETL{}.buildDistributionOrders)
 	etl.Before(DistributionETL{}.filterStorableDistributions)
 
 	return etl
+}
+
+func (etl DistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
+	log.Printf(errMsg)
+	go etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg)
 }
 
 // Extract ...
@@ -45,7 +56,7 @@ func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source i
 
 	items := make(map[string][]map[string]string, 0)
 	for _, item := range data {
-		key := item["brand_code"] + "-" + item["shop_code"] + "-" + item["waybill_no"]
+		key := item["brand_code"] + "-" + item["receipt_location_code"] + "-" + item["waybill_no"]
 		if _, ok := items[key]; ok {
 			items[key] = append(items[key], item)
 		} else {
@@ -55,9 +66,14 @@ func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source i
 	}
 
 	orders := make([]entities.DistributionOrder, 0)
-	for _, v := range items {
+	for k, v := range items {
 		order, err := entities.DistributionOrder{}.Create(v)
 		if err != nil {
+			brandCode := strings.Split(k, "-")[0]
+			recptLocCode := strings.Split(k, "-")[1]
+			waybillNo := strings.Split(k, "-")[2]
+			etl.ErrorRepository.Save(brandCode, recptLocCode, waybillNo, err.Error())
+
 			continue
 		}
 		orders = append(orders, order)
@@ -70,17 +86,16 @@ func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source i
 func (etl DistributionETL) validateDistribution(distribution entities.DistributionOrder) (bool, error) {
 	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 	if err != nil {
-		log.Printf(err.Error())
 		return false, err
 	}
 	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(distribution.BrandCode, shopCode, distribution.WaybillNo)
 	if err != nil {
-		log.Println(err.Error())
 		return false, err
 	}
 
 	if len(recvSupp) == 0 {
-		return false, errors.New("there is no outbound order which waybill no is: " + distribution.WaybillNo + ", shop is: " + distribution.BrandCode + "-" + distribution.ReceiptLocationCode)
+		err = errors.New("there is no outbound order which waybill no is: " + distribution.WaybillNo + ", shop is: " + distribution.BrandCode + "-" + distribution.ReceiptLocationCode)
+		return false, err
 	}
 
 	ok := false
@@ -93,7 +108,8 @@ func (etl DistributionETL) validateDistribution(distribution entities.Distributi
 	}
 
 	if !ok {
-		return false, errors.New("outbound order that waybill no is " + distribution.WaybillNo + " has been put in storage")
+		err = errors.New("outbound order that waybill no is " + distribution.WaybillNo + " has been put in storage")
+		return false, err
 	}
 
 	return true, nil
@@ -110,7 +126,8 @@ func (etl DistributionETL) filterStorableDistributions(ctx context.Context, sour
 	for _, order := range orders {
 		ok, err := DistributionETL{}.validateDistribution(order)
 		if err != nil {
-			log.Println(err.Error())
+			fmt.Println(order.WaybillNo)
+			etl.saveError(order, "DistributionETL.filterStorableDistributions.orders | "+err.Error())
 			continue
 		}
 		if ok {
@@ -140,12 +157,12 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 	for _, order := range orders {
 		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "DistributionETL.Load.GetShopCodeByChiefShopCodeAndBrandCode | "+err.Error())
 			continue
 		}
 		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.InEmpID)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "DistributionETL.Load.PutInStorage | "+err.Error())
 			continue
 		}
 		etl.writeDownStockMiss(order)
@@ -153,7 +170,7 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 		// 更新状态的时候需要使用主卖场的Code
 		err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "DistributionETL.Load.MarkWaybillSynced | "+err.Error())
 			continue
 		}
 		log.Printf("运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
@@ -166,12 +183,12 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 func (etl DistributionETL) writeDownStockMiss(distribution entities.DistributionOrder) error {
 	shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 	if err != nil {
-		log.Printf(err.Error())
+		etl.saveError(distribution, "DistributionETL.writeDownStockMiss.GetShopCodeByChiefShopCodeAndBrandCode | "+err.Error())
 		return err
 	}
 	recvSupp, err := repositories.RecvSuppRepository{}.GetByWaybillNo(distribution.BrandCode, shopCode, distribution.WaybillNo)
 	if err != nil {
-		log.Println(err.Error())
+		etl.saveError(distribution, err.Error())
 		return err
 	}
 
@@ -221,7 +238,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 		} else {
 			shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(distribution.ReceiptLocationCode, distribution.BrandCode)
 			if err != nil {
-				log.Printf(err.Error())
+				etl.saveError(distribution, "DistributionETL.writeDownStockMiss.Items | "+err.Error())
 				continue
 			}
 			stockMiss := StockMiss{
@@ -244,7 +261,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 				log.Printf("运单号：%v, 有误差，参数：%v", v.WaybillNo, v)
 				err := repositories.RecvSuppRepository{}.WriteDownStockMiss(v.BrandCode, v.ShopCode, v.InDate, v.WaybillNo, v.SkuCode, v.EmpID, v.OutQty, v.InQty)
 				if err != nil {
-					log.Printf(err.Error())
+					etl.saveError(distribution, "DistributionETL.writeDownStockMiss.WriteDownStockMiss | "+err.Error())
 				}
 			}
 		}
