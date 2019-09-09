@@ -99,6 +99,8 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 }
 
 func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
+	utc, _ := time.LoadLocation("")
+	startDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			sd.synced,
@@ -111,13 +113,37 @@ func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 			AND sd.waybill_no = ?
 	`
 	result, err := factory.GetP2BrandEngine().Query(sql, receiptLocationCode, waybillNo)
+	endDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
 	So(err, ShouldBeNil)
 	So(len(result), ShouldEqual, 1)
 	distList := infra.ConvertByteResult(result)
 	So(distList[0]["synced"], ShouldEqual, "1")
-	now := time.Now()
+	So(distList[0]["last_updated_at"], ShouldBeGreaterThanOrEqualTo, startDate)
+	So(distList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
+}
+
+func directSyncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	utc, _ := time.LoadLocation("")
-	So(distList[0]["last_updated_at"], ShouldEqual, now.In(utc).Format("2006-01-02T15:04:05Z"))
+	startDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
+	sql := `
+		SELECT
+			dd.synced,
+			dd.last_updated_at
+		FROM pangpang_brand_sku_location.direct_distribution AS dd
+			JOIN pangpang_brand_place_management.store AS store
+				ON store.id = dd.receipt_location_id
+		WHERE dd.tenant_code = 'pangpang'
+			AND store.code = ?
+			AND dd.waybill_no = ?
+	`
+	result, err := factory.GetP2BrandEngine().Query(sql, receiptLocationCode, waybillNo)
+	endDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
+	So(err, ShouldBeNil)
+	So(len(result), ShouldEqual, 1)
+	distList := infra.ConvertByteResult(result)
+	So(distList[0]["synced"], ShouldEqual, "1")
+	So(distList[0]["last_updated_at"], ShouldBeGreaterThanOrEqualTo, startDate)
+	So(distList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
 }
 
 func TestDistributionETL(t *testing.T) {
@@ -270,6 +296,23 @@ func TestDistributionETL(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(distError.Type, ShouldEqual, clrConst.TypStockDistributionError)
 			So(len(distError.ErrorMessage), ShouldBeGreaterThan, 0)
+		})
+
+		brandCode = "SA"
+		recptLocCode = "CEGP"
+		waybillNo = "20190909001"
+		Convey(fmt.Sprintf("【工厂直送】运单号为%v的运单应该在CSL入库", waybillNo), func() {
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", recptLocCode, waybillNo)
+			So(err, ShouldBeNil)
+			So(len(recvSuppList), ShouldEqual, 2)
+			for _, recvSupp := range recvSuppList {
+				So(recvSupp.RecvChk, ShouldEqual, true)
+				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
+				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
+				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
+			}
+			directSyncedShouldBeTrue(recptLocCode, waybillNo)
 		})
 	})
 }

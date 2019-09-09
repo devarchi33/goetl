@@ -10,6 +10,9 @@ func initLocation() {
 	// 入库分配的表
 	createStockDistributeTable()
 	createStockDistributeItemTable()
+	// 工厂直送入库的表
+	createDirectDistributeTable()
+	createDirectDistributeItemTable()
 	// 退仓的表
 	createReturnToWarehouseTable()
 	createReturnToWarehouseItemTable()
@@ -439,6 +442,90 @@ func createStockTable() {
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createDirectDistributeTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createDirectDistributeTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE direct_distribution
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			tenant_code VARCHAR(255),
+			brand_code VARCHAR(255),
+			box_no VARCHAR(255),
+			waybill_no VARCHAR(255),
+			shipment_location_code VARCHAR(255),
+			receipt_location_id BIGINT(20),
+			created_at DATETIME,
+			colleague_id BIGINT(20),
+			version VARCHAR(255),
+			synced TINYINT(1),
+			last_updated_at DATETIME
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createDirectDistributeTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.direct_distribution 
+		(tenant_code, brand_code, box_no, waybill_no, shipment_location_code, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at) 
+		VALUES 
+		('pangpang', 'SA', '20190909001', '20190909001', 'ES', 2, '2019-09-09 10:56:43', 1, NULL, false, '2019-09-09 10:56:43');
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createDirectDistributeTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createDirectDistributeItemTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createDirectDistributeItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE direct_distribution_item
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			stock_distribute_id BIGINT(20),
+			product_id BIGINT(20),
+			brand_code VARCHAR(255),
+			sku_id BIGINT(20),
+			barcode VARCHAR(255),
+			quantity BIGINT(20),
+			created_at DATETIME,
+			out_quantity BIGINT(20)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createDirectDistributeItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.direct_distribution_item 
+		(stock_distribute_id, product_id, brand_code, sku_id, barcode, quantity, created_at, out_quantity)
+		VALUES
+		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-09-09 10:58:14', 4),
+		(1, 2, 'SA', 9, 'SPWJ948S2255075', 3, '2019-09-09 10:58:14', 3);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createDirectDistributeItemTable error: %v", err.Error())
 		log.Println()
 	}
 }

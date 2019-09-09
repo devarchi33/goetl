@@ -1,6 +1,7 @@
 package entities
 
 import (
+	p2bConst "clearance-adapter/domain/p2brand-constants"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
 	"errors"
@@ -15,8 +16,9 @@ type DistributionOrder struct {
 	BoxNo               string
 	InDate              string
 	InEmpID             string
-	Items               []DistributionOrderItem
 	Version             string // 在p2brand入库时候才用
+	Type                p2bConst.DistributionType
+	Items               []DistributionOrderItem
 }
 
 // RequiredKeys 创建 DistributionOrder 的必须项
@@ -43,6 +45,7 @@ func (DistributionOrder) Create(data []map[string]string) (DistributionOrder, er
 	order.BoxNo = orderData["box_no"]
 	order.InDate = infra.Parse8BitsDate(orderData["in_date"], nil)
 	order.InEmpID = orderData["in_emp_id"]
+	order.Type = orderData["type"]
 	order.Items = make([]DistributionOrderItem, 0)
 
 	for _, item := range data {
@@ -72,6 +75,11 @@ func (DistributionOrder) CreateByRecvSupp(data []models.RecvSupp) (DistributionO
 	order.WaybillNo = orderData.WayBillNo
 	order.BoxNo = orderData.BoxNo
 	order.Version = strconv.Itoa(len(data))
+	order.Type = p2bConst.TypLogisticsToShop
+	if orderData.ShippingTypeCode == "16" {
+		order.Type = p2bConst.TypFactoryToShop
+	}
+
 	order.Items = make([]DistributionOrderItem, 0)
 
 	for _, item := range data {

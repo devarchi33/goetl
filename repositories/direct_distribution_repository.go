@@ -14,34 +14,34 @@ import (
 	"github.com/pangpanglabs/goutils/httpreq"
 )
 
-// StockDistributionRepository P2-brand 物流分配入库单仓库
-type StockDistributionRepository struct{}
+// DirectDistributionRepository P2-brand 工厂直送分配入库单仓库
+type DirectDistributionRepository struct{}
 
 // GetUnsyncedDistributionOrders 获取未同步过的分配入库数据
-func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string]string, error) {
+func (DirectDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string]string, error) {
 	sql := `
 		SELECT
-			sd.id AS distribution_id,
-			sdi.brand_code,
+			dd.id AS distribution_id,
+			ddi.brand_code,
 			store.code AS receipt_location_code,
-			sd.waybill_no,
-			sd.box_no,
+			dd.waybill_no,
+			dd.box_no,
 			sku.code AS sku_code,
-			sdi.quantity AS qty,
-			sd.created_at AS in_date,
+			ddi.quantity AS qty,
+			dd.created_at AS in_date,
 			emp.employee_no AS in_emp_id,
-			'STOCK_DISTRIBUTION' AS type
-		FROM pangpang_brand_sku_location.stock_distribute AS sd
-			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
-				ON sd.id = sdi.stock_distribute_id
+			'DIRECT_DISTRIBUTION' AS type
+		FROM pangpang_brand_sku_location.direct_distribution AS dd
+			JOIN pangpang_brand_sku_location.direct_distribution_item AS ddi
+				ON dd.id = ddi.stock_distribute_id
 			JOIN pangpang_brand_product.sku AS sku
-				ON sku.id = sdi.sku_id
+				ON sku.id = ddi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
-				ON store.id = sd.receipt_location_id
+				ON store.id = dd.receipt_location_id
 			JOIN pangpang_common_colleague_employee.employees AS emp
-				ON emp.id = sd.colleague_id
-		WHERE sd.tenant_code = ?
-			AND sd.synced = false
+				ON emp.id = dd.colleague_id
+		WHERE dd.tenant_code = ?
+			AND dd.synced = false
 			;
 	`
 
@@ -54,16 +54,16 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 }
 
 // MarkWaybillSynced 标记某个运单已经同步过
-func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybillNo string) error {
+func (DirectDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybillNo string) error {
 	sql := `
-		UPDATE pangpang_brand_sku_location.stock_distribute sd
+		UPDATE pangpang_brand_sku_location.direct_distribution dd
 		JOIN pangpang_brand_place_management.store AS store
-			ON store.id = sd.receipt_location_id
-		SET sd.synced = true,
-			sd.last_updated_at = now()
-			WHERE sd.tenant_code = ?
+			ON store.id = dd.receipt_location_id
+		SET dd.synced = true,
+			dd.last_updated_at = now()
+			WHERE dd.tenant_code = ?
 			AND store.code = ?
-			AND sd.waybill_no = ?
+			AND dd.waybill_no = ?
 		;
 	`
 	_, err := factory.GetP2BrandEngine().Exec(sql, getTenantCode(), receiptLocationCode, waybillNo)
@@ -76,7 +76,7 @@ func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybil
 }
 
 // PutInStorage P2Brand 入库
-func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder) error {
+func (DirectDistributionRepository) PutInStorage(order entities.DistributionOrder) error {
 	store, has, err := PlaceRepository{}.GetStoreByCode(order.ReceiptLocationCode)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 	data["boxNo"] = order.BoxNo
 	data["brandCode"] = order.BrandCode
 	data["version"] = order.Version
-	data["distributionType"] = "01"
+	data["distributionType"] = "16"
 
 	items := make([]map[string]interface{}, 0)
 	for _, v := range order.Items {
@@ -111,6 +111,10 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 	data["items"] = items
 
 	url := config.GetP2BrandSkuLocationAPIRoot() + "/stock-distribute"
+	fmt.Println(url)
+
+	fmt.Println("--------")
+	fmt.Println(data)
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/json;charset=utf-8"
 	var resp struct {

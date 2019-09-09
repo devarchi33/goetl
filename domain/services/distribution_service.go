@@ -3,6 +3,7 @@ package services
 import (
 	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/domain/entities"
+	p2bConst "clearance-adapter/domain/p2brand-constants"
 	"clearance-adapter/repositories"
 	"context"
 	"errors"
@@ -43,6 +44,13 @@ func (etl DistributionETL) Extract(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	directDistResult, err := repositories.DirectDistributionRepository{}.GetUnsyncedDistributionOrders()
+	if err != nil {
+		return nil, err
+	}
+
+	result = append(result, directDistResult...)
 
 	return result, nil
 }
@@ -165,15 +173,27 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 			etl.saveError(order, "DistributionETL.Load.PutInStorage | "+err.Error())
 			continue
 		}
-		etl.writeDownStockMiss(order)
 
-		// 更新状态的时候需要使用主卖场的Code
-		err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
-		if err != nil {
-			etl.saveError(order, "DistributionETL.Load.MarkWaybillSynced | "+err.Error())
-			continue
+		if order.Type == p2bConst.TypFactoryToShop {
+			// 更新状态的时候需要使用主卖场的Code
+			err = repositories.DirectDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
+			if err != nil {
+				etl.saveError(order, "DistributionETL.Load。DirectDistributionRepository.MarkWaybillSynced | "+err.Error())
+				continue
+			}
+			log.Printf("【工厂直送】运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
+		} else {
+
+			etl.writeDownStockMiss(order)
+
+			// 更新状态的时候需要使用主卖场的Code
+			err = repositories.StockDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
+			if err != nil {
+				etl.saveError(order, "DistributionETL.Load.StockDistributionRepository。MarkWaybillSynced | "+err.Error())
+				continue
+			}
+			log.Printf("【物流分配】运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 		}
-		log.Printf("运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 	}
 
 	return nil
