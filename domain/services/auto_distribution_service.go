@@ -12,21 +12,31 @@ import (
 	"log"
 	"time"
 
+	clrConst "clearance-adapter/domain/clr-constants"
+
 	"github.com/pangpanglabs/goetl"
 )
 
 // AutoDistributionETL 自动入库入库 CSL ->  p2-brand
 // p2-brand -> CSL 部分由DistributionETL完成
-type AutoDistributionETL struct{}
+type AutoDistributionETL struct {
+	ErrorRepository repositories.StockDistributionErrorRepository
+}
 
 // New 创建 AutoDistributionETL 对象，从Clearance到CSL
 func (AutoDistributionETL) New() *goetl.ETL {
-	distETL := AutoDistributionETL{}
+	distETL := AutoDistributionETL{
+		ErrorRepository: repositories.StockDistributionErrorRepository{}}
 
 	etl := goetl.New(distETL)
 	etl.Before(AutoDistributionETL{}.buildDistributionOrders)
 
 	return etl
+}
+
+func (etl AutoDistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
+	log.Printf(errMsg)
+	go etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoStockDistributionError)
 }
 
 // Extract 获取14天未入库的出库单
@@ -95,7 +105,7 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 	for _, order := range orders {
 		shopCode, err := repositories.RecvSuppRepository{}.GetChiefShopCodeByShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "AutoDistributionETL.Load.orders | "+err.Error())
 			continue
 		}
 		order.ReceiptLocationCode = shopCode
@@ -103,7 +113,7 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 		if order.Type == p2bConst.TypFactoryToShop {
 			err = repositories.DirectDistributionRepository{}.PutInStorage(order)
 			if err != nil {
-				log.Printf(err.Error())
+				etl.saveError(order, "AutoDistributionETL.Load.【工厂直送】PutInStorage | "+err.Error())
 				continue
 			}
 
@@ -111,7 +121,7 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 		} else {
 			err = repositories.StockDistributionRepository{}.PutInStorage(order)
 			if err != nil {
-				log.Printf(err.Error())
+				etl.saveError(order, "AutoDistributionETL.Load.【物流分配】PutInStorage | "+err.Error())
 				continue
 			}
 

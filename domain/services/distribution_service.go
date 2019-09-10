@@ -1,13 +1,13 @@
 package services
 
 import (
+	clrConst "clearance-adapter/domain/clr-constants"
 	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/domain/entities"
 	p2bConst "clearance-adapter/domain/p2brand-constants"
 	"clearance-adapter/repositories"
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -35,7 +35,7 @@ func (DistributionETL) New() *goetl.ETL {
 
 func (etl DistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
 	log.Printf(errMsg)
-	go etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg)
+	go etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypStockDistributionError)
 }
 
 // Extract ...
@@ -77,10 +77,12 @@ func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source i
 	for k, v := range items {
 		order, err := entities.DistributionOrder{}.Create(v)
 		if err != nil {
-			brandCode := strings.Split(k, "-")[0]
-			recptLocCode := strings.Split(k, "-")[1]
-			waybillNo := strings.Split(k, "-")[2]
-			etl.ErrorRepository.Save(brandCode, recptLocCode, waybillNo, err.Error())
+
+			etl.saveError(entities.DistributionOrder{
+				BrandCode:           strings.Split(k, "-")[0],
+				ReceiptLocationCode: strings.Split(k, "-")[1],
+				WaybillNo:           strings.Split(k, "-")[2],
+			}, err.Error())
 
 			continue
 		}
@@ -134,7 +136,6 @@ func (etl DistributionETL) filterStorableDistributions(ctx context.Context, sour
 	for _, order := range orders {
 		ok, err := DistributionETL{}.validateDistribution(order)
 		if err != nil {
-			fmt.Println(order.WaybillNo)
 			etl.saveError(order, "DistributionETL.filterStorableDistributions.orders | "+err.Error())
 			continue
 		}

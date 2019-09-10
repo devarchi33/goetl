@@ -111,10 +111,6 @@ func (DirectDistributionRepository) PutInStorage(order entities.DistributionOrde
 	data["items"] = items
 
 	url := config.GetP2BrandSkuLocationAPIRoot() + "/stock-distribute"
-	fmt.Println(url)
-
-	fmt.Println("--------")
-	fmt.Println(data)
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/json;charset=utf-8"
 	var resp struct {
