@@ -49,4 +49,22 @@ func TestAutoDistributionETL(t *testing.T) {
 		}
 		So(has, ShouldEqual, true)
 	})
+
+	waybillNo = "20190909002"
+	brandCode = "SA"
+	shopCode = "CEGP"
+	title = fmt.Sprintf("【工厂直送】卖场%v(品牌%v)的%v运单应该在P2Brand中入库，并且ReceiptLocationCode为%v", shopCode, brandCode, waybillNo, shopCode)
+	Convey(title, t, func() {
+		orders, err := repositories.DirectDistributionRepository{}.GetUnsyncedDistributionOrders()
+		So(err, ShouldBeNil)
+		has := false
+		for _, v := range orders {
+			if v["waybill_no"] == waybillNo {
+				has = true
+				So(v["brand_code"], ShouldEqual, brandCode)
+				So(v["receipt_location_code"], ShouldEqual, shopCode)
+			}
+		}
+		So(has, ShouldEqual, true)
+	})
 }

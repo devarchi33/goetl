@@ -3,6 +3,7 @@ package services
 import (
 	"clearance-adapter/config"
 	"clearance-adapter/domain/entities"
+	p2bConst "clearance-adapter/domain/p2brand-constants"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
 	"clearance-adapter/repositories"
@@ -98,13 +99,24 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 			continue
 		}
 		order.ReceiptLocationCode = shopCode
-		err = repositories.StockDistributionRepository{}.PutInStorage(order)
-		if err != nil {
-			log.Printf(err.Error())
-			continue
-		}
 
-		log.Printf("Clearance将运单号为：%v 的运单（卖场：%v，品牌：%v）自动入库到P2Brand，需要继续等待Clearance将其同步到CSL。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
+		if order.Type == p2bConst.TypFactoryToShop {
+			err = repositories.DirectDistributionRepository{}.PutInStorage(order)
+			if err != nil {
+				log.Printf(err.Error())
+				continue
+			}
+
+			log.Printf("Clearance将【工厂直送】运单号为：%v 的运单（卖场：%v，品牌：%v）自动入库到P2Brand，需要继续等待Clearance将其同步到CSL。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
+		} else {
+			err = repositories.StockDistributionRepository{}.PutInStorage(order)
+			if err != nil {
+				log.Printf(err.Error())
+				continue
+			}
+
+			log.Printf("Clearance将【物流分配】运单号为：%v 的运单（卖场：%v，品牌：%v）自动入库到P2Brand，需要继续等待Clearance将其同步到CSL。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
+		}
 	}
 
 	return nil

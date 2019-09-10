@@ -1,6 +1,7 @@
 package entities
 
 import (
+	p2bConst "clearance-adapter/domain/p2brand-constants"
 	"clearance-adapter/models"
 	"errors"
 	"fmt"
@@ -24,6 +25,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 					"qty":                   "2",
 					"in_emp_id":             "7000028260",
 					"in_date":               "2019-08-18T19:03:13Z",
+					"type":                  "DIRECT_DISTRIBUTION",
 				}, map[string]string{
 					"brand_code":            "SA",
 					"receipt_location_code": "CEGP",
@@ -33,6 +35,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 					"qty":                   "3",
 					"in_emp_id":             "7000028260",
 					"in_date":               "2019-08-18T19:03:13Z",
+					"type":                  "DIRECT_DISTRIBUTION",
 				},
 			}
 			order, err := DistributionOrder{}.Create(data)
@@ -42,6 +45,7 @@ func TestCreateDistributionOrder(t *testing.T) {
 			So(order.WaybillNo, ShouldEqual, "1010590009008")
 			So(order.BoxNo, ShouldEqual, "1010590009008")
 			So(order.InEmpID, ShouldEqual, "7000028260")
+			So(order.Type, ShouldEqual, p2bConst.TypFactoryToShop)
 			So(order.Items, ShouldNotBeNil)
 			So(len(order.Items), ShouldEqual, 2)
 			So(order.Items[0].SkuCode, ShouldEqual, "SPWJ948S2255070")
@@ -99,10 +103,11 @@ func TestCreateByRecvSupp(t *testing.T) {
 	Convey("如果源数据类型正确，应该能成确转换", t, func() {
 		recvSupp1 := models.RecvSupp{
 			RecvSuppMst: models.RecvSuppMst{
-				BrandCode: brandCode,
-				ShopCode:  receiptLocationCode,
-				WayBillNo: waybillNo,
-				BoxNo:     boxNo,
+				BrandCode:        brandCode,
+				ShopCode:         receiptLocationCode,
+				WayBillNo:        waybillNo,
+				BoxNo:            boxNo,
+				ShippingTypeCode: "16",
 			},
 			RecvSuppDtl: models.RecvSuppDtl{
 				ProdCode:    sku1,
@@ -111,10 +116,11 @@ func TestCreateByRecvSupp(t *testing.T) {
 		}
 		recvSupp2 := models.RecvSupp{
 			RecvSuppMst: models.RecvSuppMst{
-				BrandCode: brandCode,
-				ShopCode:  receiptLocationCode,
-				WayBillNo: waybillNo,
-				BoxNo:     boxNo,
+				BrandCode:        brandCode,
+				ShopCode:         receiptLocationCode,
+				WayBillNo:        waybillNo,
+				BoxNo:            boxNo,
+				ShippingTypeCode: "16",
 			},
 			RecvSuppDtl: models.RecvSuppDtl{
 				ProdCode:    sku2,
@@ -128,6 +134,7 @@ func TestCreateByRecvSupp(t *testing.T) {
 		So(order.ReceiptLocationCode, ShouldEqual, receiptLocationCode)
 		So(order.WaybillNo, ShouldEqual, waybillNo)
 		So(order.BoxNo, ShouldEqual, boxNo)
+		So(order.Type, ShouldEqual, p2bConst.TypFactoryToShop)
 		So(order.Version, ShouldEqual, strconv.Itoa(len(data)))
 		So(order.Items[0].SkuCode, ShouldEqual, sku1)
 		So(order.Items[0].Qty, ShouldEqual, qty1)
