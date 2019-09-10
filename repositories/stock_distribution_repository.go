@@ -91,7 +91,7 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 	data["boxNo"] = order.BoxNo
 	data["brandCode"] = order.BrandCode
 	data["version"] = order.Version
-	data["distributionType"] = "01"
+	data["distributionType"] = "Distribute"
 
 	items := make([]map[string]interface{}, 0)
 	for _, v := range order.Items {
