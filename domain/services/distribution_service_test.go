@@ -100,7 +100,7 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 
 func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	utc, _ := time.LoadLocation("")
-	startDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
+	startDate := time.Now().Add(-1000).In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			sd.synced,
