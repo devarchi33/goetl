@@ -1,6 +1,7 @@
 package services
 
 import (
+	clrConst "clearance-adapter/domain/clr-constants"
 	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/factory"
@@ -8,6 +9,7 @@ import (
 	"clearance-adapter/repositories"
 	_ "clearance-adapter/test"
 	"context"
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -100,6 +102,8 @@ func TestTransform(t *testing.T) {
 }
 
 func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, shouldBeTrue bool) {
+	utc, _ := time.LoadLocation("")
+	startDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			rtw.synced,
@@ -112,6 +116,7 @@ func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, should
 			AND rtw.waybill_no = ?
 	`
 	result, err := factory.GetP2BrandEngine().Query(sql, shipmentLocationCode, waybillNo)
+	endDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
 	So(err, ShouldBeNil)
 	So(len(result), ShouldEqual, 1)
 	distList := infra.ConvertByteResult(result)
@@ -120,9 +125,8 @@ func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, should
 	} else {
 		So(distList[0]["synced"], ShouldEqual, "0")
 	}
-	now := time.Now()
-	utc, _ := time.LoadLocation("")
-	So(distList[0]["last_updated_at"], ShouldEqual, now.In(utc).Format("2006-01-02T15:04:05Z"))
+	So(distList[0]["last_updated_at"], ShouldBeGreaterThanOrEqualTo, startDate)
+	So(distList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
 }
 
 func TestReturnToWarehouseETL(t *testing.T) {
@@ -182,6 +186,18 @@ func TestReturnToWarehouseETL(t *testing.T) {
 				}
 			}
 			rtwSyncedShouldBeTrueOrFalse("CEGP", "20190814001", true)
+		})
+
+		brandCode := "SA"
+		shipLocCode := "CFGY"
+		waybillNo := "20190910001"
+		title := fmt.Sprintf("%v品牌，%v卖场，运单号为：%v的运单应该同步失败并且在error表中有记录", brandCode, shipLocCode, waybillNo)
+		Convey(title, func() {
+			has, distError, err := repositories.ReturnToWarehouseErrorRepository{}.GetByWaybillNo("XX", shipLocCode, waybillNo)
+			So(has, ShouldEqual, true)
+			So(err, ShouldBeNil)
+			So(distError.Type, ShouldEqual, clrConst.TypReturnToWarehouseError)
+			So(len(distError.ErrorMessage), ShouldBeGreaterThan, 0)
 		})
 	})
 }
