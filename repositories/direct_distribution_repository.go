@@ -91,7 +91,7 @@ func (DirectDistributionRepository) PutInStorage(order entities.DistributionOrde
 	data["boxNo"] = order.BoxNo
 	data["brandCode"] = order.BrandCode
 	data["version"] = order.Version
-	data["distributionType"] = "16"
+	data["distributionType"] = "DirectDistribute"
 
 	items := make([]map[string]interface{}, 0)
 	for _, v := range order.Items {
