@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
 	"fmt"
@@ -11,7 +12,7 @@ import (
 type StockDistributionErrorRepository struct{}
 
 // Save ...
-func (StockDistributionErrorRepository) Save(brandCode, receiptLocationCode, waybillNo, errMsg, errType string) error {
+func (StockDistributionErrorRepository) Save(brandCode, receiptLocationCode, waybillNo, errMsg string, errType clrConst.ClrErrorType) error {
 	has, distError, err := StockDistributionErrorRepository{}.GetByWaybillNo(brandCode, receiptLocationCode, waybillNo)
 	if err != nil {
 		return err
