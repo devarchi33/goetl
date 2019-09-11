@@ -2,6 +2,7 @@ package services
 
 import (
 	"clearance-adapter/config"
+	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/domain/entities"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
@@ -9,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/pangpanglabs/goetl"
@@ -16,16 +18,25 @@ import (
 
 // AutoTransferETL 自动调货入库 CSL ->  p2-brand
 // p2-brand -> CSL 部分由TransferETL完成
-type AutoTransferETL struct{}
+type AutoTransferETL struct {
+	ErrorRepository repositories.StockRoundErrorRepository
+}
 
 // New 创建 AutoTransferETL 对象，从Clearance到CSL
 func (AutoTransferETL) New() *goetl.ETL {
-	transferETL := AutoTransferETL{}
+	transferETL := AutoTransferETL{
+		ErrorRepository: repositories.StockRoundErrorRepository{},
+	}
 
 	etl := goetl.New(transferETL)
 	etl.Before(AutoTransferETL{}.buildTransferOrders)
 
 	return etl
+}
+
+func (etl AutoTransferETL) saveError(order entities.TransferOrder, errMsg string) {
+	log.Printf(errMsg)
+	go etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoTransferInError)
 }
 
 // Extract 获取14天未入库的出库单
@@ -53,7 +64,7 @@ func (etl AutoTransferETL) buildTransferOrders(ctx context.Context, source inter
 
 	items := make(map[string][]models.RecvSupp, 0)
 	for _, item := range data {
-		key := item.RecvSuppMst.BrandCode + "-" + item.RecvSuppMst.ShopCode + "-" + item.WayBillNo
+		key := item.RecvSuppMst.BrandCode + "-" + item.RecvSuppMst.TargetShopCode + "-" + item.RecvSuppMst.ShopCode + "-" + item.WayBillNo
 		if _, ok := items[key]; ok {
 			items[key] = append(items[key], item)
 		} else {
@@ -63,9 +74,17 @@ func (etl AutoTransferETL) buildTransferOrders(ctx context.Context, source inter
 	}
 
 	orders := make([]entities.TransferOrder, 0)
-	for _, v := range items {
+	for k, v := range items {
 		order, err := entities.TransferOrder{}.CreateByRecvSupp(v)
 		if err != nil {
+
+			etl.saveError(entities.TransferOrder{
+				BrandCode:            strings.Split(k, "-")[0],
+				ShipmentLocationCode: strings.Split(k, "-")[1],
+				ReceiptLocationCode:  strings.Split(k, "-")[2],
+				WaybillNo:            strings.Split(k, "-")[3],
+			}, err.Error())
+
 			continue
 		}
 		orders = append(orders, order)
@@ -94,18 +113,18 @@ func (etl AutoTransferETL) Load(ctx context.Context, source interface{}) error {
 	for _, order := range orders {
 		chiefShipmentLocationCode, err := repositories.RecvSuppRepository{}.GetChiefShopCodeByShopCodeAndBrandCode(order.ShipmentLocationCode, order.BrandCode)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "TransferETL.Load.GetChiefShopCodeByShopCodeAndBrandCode(chiefShipmentLocationCode) | "+err.Error())
 			continue
 		}
 
 		chiefReceiptLocationCode, err := repositories.RecvSuppRepository{}.GetChiefShopCodeByShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "TransferETL.Load.GetChiefShopCodeByShopCodeAndBrandCode(chiefReceiptLocationCode) | "+err.Error())
 			continue
 		}
 		err = repositories.StockRoundRepository{}.TransferIn(order.WaybillNo, chiefShipmentLocationCode, chiefReceiptLocationCode)
 		if err != nil {
-			log.Printf(err.Error())
+			etl.saveError(order, "TransferETL.Load.TransferIn | "+err.Error())
 			continue
 		}
 

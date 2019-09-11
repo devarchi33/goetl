@@ -6,9 +6,11 @@ import (
 	"clearance-adapter/repositories"
 	_ "clearance-adapter/test"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	clrConst "clearance-adapter/domain/clr-constants"
 	cslConst "clearance-adapter/domain/csl-constants"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -17,6 +19,8 @@ import (
 )
 
 func transferOrderSyncedShouldBeTrue(shipmentLocationCode, receiptLocationCode, waybillNo string) {
+	utc, _ := time.LoadLocation("")
+	startDate := time.Now().Add(-1000).In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			sr.synced,
@@ -33,13 +37,13 @@ func transferOrderSyncedShouldBeTrue(shipmentLocationCode, receiptLocationCode, 
 		;
 	`
 	result, err := factory.GetP2BrandEngine().Query(sql, shipmentLocationCode, receiptLocationCode, waybillNo)
+	endDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
 	So(err, ShouldBeNil)
 	So(len(result), ShouldEqual, 1)
-	distList := infra.ConvertByteResult(result)
-	So(distList[0]["synced"], ShouldEqual, "1")
-	now := time.Now()
-	utc, _ := time.LoadLocation("")
-	So(distList[0]["last_updated_at"], ShouldEqual, now.In(utc).Format("2006-01-02T15:04:05Z"))
+	tranList := infra.ConvertByteResult(result)
+	So(tranList[0]["synced"], ShouldEqual, "1")
+	So(tranList[0]["last_updated_at"], ShouldBeGreaterThanOrEqualTo, startDate)
+	So(tranList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
 }
 
 func TestTransferETL(t *testing.T) {
@@ -88,6 +92,19 @@ func TestTransferETL(t *testing.T) {
 		})
 		Convey("CEGP卖场调到CFGY卖场的运单为20190821001的调货单同步后，synced应该为true", func() {
 			transferOrderSyncedShouldBeTrue(shipmentLocationCode, receiptLocationCode, waybillNo)
+		})
+
+		brandCode = "SA"
+		shipLocCode := "CEGP"
+		recptLocCode := "CFGY"
+		waybillNo = "20190911001"
+		title := fmt.Sprintf("%v品牌，从%v卖场调货到%v卖场，运单号为：%v的运单应该同步失败并且在error表中有记录", brandCode, shipLocCode, recptLocCode, waybillNo)
+		Convey(title, func() {
+			has, tranError, err := repositories.StockRoundErrorRepository{}.GetByWaybillNo("XX", shipLocCode, recptLocCode, waybillNo)
+			So(has, ShouldEqual, true)
+			So(err, ShouldBeNil)
+			So(tranError.Type, ShouldEqual, clrConst.TypTransferError)
+			So(len(tranError.ErrorMessage), ShouldBeGreaterThan, 0)
 		})
 	})
 }
