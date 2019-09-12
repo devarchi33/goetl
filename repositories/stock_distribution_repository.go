@@ -3,6 +3,7 @@ package repositories
 import (
 	"clearance-adapter/config"
 	"clearance-adapter/domain/entities"
+	p2bConst "clearance-adapter/domain/p2brand-constants"
 	"clearance-adapter/factory"
 	"clearance-adapter/infra"
 	"clearance-adapter/infra/proxy"
@@ -12,6 +13,18 @@ import (
 
 	"github.com/pangpanglabs/goutils/behaviorlog"
 	"github.com/pangpanglabs/goutils/httpreq"
+)
+
+// SkuLocationDistributionType sku-location 使用的入库类型
+// https://pangpang.dooray.com/project/posts/2565169056341902087
+type SkuLocationDistributionType = string
+
+const (
+	// TypStockDistribute 物流分配
+	TypStockDistribute = "Distribute"
+
+	// TypDirectDistribute 工厂直送
+	TypDirectDistribute = "DirectDistribute"
 )
 
 // StockDistributionRepository P2-brand 物流分配入库单仓库
@@ -75,8 +88,7 @@ func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybil
 	return nil
 }
 
-// PutInStorage P2Brand 入库
-func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder) error {
+func (StockDistributionRepository) putInStorage(order entities.DistributionOrder) error {
 	store, has, err := PlaceRepository{}.GetStoreByCode(order.ReceiptLocationCode)
 	if err != nil {
 		return err
@@ -91,7 +103,10 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 	data["boxNo"] = order.BoxNo
 	data["brandCode"] = order.BrandCode
 	data["version"] = order.Version
-	data["distributionType"] = "Distribute"
+	data["distributionType"] = TypStockDistribute
+	if order.Type == p2bConst.TypFactoryToShop {
+		data["distributionType"] = TypDirectDistribute
+	}
 
 	items := make([]map[string]interface{}, 0)
 	for _, v := range order.Items {
@@ -143,5 +158,10 @@ func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder
 		return nil
 	}
 
-	return fmt.Errorf("Call PutInStorage API error, status code is %v, error message is: %v ", statusCode, resp)
+	return fmt.Errorf("Call PutInStorage API error, status code is %v, error message is: %v , data is: %v", statusCode, resp, data)
+}
+
+// PutInStorage P2Brand 入库
+func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder) error {
+	return StockDistributionRepository{}.putInStorage(order)
 }
