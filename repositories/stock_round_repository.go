@@ -106,7 +106,7 @@ func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptL
 	}
 	receiptLocationID := receiptLocation.ID
 
-	url := fmt.Sprintf("%v/stock-round/%v?status=%v&shipmentLocationId=%v&receiptLocationId=%v", config.GetP2BrandSkuLocationAPIRoot(), waybillNo, cslConst.StsConfirmed, shipmentLocationID, receiptLocationID)
+	url := fmt.Sprintf("%v/stock-round?waybillNo=%v&status=%v&shipmentLocationId=%v&receiptLocationId=%v", config.GetP2BrandSkuLocationAPIRoot(), waybillNo, cslConst.StsConfirmed, shipmentLocationID, receiptLocationID)
 
 	var resp struct {
 		Result  interface{} `json:"result"`
