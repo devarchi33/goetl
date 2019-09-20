@@ -52,7 +52,7 @@ func TestGetUnsyncedTransferInOrders(t *testing.T) {
 		Convey("应该返回[]map[string]string类型的结果, 并且包含brand_code, shipment_location_code, receipt_location_code, waybill_no, box_no, out_date, out_emp_id, in_date, in_emp_id, sku_code, qty, shipping_company_code字段", func() {
 			result, err := StockRoundRepository{}.GetUnsyncedTransferInOrders()
 			So(err, ShouldBeNil)
-			So(len(result), ShouldEqual, 2)
+			So(len(result), ShouldEqual, 3)
 			for _, item := range result {
 				requiredKeys := [12]string{"brand_code", "shipment_location_code", "receipt_location_code", "waybill_no", "box_no", "out_date", "out_emp_id", "in_date", "in_emp_id", "sku_code", "qty", "shipping_company_code"}
 				isOk := true

@@ -23,6 +23,8 @@ func initLocation() {
 	createCMMPlantTable()
 	// 库存相关表
 	createStockTable()
+	// 运单表
+	createWaybillsTable()
 }
 
 func createLocationDB() {
@@ -530,6 +532,29 @@ func createDirectDistributeItemTable() {
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createDirectDistributeItemTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createWaybillsTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createWaybillsTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE waybills
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			waybill_no VARCHAR(255)
+		);
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createWaybillsTable error: %v", err.Error())
 		log.Println()
 	}
 }

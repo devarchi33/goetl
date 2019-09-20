@@ -22,7 +22,7 @@ func (DirectDistributionRepository) GetUnsyncedDistributionOrders() ([]map[strin
 			sku.code AS sku_code,
 			ddi.quantity AS qty,
 			dd.created_at AS in_date,
-			emp.employee_no AS in_emp_id,
+			emp.emp_id AS in_emp_id,
 			'DIRECT_DISTRIBUTION' AS type
 		FROM pangpang_brand_sku_location.direct_distribution AS dd
 			JOIN pangpang_brand_sku_location.direct_distribution_item AS ddi
@@ -31,8 +31,8 @@ func (DirectDistributionRepository) GetUnsyncedDistributionOrders() ([]map[strin
 				ON sku.id = ddi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
 				ON store.id = dd.receipt_location_id
-			JOIN pangpang_common_colleague_employee.employees AS emp
-				ON emp.id = dd.colleague_id
+			JOIN pangpang_common_colleague_auth.employees AS emp
+				ON emp.colleague_id = dd.colleague_id
 		WHERE dd.tenant_code = ?
 			AND dd.synced = false
 			;

@@ -42,7 +42,7 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 			sku.code AS sku_code,
 			sdi.quantity AS qty,
 			sd.created_at AS in_date,
-			emp.employee_no AS in_emp_id,
+			emp.emp_id AS in_emp_id,
 			'STOCK_DISTRIBUTION' AS type
 		FROM pangpang_brand_sku_location.stock_distribute AS sd
 			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
@@ -51,8 +51,8 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 				ON sku.id = sdi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
 				ON store.id = sd.receipt_location_id
-			JOIN pangpang_common_colleague_employee.employees AS emp
-				ON emp.id = sd.colleague_id
+			JOIN pangpang_common_colleague_auth.employees AS emp
+				ON emp.colleague_id = sd.colleague_id
 		WHERE sd.tenant_code = ?
 			AND sd.synced = false
 			;

@@ -46,7 +46,7 @@ func TestGetUnsyncedReturnToWarehouseOrders(t *testing.T) {
 		Convey("应该返回[]map[string]string类型的结果, 并且包含brand_code, shipment_location_code, waybill_no, status_code, emp_id, sku_code, qty, out_date字段", func() {
 			result, err := ReturnToWarehouseRepository{}.GetUnsyncedReturnToWarehouseOrders()
 			So(err, ShouldBeNil)
-			So(len(result), ShouldEqual, 4)
+			So(len(result), ShouldEqual, 5)
 			for _, item := range result {
 				requiredKeys := [8]string{"brand_code", "shipment_location_code", "waybill_no", "status_code", "emp_id", "sku_code", "qty", "out_date"}
 				isOk := true

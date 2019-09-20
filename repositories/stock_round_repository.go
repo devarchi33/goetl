@@ -30,9 +30,9 @@ func (StockRoundRepository) GetUnsyncedTransferInOrders() ([]map[string]string, 
 			sku.code AS sku_code,
 			sri.quantity AS qty,
 			sr.out_created_at AS out_date,
-			outEmp.employee_no AS out_emp_id,
+			outEmp.emp_id AS out_emp_id,
 			sr.in_created_at AS in_date,
-			inEmp.employee_no AS in_emp_id,
+			inEmp.emp_id AS in_emp_id,
 			sr.shipping_company_code
 		FROM pangpang_brand_sku_location.stock_round AS sr
 			JOIN pangpang_brand_sku_location.stock_round_item AS sri
@@ -43,10 +43,10 @@ func (StockRoundRepository) GetUnsyncedTransferInOrders() ([]map[string]string, 
 				ON shipmentStore.id = sr.shipment_location_id
 			JOIN pangpang_brand_place_management.store AS receitpStore
 				ON receitpStore.id = sr.receipt_location_id
-			JOIN pangpang_common_colleague_employee.employees AS outEmp
-				ON outEmp.id = sr.out_colleague_id
-			JOIN pangpang_common_colleague_employee.employees AS inEmp
-				ON inEmp.id = sr.in_colleague_id
+			JOIN pangpang_common_colleague_auth.employees AS outEmp
+				ON outEmp.colleague_id = sr.out_colleague_id
+			JOIN pangpang_common_colleague_auth.employees AS inEmp
+				ON inEmp.colleague_id = sr.in_colleague_id
 		WHERE sr.tenant_code = ?
 			AND sr.synced = false
 			AND sr.status = 'F'
@@ -90,6 +90,7 @@ func (StockRoundRepository) MarkWaybillSynced(shipmentLocationCode, receiptLocat
 func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptLocationCode string) error {
 	shipmentLocation, has, err := PlaceRepository{}.GetStoreByCode(shipmentLocationCode)
 	if err != nil {
+		fmt.Println(1)
 		return err
 	}
 	if !has {
@@ -99,6 +100,7 @@ func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptL
 
 	receiptLocation, has, err := PlaceRepository{}.GetStoreByCode(receiptLocationCode)
 	if err != nil {
+		fmt.Println(2)
 		return err
 	}
 	if !has {
@@ -108,35 +110,26 @@ func (StockRoundRepository) TransferIn(waybillNo, shipmentLocationCode, receiptL
 
 	url := fmt.Sprintf("%v/stock-round?waybillNo=%v&status=%v&shipmentLocationId=%v&receiptLocationId=%v", config.GetP2BrandSkuLocationAPIRoot(), waybillNo, cslConst.StsConfirmed, shipmentLocationID, receiptLocationID)
 
-	var resp struct {
-		Result  interface{} `json:"result"`
-		Success bool        `json:"success"`
-		Error   struct {
-			Code    int         `json:"code"`
-			Message string      `json:"message"`
-			Details interface{} `json:"details"`
-		} `json:"error"`
-	}
 	tokenProxy := proxy.TokenProxy{}.GetInstance()
 	token, err := tokenProxy.GetToken()
 	if err != nil {
+		fmt.Println(3)
 		return err
 	}
-	statusCode, err := httpreq.New(http.MethodPut, url, nil).
+	statusCode, err := httpreq.New(http.MethodPut, url, make(map[string]interface{}, 0)).
 		WithToken(token).
 		WithBehaviorLogContext(behaviorlog.FromCtx(nil)).
-		Call(&resp)
+		Call(nil)
 
 	if err != nil {
-		return err
-	}
-	if err != nil {
+		fmt.Println(4)
 		return err
 	}
 
 	if statusCode >= 200 && statusCode <= 299 {
+		fmt.Println(5)
 		return nil
 	}
 
-	return fmt.Errorf("Call TransferIn API error, status code is %v, error message is: %v ", statusCode, resp)
+	return fmt.Errorf("Call TransferIn API error, status code is %v, error message is: %v ", statusCode, err.Error())
 }
