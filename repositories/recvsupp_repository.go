@@ -178,22 +178,37 @@ func (RecvSuppRepository) GetChiefShopCodeByShopCodeAndBrandCode(shopCode, brand
 	return shop, nil
 }
 
+// CreateReturnToWarehouseAnytimeOrder 创建随时退仓订单，返回RecvSuppNo
+func (RecvSuppRepository) CreateReturnToWarehouseAnytimeOrder(brandCode, shopCode, waybillNo, outDate, empID, deliveryOrderNo string) (string, error) {
+	return RecvSuppRepository{}.createReturnToWarehouseOrder(brandCode, shopCode, waybillNo, cslConst.TypRTWAnytime, outDate, empID, deliveryOrderNo)
+}
+
+// CreateReturnToWarehouseSeasonalOrder 创建季节退仓订单，返回RecvSuppNo
+func (RecvSuppRepository) CreateReturnToWarehouseSeasonalOrder(brandCode, shopCode, waybillNo, outDate, empID, deliveryOrderNo string) (string, error) {
+	return RecvSuppRepository{}.createReturnToWarehouseOrder(brandCode, shopCode, waybillNo, cslConst.TypRTWSeasonal, outDate, empID, deliveryOrderNo)
+}
+
+// CreateReturnToWarehouseDefectiveOrder 创建次品退仓订单，返回RecvSuppNo
+func (RecvSuppRepository) CreateReturnToWarehouseDefectiveOrder(brandCode, shopCode, waybillNo, outDate, empID, deliveryOrderNo string) (string, error) {
+	return RecvSuppRepository{}.createReturnToWarehouseOrder(brandCode, shopCode, waybillNo, cslConst.TypRTWDefective, outDate, empID, deliveryOrderNo)
+}
+
 // CreateReturnToWarehouseOrder 创建退仓订单，返回RecvSuppNo
-func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, waybillNo, outDate, empID, deliveryOrderNo string) (string, error) {
+func (RecvSuppRepository) createReturnToWarehouseOrder(brandCode, shopCode, waybillNo, shippingTypeCode, outDate, empID, deliveryOrderNo string) (string, error) {
 	sql := `
 		EXEC [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppMst_C1_Clearance]
 			@BrandCode				= ?
 			,@ShopCode				= ?
 			,@OutDate				= ?
 			,@WayBillNo				= ?
-			,@ShippingTypeCode		= '41'
+			,@ShippingTypeCode		= ?
 			,@ShippingCompanyCode  	= 'SR'
 			,@EmpID 				= ?
 			,@DeliveryID 			= ?
 			,@DeliveryOrderNo 		= ?
 	`
 
-	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, outDate, waybillNo, empID, waybillNo, deliveryOrderNo)
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, outDate, waybillNo, shippingTypeCode, empID, waybillNo, deliveryOrderNo)
 	if err != nil {
 		log.Printf("brandCode: %v", brandCode)
 		log.Printf("shopCode: %v", shopCode)
@@ -209,6 +224,38 @@ func (RecvSuppRepository) CreateReturnToWarehouseOrder(brandCode, shopCode, wayb
 	recvSuppNo := master[0]["RecvSuppNo"]
 
 	return recvSuppNo, nil
+}
+
+// AddReturnToWarehouseDefectiveOrderItem 向退仓单中添加次品商品
+func (RecvSuppRepository) AddReturnToWarehouseDefectiveOrderItem(brandCode, shopCode, outDate, recvSuppNo, skuCode, abnormalProdReasonCode string, qty int, empID string) error {
+	sql := `
+	EXEC [dbo].[up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance]
+		@RecvSuppNo			        = ?
+		,@RecvSuppSeqNo		        = NULL
+		,@BrandCode					= ?
+		,@ShopCode					= ?
+		,@Dates						= ?
+		,@ProdCode					= ?
+		,@RecvSuppQty				= ?
+		,@AbnormalProdReasonCode	= ?
+		,@EmpID						= ?
+		,@AbnormalChkCode    		= 1
+		,@AbnormalSerialNo   		= NULL
+`
+
+	_, err := factory.GetCSLEngine().Exec(sql, recvSuppNo, brandCode, shopCode, outDate, skuCode, qty, abnormalProdReasonCode, empID)
+	if err != nil {
+		log.Println("up_CSLK_IOM_InsertReturnGoodReservation_RecvSuppDtl_C1_Clearance params:")
+		log.Printf("recvSuppNo: %v", recvSuppNo)
+		log.Printf("brandCode: %v", brandCode)
+		log.Printf("shopCode: %v", shopCode)
+		log.Printf("outDate: %v", outDate)
+		log.Printf("skuCode: %v", skuCode)
+
+		return errors.New("AddReturnToWarehouseDefectiveOrderItem error: " + err.Error())
+	}
+
+	return nil
 }
 
 // AddReturnToWarehouseOrderItem 向退仓单中添加商品

@@ -13,9 +13,15 @@ func initLocation() {
 	// 工厂直送入库的表
 	createDirectDistributeTable()
 	createDirectDistributeItemTable()
-	// 退仓的表
-	createReturnToWarehouseTable()
-	createReturnToWarehouseItemTable()
+	// 随时退仓的表
+	createReturnToWarehouseAnytimeTable()
+	createReturnToWarehouseAnytimeItemTable()
+	// 季节退仓的表
+	createReturnToWarehouseSeasonalTable()
+	createReturnToWarehouseSeasonalItemTable()
+	// 次品退仓的表
+	createReturnToWarehouseDefectiveTable()
+	createReturnToWarehouseDefectiveItemTable()
 	// 调货的表
 	createStockRoundTable()
 	createStockRoundItemTable()
@@ -168,17 +174,17 @@ func createStockDistributeItemTable() {
 	}
 }
 
-func createReturnToWarehouseTable() {
+func createReturnToWarehouseAnytimeTable() {
 	session := factory.GetP2BrandEngine().NewSession()
 	defer session.Close()
 
 	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
-		log.Printf("createReturnToWarehouseTable error: %v", err.Error())
+		log.Printf("createReturnToWarehouseAnytimeTable error: %v", err.Error())
 		log.Println()
 	}
 
 	sql := `
-		CREATE TABLE return_to_warehouse
+		CREATE TABLE return_to_warehouse_anytime
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
 			tenant_code VARCHAR(255),
@@ -186,51 +192,52 @@ func createReturnToWarehouseTable() {
 			status VARCHAR(255),
 			waybill_no VARCHAR(255),
 			shipment_location_id BIGINT(20),
+			receipt_location_code VARCHAR(255),
+			synced TINYINT(1),
 			created_at DATETIME,
 			last_updated_at DATETIME,
-			colleague_id BIGINT(20),
-			receipt_location_code VARCHAR(255),
-			synced TINYINT(1) DEFAULT '0' NOT NULL,
 			last_colleague_id BIGINT(20),
+			colleague_id BIGINT(20),
 			out_created_at DATETIME,
-			out_colleague_id BIGINT(20)
+			out_colleague_id BIGINT(20),
+			warehouse_type VARCHAR(255)
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
-		log.Printf("createReturnToWarehouseTable error: %v", err.Error())
+		log.Printf("createReturnToWarehouseAnytimeTable error: %v", err.Error())
 		log.Println()
 	}
 
 	sql = `
-		INSERT INTO pangpang_brand_sku_location.return_to_warehouse 
+		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_anytime 
 		(tenant_code, brand_code, status, waybill_no, shipment_location_id, created_at, last_updated_at, 
 			colleague_id, receipt_location_code, synced, last_colleague_id, out_created_at, out_colleague_id) 
 		VALUES
-		('pangpang', 'SA', 'R', '20190813001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 09:03:13', 1),
-		('pangpang', 'Q3', 'R', '20190814001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 19:03:13', 1),
-		('pangpang', 'SA', 'R', '20190819001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES', true, 1, '2019-08-18 19:03:13', 1),
-		('pangpang', 'XX', 'R', '20190910001', 3, '2019-09-10 09:03:12', '2019-09-10 09:03:13', 1, 'ES', false, 1, '2019-09-10 19:03:13', 1);
+		('pangpang', 'SA', 'R', 'A20190813001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 09:03:13', 1),
+		('pangpang', 'Q3', 'R', 'A20190814001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 19:03:13', 1),
+		('pangpang', 'SA', 'R', 'A20190819001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES', true, 1, '2019-08-18 19:03:13', 1),
+		('pangpang', 'XX', 'R', 'A20190910001', 3, '2019-09-10 09:03:12', '2019-09-10 09:03:13', 1, 'ES', false, 1, '2019-09-10 19:03:13', 1);
 	`
 	if _, err := session.Exec(sql); err != nil {
-		log.Printf("createReturnToWarehouseTable error: %v", err.Error())
+		log.Printf("createReturnToWarehouseAnytimeTable error: %v", err.Error())
 		log.Println()
 	}
 }
 
-func createReturnToWarehouseItemTable() {
+func createReturnToWarehouseAnytimeItemTable() {
 	session := factory.GetP2BrandEngine().NewSession()
 	defer session.Close()
 
 	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
-		log.Printf("createReturnToWarehouseItemTable error: %v", err.Error())
+		log.Printf("createReturnToWarehouseAnytimeItemTable error: %v", err.Error())
 		log.Println()
 	}
 
 	sql := `
-		CREATE TABLE return_to_warehouse_item
+		CREATE TABLE return_to_warehouse_anytime_item
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			return_to_warehouse_id BIGINT(20),
+			return_to_warehouse_anytime_id BIGINT(20),
 			product_id BIGINT(20),
 			brand_code VARCHAR(255),
 			sku_id BIGINT(20),
@@ -243,13 +250,13 @@ func createReturnToWarehouseItemTable() {
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
-		log.Printf("createReturnToWarehouseItemTable error: %v", err.Error())
+		log.Printf("createReturnToWarehouseAnytimeItemTable error: %v", err.Error())
 		log.Println()
 	}
 
 	sql = `
-		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_item 
-		(return_to_warehouse_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
+		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_anytime_item 
+		(return_to_warehouse_anytime_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
 		VALUES 
 		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
 		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
@@ -260,7 +267,203 @@ func createReturnToWarehouseItemTable() {
 		(4, 1, 'XX', 3, 'SPYC949S1139095', 1, '2019-09-10 09:10:08', 1, '2019-09-10 09:10:11', 1);
 	`
 	if _, err := session.Exec(sql); err != nil {
-		log.Printf("createReturnToWarehouseItemTable error: %v", err.Error())
+		log.Printf("createReturnToWarehouseAnytimeItemTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createReturnToWarehouseSeasonalTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createReturnToWarehouseSeasonalTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE return_to_warehouse_seasonal
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			tenant_code VARCHAR(255),
+			brand_code VARCHAR(255),
+			status VARCHAR(255),
+			waybill_no VARCHAR(255),
+			shipment_location_id BIGINT(20),
+			receipt_location_code VARCHAR(255),
+			synced TINYINT(1),
+			created_at DATETIME,
+			last_updated_at DATETIME,
+			last_colleague_id BIGINT(20),
+			colleague_id BIGINT(20),
+			out_created_at DATETIME,
+			out_colleague_id BIGINT(20),
+			warehouse_type VARCHAR(255)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseSeasonalTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_seasonal 
+		(tenant_code, brand_code, status, waybill_no, shipment_location_id, created_at, last_updated_at, 
+			colleague_id, receipt_location_code, synced, last_colleague_id, out_created_at, out_colleague_id) 
+		VALUES
+		('pangpang', 'SA', 'R', 'S20190813001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 09:03:13', 1),
+		('pangpang', 'Q3', 'R', 'S20190814001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 19:03:13', 1),
+		('pangpang', 'SA', 'R', 'S20190819001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES', true, 1, '2019-08-18 19:03:13', 1),
+		('pangpang', 'XX', 'R', 'S20190910001', 3, '2019-09-10 09:03:12', '2019-09-10 09:03:13', 1, 'ES', false, 1, '2019-09-10 19:03:13', 1);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseSeasonalTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createReturnToWarehouseSeasonalItemTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createReturnToWarehouseSeasonalItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE return_to_warehouse_seasonal_item
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			return_to_warehouse_seasonal_id BIGINT(20),
+			product_id BIGINT(20),
+			brand_code VARCHAR(255),
+			sku_id BIGINT(20),
+			barcode VARCHAR(255),
+			quantity BIGINT(20),
+			created_at DATETIME,
+			created_colleague_id BIGINT(20),
+			updated_at DATETIME,
+			updated_colleague_id BIGINT(20)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseSeasonalItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_seasonal_item 
+		(return_to_warehouse_seasonal_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
+		VALUES 
+		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
+		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
+		(2, 6, 'Q3', 45, 'Q3AFAFDU6S2100230', 2, '2019-08-14 09:09:13', 1, '2019-08-14 09:09:18', 1),
+		(2, 6, 'Q3', 46, 'Q3AFAFDU6S2100240', 3, '2019-08-14 09:10:08', 1, '2019-08-14 09:10:11', 1),
+		(3, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
+		(3, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
+		(4, 1, 'XX', 3, 'SPYC949S1139095', 1, '2019-09-10 09:10:08', 1, '2019-09-10 09:10:11', 1);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseSeasonalItemTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createReturnToWarehouseDefectiveTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createReturnToWarehouseDefectiveTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE return_to_warehouse_defective
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			tenant_code VARCHAR(255),
+			brand_code VARCHAR(255),
+			status VARCHAR(255),
+			waybill_no VARCHAR(255),
+			shipment_location_id BIGINT(20),
+			receipt_location_code VARCHAR(255),
+			synced TINYINT(1),
+			created_at DATETIME,
+			last_updated_at DATETIME,
+			last_colleague_id BIGINT(20),
+			colleague_id BIGINT(20),
+			out_created_at DATETIME,
+			out_colleague_id BIGINT(20),
+			warehouse_type VARCHAR(255)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseDefectiveTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_defective 
+		(tenant_code, brand_code, status, waybill_no, shipment_location_id, created_at, last_updated_at, 
+			colleague_id, receipt_location_code, synced, last_colleague_id, out_created_at, out_colleague_id) 
+		VALUES
+		('pangpang', 'SA', 'R', 'D20190813001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 09:03:13', 1),
+		('pangpang', 'Q3', 'R', 'D20190814001', 2, '2019-08-13 09:03:12', '2019-08-13 09:03:13', 1, 'ES', false, 1, '2019-08-13 19:03:13', 1),
+		('pangpang', 'SA', 'R', 'D20190819001', 2, '2019-08-14 09:03:12', '2019-08-14 09:03:13', 1, 'ES', true, 1, '2019-08-18 19:03:13', 1),
+		('pangpang', 'XX', 'R', 'D20190910001', 3, '2019-09-10 09:03:12', '2019-09-10 09:03:13', 1, 'ES', false, 1, '2019-09-10 19:03:13', 1);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseDefectiveTable error: %v", err.Error())
+		log.Println()
+	}
+}
+
+func createReturnToWarehouseDefectiveItemTable() {
+	session := factory.GetP2BrandEngine().NewSession()
+	defer session.Close()
+
+	if _, err := session.Exec("USE pangpang_brand_sku_location;"); err != nil {
+		log.Printf("createReturnToWarehouseDefectiveItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql := `
+		CREATE TABLE return_to_warehouse_defective_item
+		(
+			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+			return_to_warehouse_defective_id BIGINT(20),
+			product_id BIGINT(20),
+			brand_code VARCHAR(255),
+			sku_id BIGINT(20),
+			barcode VARCHAR(255),
+			quantity BIGINT(20),
+			created_at DATETIME,
+			created_colleague_id BIGINT(20),
+			updated_at DATETIME,
+			updated_colleague_id BIGINT(20)
+		);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseDefectiveItemTable error: %v", err.Error())
+		log.Println()
+	}
+
+	sql = `
+		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_defective_item 
+		(return_to_warehouse_defective_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
+		VALUES 
+		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
+		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
+		(2, 6, 'Q3', 45, 'Q3AFAFDU6S2100230', 2, '2019-08-14 09:09:13', 1, '2019-08-14 09:09:18', 1),
+		(2, 6, 'Q3', 46, 'Q3AFAFDU6S2100240', 3, '2019-08-14 09:10:08', 1, '2019-08-14 09:10:11', 1),
+		(3, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
+		(3, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
+		(4, 1, 'XX', 3, 'SPYC949S1139095', 1, '2019-09-10 09:10:08', 1, '2019-09-10 09:10:11', 1);
+	`
+	if _, err := session.Exec(sql); err != nil {
+		log.Printf("createReturnToWarehouseDefectiveItemTable error: %v", err.Error())
 		log.Println()
 	}
 }
