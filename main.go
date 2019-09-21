@@ -31,8 +31,20 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	returnToWarehouseETL := services.ReturnToWarehouseETL{}.New()
-	err = returnToWarehouseETL.Run(context.Background())
+	returnToWarehouseAnytimeETL := services.ReturnToWarehouseAnytimeETL{}.New()
+	err = returnToWarehouseAnytimeETL.Run(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	returnToWarehouseSeasonalETL := services.ReturnToWarehouseSeasonalETL{}.New()
+	err = returnToWarehouseSeasonalETL.Run(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	returnToWarehouseDefectiveETL := services.ReturnToWarehouseDefectiveETL{}.New()
+	err = returnToWarehouseDefectiveETL.Run(context.Background())
 	if err != nil {
 		log.Println(err.Error())
 	}
