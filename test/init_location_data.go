@@ -237,7 +237,7 @@ func createReturnToWarehouseAnytimeItemTable() {
 		CREATE TABLE return_to_warehouse_anytime_item
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			return_to_warehouse_anytime_id BIGINT(20),
+			anytime_id BIGINT(20),
 			product_id BIGINT(20),
 			brand_code VARCHAR(255),
 			sku_id BIGINT(20),
@@ -256,7 +256,7 @@ func createReturnToWarehouseAnytimeItemTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_anytime_item 
-		(return_to_warehouse_anytime_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
+		(anytime_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
 		VALUES 
 		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
 		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
@@ -335,7 +335,7 @@ func createReturnToWarehouseSeasonalItemTable() {
 		CREATE TABLE return_to_warehouse_seasonal_item
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			return_to_warehouse_seasonal_id BIGINT(20),
+			seasonal_id BIGINT(20),
 			product_id BIGINT(20),
 			brand_code VARCHAR(255),
 			sku_id BIGINT(20),
@@ -354,7 +354,7 @@ func createReturnToWarehouseSeasonalItemTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_seasonal_item 
-		(return_to_warehouse_seasonal_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
+		(seasonal_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
 		VALUES 
 		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
 		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),
@@ -433,7 +433,7 @@ func createReturnToWarehouseDefectiveItemTable() {
 		CREATE TABLE return_to_warehouse_defective_item
 		(
 			id BIGINT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-			return_to_warehouse_defective_id BIGINT(20),
+			defective_id BIGINT(20),
 			product_id BIGINT(20),
 			brand_code VARCHAR(255),
 			sku_id BIGINT(20),
@@ -452,7 +452,7 @@ func createReturnToWarehouseDefectiveItemTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.return_to_warehouse_defective_item 
-		(return_to_warehouse_defective_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
+		(defective_id, product_id, brand_code, sku_id, barcode, quantity, created_at, created_colleague_id, updated_at, updated_colleague_id) 
 		VALUES 
 		(1, 2, 'SA', 8, 'SPWJ948S2255070', 4, '2019-08-13 09:09:13', 1, '2019-08-13 09:09:18', 1),
 		(1, 1, 'SA', 3, 'SPYC949S1139095', 1, '2019-08-13 09:10:08', 1, '2019-08-13 09:10:11', 1),

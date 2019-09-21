@@ -23,7 +23,7 @@ func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseAnytimeOrders() (
 			rtw.out_created_at AS out_date
 		FROM pangpang_brand_sku_location.return_to_warehouse_anytime AS rtw
 			JOIN pangpang_brand_sku_location.return_to_warehouse_anytime_item AS rtwi
-				ON rtw.id = rtwi.return_to_warehouse_anytime_id
+				ON rtw.id = rtwi.anytime_id
 			JOIN pangpang_brand_product.sku AS sku
 				ON sku.id = rtwi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
@@ -80,7 +80,7 @@ func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseSeasonalOrders() 
 			rtw.out_created_at AS out_date
 		FROM pangpang_brand_sku_location.return_to_warehouse_seasonal AS rtw
 			JOIN pangpang_brand_sku_location.return_to_warehouse_seasonal_item AS rtwi
-				ON rtw.id = rtwi.return_to_warehouse_seasonal_id
+				ON rtw.id = rtwi.seasonal_id
 			JOIN pangpang_brand_product.sku AS sku
 				ON sku.id = rtwi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
@@ -137,7 +137,7 @@ func (ReturnToWarehouseRepository) GetUnsyncedReturnToWarehouseDefectiveOrders()
 			rtw.out_created_at AS out_date
 		FROM pangpang_brand_sku_location.return_to_warehouse_defective AS rtw
 			JOIN pangpang_brand_sku_location.return_to_warehouse_defective_item AS rtwi
-				ON rtw.id = rtwi.return_to_warehouse_defective_id
+				ON rtw.id = rtwi.defective_id
 			JOIN pangpang_brand_product.sku AS sku
 				ON sku.id = rtwi.sku_id
 			JOIN pangpang_brand_place_management.store AS store
