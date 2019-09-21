@@ -17,10 +17,10 @@ const (
 	TypShopToShop string = "20"
 
 	// TypRTWAnytime 随时退仓
-	TypRTWAnytime string = "41"
+	TypRTWAnytime string = "42"
 
 	// TypRTWSeasonal 季节退仓
-	TypRTWSeasonal string = "42"
+	TypRTWSeasonal string = "41"
 
 	// TypRTWDefective 次品退仓
 	TypRTWDefective string = "47"
