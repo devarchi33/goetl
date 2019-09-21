@@ -65,7 +65,7 @@ func TestTransform(t *testing.T) {
 				},
 			}
 
-			result, err := ReturnToWarehouseETL{}.Transform(context.Background(), data)
+			result, err := ReturnToWarehouseAnytimeETL{}.Transform(context.Background(), data)
 			if err != nil {
 				log.Printf(err.Error())
 			}
@@ -101,14 +101,14 @@ func TestTransform(t *testing.T) {
 	})
 }
 
-func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, shouldBeTrue bool) {
+func rtwAnytimeSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, shouldBeTrue bool) {
 	utc, _ := time.LoadLocation("")
 	startDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			rtw.synced,
 			rtw.last_updated_at
-		FROM pangpang_brand_sku_location.return_to_warehouse AS rtw
+		FROM pangpang_brand_sku_location.return_to_warehouse_anytime AS rtw
 			JOIN pangpang_brand_place_management.store AS store
 				ON store.id = rtw.shipment_location_id
 		WHERE rtw.tenant_code = 'pangpang'
@@ -129,24 +129,26 @@ func rtwSyncedShouldBeTrueOrFalse(shipmentLocationCode, waybillNo string, should
 	So(distList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
 }
 
-func TestReturnToWarehouseETL(t *testing.T) {
-	Convey("测试ReturnToWarehouseETL的Run方法", t, func() {
-		etl := ReturnToWarehouseETL{}.New()
+func TestReturnToWarehouseAnytimeETL(t *testing.T) {
+	Convey("测试ReturnToWarehouseAnytimeETL的Run方法", t, func() {
+		etl := ReturnToWarehouseAnytimeETL{}.New()
 		err := etl.Run(context.Background())
 		So(err, ShouldBeNil)
-		Convey("运单号为20190819001的出库单synced=true，所以应该不会同步到CSL入库", func() {
-			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "20190819001")
+		waybillNo := "A20190819001"
+		Convey("运单号为"+waybillNo+"的出库单synced=true，所以应该不会同步到CSL入库", func() {
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 0)
 		})
-		Convey("运单号为20190813001的退仓出库单应该在CSL有记录", func() {
-			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", "20190813001")
+		waybillNo = "A20190813001"
+		Convey("运单号为"+waybillNo+"的退仓出库单应该在CSL有记录", func() {
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("SA", "CEGP", waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 2)
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, false)
-				So(recvSupp.ShippingTypeCode, ShouldEqual, "41")
-				So(recvSupp.RecvSuppType, ShouldEqual, "S")
+				So(recvSupp.ShippingTypeCode, ShouldEqual, cslConst.TypRTWAnytime)
+				So(recvSupp.RecvSuppType, ShouldEqual, cslConst.TypSentOut)
 				So(recvSupp.RecvSuppStatusCode, ShouldEqual, cslConst.StsSentOut)
 				So(recvSupp.SuppEmpID, ShouldEqual, "7000028260")
 				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
@@ -159,17 +161,18 @@ func TestReturnToWarehouseETL(t *testing.T) {
 					So(recvSupp.RecvSuppQty, ShouldEqual, 1)
 				}
 			}
-			rtwSyncedShouldBeTrueOrFalse("CEGP", "20190813001", true)
+			rtwAnytimeSyncedShouldBeTrueOrFalse("CEGP", waybillNo, true)
 		})
 
-		Convey("CEGP的子卖场CJC1运单号为20190814001的退仓出库单应该在CSL有记录", func() {
-			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("Q3", "CJC1", "20190814001")
+		waybillNo = "A20190814001"
+		Convey("CEGP的子卖场CJC1运单号为"+waybillNo+"的退仓出库单应该在CSL有记录", func() {
+			recvSuppList, err := repositories.RecvSuppRepository{}.GetByWaybillNo("Q3", "CJC1", waybillNo)
 			So(err, ShouldBeNil)
 			So(len(recvSuppList), ShouldEqual, 2)
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, false)
-				So(recvSupp.ShippingTypeCode, ShouldEqual, "41")
-				So(recvSupp.RecvSuppType, ShouldEqual, "S")
+				So(recvSupp.ShippingTypeCode, ShouldEqual, cslConst.TypRTWAnytime)
+				So(recvSupp.RecvSuppType, ShouldEqual, cslConst.TypSentOut)
 				So(recvSupp.RecvSuppStatusCode, ShouldEqual, cslConst.StsSentOut)
 				So(recvSupp.SuppEmpID, ShouldEqual, "7000028260")
 				So(recvSupp.SuppEmpName, ShouldEqual, "史妍珣")
@@ -185,12 +188,12 @@ func TestReturnToWarehouseETL(t *testing.T) {
 					So(recvSupp.RecvSuppQty, ShouldEqual, 3)
 				}
 			}
-			rtwSyncedShouldBeTrueOrFalse("CEGP", "20190814001", true)
+			rtwAnytimeSyncedShouldBeTrueOrFalse("CEGP", waybillNo, true)
 		})
 
 		brandCode := "SA"
 		shipLocCode := "CFGY"
-		waybillNo := "20190910001"
+		waybillNo = "A20190910001"
 		title := fmt.Sprintf("%v品牌，%v卖场，运单号为：%v的运单应该同步失败并且在error表中有记录", brandCode, shipLocCode, waybillNo)
 		Convey(title, func() {
 			has, distError, err := repositories.ReturnToWarehouseErrorRepository{}.GetByWaybillNo("XX", shipLocCode, waybillNo)

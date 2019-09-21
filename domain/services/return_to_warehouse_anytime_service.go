@@ -13,28 +13,28 @@ import (
 	"github.com/pangpanglabs/goetl"
 )
 
-// ReturnToWarehouseETL 退仓 p2-brand -> CSL
-type ReturnToWarehouseETL struct {
+// ReturnToWarehouseAnytimeETL 随时退仓 p2-brand -> CSL
+type ReturnToWarehouseAnytimeETL struct {
 	ErrorRepository repositories.ReturnToWarehouseErrorRepository
 }
 
-// New 创建 ReturnToWarehouseETL 对象，从Clearance到CSL
-func (ReturnToWarehouseETL) New() *goetl.ETL {
-	returnToWarehouseETL := ReturnToWarehouseETL{
+// New 创建 ReturnToWarehouseAnytimeETL 对象，从Clearance到CSL
+func (ReturnToWarehouseAnytimeETL) New() *goetl.ETL {
+	returnToWarehouseETL := ReturnToWarehouseAnytimeETL{
 		ErrorRepository: repositories.ReturnToWarehouseErrorRepository{}}
 	etl := goetl.New(returnToWarehouseETL)
 
 	return etl
 }
 
-func (etl ReturnToWarehouseETL) saveError(order entities.ReturnToWarehouseOrder, errMsg string) {
+func (etl ReturnToWarehouseAnytimeETL) saveError(order entities.ReturnToWarehouseOrder, errMsg string) {
 	log.Printf(errMsg)
 	go etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.WaybillNo, errMsg)
 }
 
 // Extract ...
-func (etl ReturnToWarehouseETL) Extract(ctx context.Context) (interface{}, error) {
-	result, err := repositories.ReturnToWarehouseRepository{}.GetUnsyncedReturnToWarehouseOrders()
+func (etl ReturnToWarehouseAnytimeETL) Extract(ctx context.Context) (interface{}, error) {
+	result, err := repositories.ReturnToWarehouseRepository{}.GetUnsyncedReturnToWarehouseAnytimeOrders()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (etl ReturnToWarehouseETL) Extract(ctx context.Context) (interface{}, error
 }
 
 // Transform ...
-func (etl ReturnToWarehouseETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
+func (etl ReturnToWarehouseAnytimeETL) Transform(ctx context.Context, source interface{}) (interface{}, error) {
 	data, ok := source.([]map[string]string)
 	if !ok {
 		return nil, errors.New("Convert Failed")
@@ -68,7 +68,7 @@ func (etl ReturnToWarehouseETL) Transform(ctx context.Context, source interface{
 				BrandCode:            strings.Split(k, "-")[0],
 				ShipmentLocationCode: strings.Split(k, "-")[1],
 				WaybillNo:            strings.Split(k, "-")[2],
-			}, "ReturnToWarehouseETL.Transform.orders | "+err.Error())
+			}, "ReturnToWarehouseAnytimeETL.Transform.orders | "+err.Error())
 			continue
 		}
 		orders = append(orders, order)
@@ -78,7 +78,7 @@ func (etl ReturnToWarehouseETL) Transform(ctx context.Context, source interface{
 }
 
 // Load ...
-func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) error {
+func (etl ReturnToWarehouseAnytimeETL) Load(ctx context.Context, source interface{}) error {
 	orders, ok := source.([]entities.ReturnToWarehouseOrder)
 	if !ok {
 		return errors.New("Convert Failed")
@@ -87,19 +87,19 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 	for _, order := range orders {
 		if len(order.Items) == 0 {
 			err := fmt.Errorf("运单号为: %v 的出库单没有商品", order.WaybillNo)
-			etl.saveError(order, "ReturnToWarehouseETL.Load.orders | "+err.Error())
+			etl.saveError(order, "ReturnToWarehouseAnytimeETL.Load.orders | "+err.Error())
 			continue
 		}
 
 		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ShipmentLocationCode, order.BrandCode)
 		if err != nil {
-			etl.saveError(order, "ReturnToWarehouseETL.Load.GetShopCodeByChiefShopCodeAndBrandCode | "+err.Error())
+			etl.saveError(order, "ReturnToWarehouseAnytimeETL.Load.GetShopCodeByChiefShopCodeAndBrandCode | "+err.Error())
 			continue
 		}
 
-		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseOrder(order.BrandCode, shopCode, order.WaybillNo, order.OutDate, order.EmpID, order.DeliveryOrderNo)
+		recvSuppNo, err := repositories.RecvSuppRepository{}.CreateReturnToWarehouseAnytimeOrder(order.BrandCode, shopCode, order.WaybillNo, order.OutDate, order.EmpID, order.DeliveryOrderNo)
 		if err != nil {
-			etl.saveError(order, "ReturnToWarehouseETL.Load.CreateReturnToWarehouseOrder | "+err.Error())
+			etl.saveError(order, "ReturnToWarehouseAnytimeETL.Load.CreateReturnToWarehouseAnytimeOrder | "+err.Error())
 			continue
 		}
 
@@ -109,7 +109,7 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 			go func(item entities.ReturnToWarehouseOrderItem, wg *sync.WaitGroup) {
 				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseOrderItem(order.BrandCode, shopCode, order.OutDate, recvSuppNo, item.SkuCode, item.Qty, order.EmpID)
 				if err != nil {
-					etl.saveError(order, "ReturnToWarehouseETL.Load.AddReturnToWarehouseOrderItem | "+err.Error())
+					etl.saveError(order, "ReturnToWarehouseAnytimeETL.Load.AddReturnToWarehouseOrderItem | "+err.Error())
 				}
 				wg.Done()
 			}(v, &wg)
@@ -117,9 +117,9 @@ func (etl ReturnToWarehouseETL) Load(ctx context.Context, source interface{}) er
 		wg.Wait()
 
 		// 更新状态的时候需要使用主卖场的Code
-		err = repositories.ReturnToWarehouseRepository{}.MarkWaybillSynced(order.ShipmentLocationCode, order.WaybillNo)
+		err = repositories.ReturnToWarehouseRepository{}.MarkAnytimeWaybillSynced(order.ShipmentLocationCode, order.WaybillNo)
 		if err != nil {
-			etl.saveError(order, "ReturnToWarehouseETL.Load.MarkWaybillSynced | "+err.Error())
+			etl.saveError(order, "ReturnToWarehouseAnytimeETL.Load.MarkAnytimeWaybillSynced | "+err.Error())
 			continue
 		}
 		log.Printf("运单号为：%v 的退仓单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShipmentLocationCode, order.BrandCode)
