@@ -120,6 +120,35 @@ func (RecvSuppRepository) WriteDownStockMiss(brandCode, shopCode, inDate, waybil
 	return nil
 }
 
+// GetStockMissStatusByWaybillNo 根据运单号获取该运单的误差状态（是否可以修改误差）
+func (RecvSuppRepository) GetStockMissStatusByWaybillNo(brandCode, shopCode, waybillNo string) (bool, cslConst.StockMissStatus, error) {
+	sql := `
+		SELECT TOP 1 StockMisStatusCode
+		FROM StockMisDtl AS m
+		JOIN RecvSuppMst AS mst
+		ON m.BrandCode = mst.BrandCode
+			AND m.ShopCode = mst.ShopCode
+			AND m.RecvSuppNo = mst.RecvSuppNo
+		WHERE mst.BrandCode = ?
+		AND mst.ShopCode = ?
+		AND mst.WayBillNo = ?
+		ORDER BY StockMisStatusCode DESC ;
+	`
+
+	result, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo)
+	if err != nil {
+		return false, "", err
+	}
+
+	if result == nil || len(result) == 0 {
+		return false, "", nil
+	}
+
+	status := infra.ConvertByteResult(result)[0]["StockMisStatusCode"]
+
+	return true, status, nil
+}
+
 // GetShopCodeByChiefShopCodeAndBrandCode 根据主卖场Code和子品牌获取子卖场的Code
 func (RecvSuppRepository) GetShopCodeByChiefShopCodeAndBrandCode(chiefShopCode, brandCode string) (string, error) {
 	sql := `
