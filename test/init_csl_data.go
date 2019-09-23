@@ -866,11 +866,12 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 
 	sql := `
 		CREATE PROCEDURE [dbo].[up_CSLK_IOM_UpdateStockInEnterConfirmSave_RecvSuppMst_R1_Clearance_By_WaybillNo]
-			@BrandCode VARCHAR(4),   -- 브랜드 코드
-			@ShopCode CHAR(4),       -- 主卖场
-			@WaybillNo VARCHAR(13),  -- 운송장번호
-			@InDate CHAR(8),			-- 入库时间
-			@EmpID CHAR(10)      -- 入库人EmpNo
+			@BrandCode VARCHAR(4),   	-- 브랜드 코드
+			@ShopCode CHAR(4),       	-- 主卖场
+			@WaybillNo VARCHAR(13),  	-- 운송장번호
+			@InDate CHAR(8),					-- 入库时间
+			@EmpID CHAR(10),      		-- 入库人EmpNo
+			@IsAuto BIT								-- 是否是自动入库
 			AS
 			--SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 			SET XACT_ABORT ON;
@@ -884,8 +885,8 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 				DECLARE @ErrorCode NVARCHAR(1000) = '';
 				DECLARE @ErrorParam1 NVARCHAR(4000) = '';
 				DECLARE @ErrorParam2 NVARCHAR(4000) = '';
-				DECLARE @RecvEmpName NVARCHAR(200);
-				DECLARE @UserID VARCHAR(20);
+				DECLARE @RecvEmpName NVARCHAR(200) = '';
+				DECLARE @UserID VARCHAR(20) = '';
 
 				BEGIN TRY
 					-- 마감체크
@@ -921,15 +922,23 @@ func createUpdateStockInEnterConfirmSaveRecvSuppMstR1ClearanceByWaybillNo() {
 					PRINT ('@RecvSuppNo2');
 					PRINT (@RecvSuppNo);
 
+			IF @IsAuto = 1
+			BEGIN
+				SET @UserID = 'SYS_BG_USER'
+				SET @RecvEmpName = N'强制入库'
+				SET @EmpID = NULL
+			END
+			ELSE
+			BEGIN
 
-			SELECT @RecvEmpName = EmpName
-			FROM Employee
-			WHERE EmpID = @EmpID
+				SELECT @RecvEmpName = EmpName
+				FROM Employee
+				WHERE EmpID = @EmpID
 
-
-			SELECT @UserID = UserID
-			FROM UserInfo
-			WHERE EmpID = @EmpID
+				SELECT @UserID = UserID
+				FROM UserInfo
+				WHERE EmpID = @EmpID
+			END;
 
 					-- 인터페이스 실시간 처리 확인
 					EXEC [up_CSLK_IF_CHK_RecvSupp] @p_RECVSUPPNO = @RecvSuppNo,

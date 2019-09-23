@@ -61,6 +61,25 @@ func (RecvSuppRepository) GetUnconfirmedTransferOrdersByDeadline(deadline string
 	return details, nil
 }
 
+// AutoPutInStorage 自动入库
+func (RecvSuppRepository) AutoPutInStorage(brandCode, shopCode, waybillNo, inDate string) error {
+	sql := `
+		EXEC [up_CSLK_IOM_UpdateStockInEnterConfirmSave_RecvSuppMst_R1_Clearance_By_WaybillNo]
+				@BrandCode = ?,
+				@ShopCode = ?,
+				@WaybillNo = ?,
+				@InDate = ?,
+				@EmpID = NULL,
+				@IsAuto = 1
+		`
+	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, inDate)
+	if err != nil {
+		return errors.New("AutoPutInStorage error: " + err.Error())
+	}
+
+	return nil
+}
+
 // PutInStorage 入库
 func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, inDate, empID string) error {
 	sql := `
@@ -69,7 +88,8 @@ func (RecvSuppRepository) PutInStorage(brandCode, shopCode, waybillNo, inDate, e
 				@ShopCode = ?,
 				@WaybillNo = ?,
 				@InDate = ?,
-				@EmpID = ?
+				@EmpID = ?,
+				@IsAuto = 0
 		`
 	_, err := factory.GetCSLEngine().Query(sql, brandCode, shopCode, waybillNo, inDate, empID)
 	if err != nil {
