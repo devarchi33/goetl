@@ -402,7 +402,8 @@ func createRecvSuppMstTable() {
 		('CJC11909036000', 'Q3', 'CJC1', '20190817', 6002, '8074783302', '20190817', 'R', 'A', '20190817', '20190817', '5', '20', '20190903001', 'R', '              ', '20190903001       ', ' ', ' ', '1200', '              ', '          ', 'CHTM', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190817', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
 		('CJUT1909036000', 'SA', 'CJUT', '20190817', 6002, '8074783302', '20190817', 'R', 'A', '20190817', '20190817', '5', '20', '20190903002', 'R', '              ', '20190903002       ', ' ', ' ', '1200', '              ', '          ', 'CEGP', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190817', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
 		('CEGP1909096000', 'SA', 'CEGP', '20190909', 6000, '8074783302', '20190909', 'R', 'A', '20190909', '20190909', '5', '16', '20190909001', 'R', '              ', '20190909001       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190909', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
-		('CEGP1908096001', 'SA', 'CEGP', '20190809', 6001, '8074783302', '20190809', 'R', 'A', '20190809', '20190809', '5', '16', '20190909002', 'R', '              ', '20190909002       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190809', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  ');
+		('CEGP1908096001', 'SA', 'CEGP', '20190809', 6001, '8074783302', '20190809', 'R', 'A', '20190809', '20190809', '5', '16', '20190909002', 'R', '              ', '20190909002       ', ' ', ' ', '1200', '              ', '          ', '    ', 0, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190809', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  '),
+		('CEGP1909236010', 'SA', 'CEGP', '20190819', 6010, '8074783305', '20190923', 'R', 'A', '20190923', '20190923', '5', '01', '20190923001', 'F', '              ', '20190923001       ', ' ', ' ', '1200', '              ', '          ', '    ', 1, '            ', '          ', ' ', '          ', 'CNFBGLEA02', '1', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '20190923', 0, 0.00, '', 'SR', 0.000, '', '', '', '', '', '', '   ', '     ', '        ', '', '', '', null, null, '  ');
 	`
 
 	if _, err := session.Exec(sql); err != nil {
@@ -527,7 +528,9 @@ func createRecvSuppDtlTable() {
 		('CJUT1909036000', 1, '01', 'SA', 'CJUT', '20190817', 6000, '8074783296', '000260    ', '              ', 0, '          ', '          ', 'SPWJ948S2255075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
 		('CEGP1909096000', 1, '01', 'SA', 'CEGP', '20190909', 6000, '8074783302', '000310    ', '              ', 0, '          ', '          ', 'SPWJ948S2255070', '  ', '  ', 4, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
 		('CEGP1909096000', 2, '01', 'SA', 'CEGP', '20190909', 6000, '8074783302', '000320    ', '              ', 0, '          ', '          ', 'SPWJ948S2255075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
-		('CEGP1908096001', 2, '01', 'SA', 'CEGP', '20190809', 6001, '8074783302', '000320    ', '              ', 0, '          ', '          ', 'SPWJ948S2255075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', '');
+		('CEGP1908096001', 2, '01', 'SA', 'CEGP', '20190809', 6001, '8074783302', '000320    ', '              ', 0, '          ', '          ', 'SPWJ948S2255075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1909236010', 1, '01', 'SA', 'CEGP', '20190923', 6010, '8074783302', '000320    ', '              ', 0, '          ', '          ', 'SPWJ948S2255070', '  ', '  ', 2, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', ''),
+		('CEGP1909236010', 2, '01', 'SA', 'CEGP', '20190923', 6010, '8074783302', '000320    ', '              ', 0, '          ', '          ', 'SPWJ948S2255075', '  ', '  ', 3, 0, 0.00, '  ', 0, 'SYS_BG_USER', null, 'SYS_BG_USER', null, '', 'S', null, '  ', '', '', '');
 	`
 
 	if _, err := session.Exec(sql); err != nil {
@@ -601,6 +604,19 @@ func createStockMisDtlTable() {
 			SendEmpName NVARCHAR(100),
 			WayBillNo01 CHAR(13)
 		);
+	`
+
+	if _, err := session.Exec(sql); err != nil {
+		fmt.Printf("createRecvSuppMstTable error: %v", err.Error())
+		fmt.Println()
+	}
+
+	sql = `
+		INSERT INTO StockMisDtl
+		(BrandCode, ShopCode, Dates, SeqNo, DtSeq, SAPDeliveryNo, SAPDeliveryItemNo, ProdCode, RecvSuppQty, StockMisQty, StockMisFixQty, StockMisReasonCode, StockMisStatusCode, StockMisResultCode, RecvDate, RecvSuppNo, StyleCode, StockMisNo, RecvSuppDate, ShopDesc, BrandDesc, PlantCode, InsertEmpID, InsertEmpName, RecvEmpID, RecvEmpName, StockMisRecvDateTime, ProcessEmpID, ProcessEmpName, StockMisProcDateTime, NewSAPDeliveryNo, BoxNo, RecvSuppType, DelChk, InUserID, InDateTime, ModiUserID, ModiDateTime, SendState, SendFlag, SendDateTime, InvtBaseDate, RecvSuppNoNew, SendEmpName, WayBillNo01)
+		VALUES
+		('SA', 'CEGP', '20190923', 6010, 1, '8000175501', '000010    ', 'SPWJ948S2255070', 14, 1, 0, '17', '10', '10', '20190923', 'CEGP1909236010', 'SPWJ948S22', 'SACEGP20190923', '20190923', '', ' ', '1200', '6000004113', '华培', 'CNFBGLEA02', 'XLMING0', '2010-08-16 00:00:00', 'CNFBGLEA02', 'XLMING0', '2010-08-16 00:00:00', '          ', 'EEXC3011000003640001', 'S', 0, 'peih', '2010-08-07 11:12:24.350', 'peih', '2010-08-16 14:22:01.040', '', 'S', '2010-08-07 11:12:31.060', '20190923', '              ', '', null),
+		('SA', 'CEGP', '20190923', 6010, 2, '8000175501', '000000    ', 'SPWJ948S2255075', 0, 1, 1, '10', '12', '12', '20190923', 'CEGP1909236010', 'SPWJ948S22', 'SACEGP20190923', '20190923', '', ' ', '1200', '6000004113', '华培', 'CNFBGLEA02', 'XLMING0', '2010-08-26 00:00:00', 'CNFBGLEA02', 'XLMING0', '2010-08-26 00:00:00', '8000605096', 'EEXC3011000003640001', 'R', 0, 'peih', '2010-08-14 16:48:56.667', 'peih', '2010-08-26 18:42:01.200', '', 'S', '2010-08-14 16:50:30.180', '20190923', 'C3011008269000', '', null);
 	`
 
 	if _, err := session.Exec(sql); err != nil {

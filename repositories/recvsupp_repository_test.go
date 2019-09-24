@@ -302,3 +302,17 @@ func TestCreateTransferOrderSet(t *testing.T) {
 		})
 	})
 }
+
+func TestGetStockMissStatusByWaybillNo(t *testing.T) {
+	Convey("测试GetStockMissStatusByWaybillNo", t, func() {
+		brandCode := "SA"
+		shopCode := "CEGP"
+		waybillNo := "20190923001"
+		Convey("运单号为："+waybillNo+"的运单误差处理状态应该是【处理结束】", func() {
+			has, status, err := RecvSuppRepository{}.GetStockMissStatusByWaybillNo(brandCode, shopCode, waybillNo)
+			So(err, ShouldBeNil)
+			So(has, ShouldEqual, true)
+			So(status, ShouldEqual, cslConst.StsStockMissFinished)
+		})
+	})
+}
