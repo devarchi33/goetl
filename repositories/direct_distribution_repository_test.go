@@ -85,7 +85,7 @@ func TestDirectPutInStorage(t *testing.T) {
 
 	title := fmt.Sprintf("应该在%v卖场，生成运单号为%v的入库单", order.ReceiptLocationCode, order.WaybillNo)
 	Convey(title, t, func() {
-		err := DirectDistributionRepository{}.PutInStorage(order)
+		err := DirectDistributionRepository{}.PutInStorage(order, true)
 		So(err, ShouldBeNil)
 	})
 }

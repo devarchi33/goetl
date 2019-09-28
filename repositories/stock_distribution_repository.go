@@ -43,7 +43,8 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 			sdi.quantity AS qty,
 			sd.created_at AS in_date,
 			emp.emp_id AS in_emp_id,
-			'STOCK_DISTRIBUTION' AS type
+			'STOCK_DISTRIBUTION' AS type,
+			sd.is_auto_receipt
 		FROM pangpang_brand_sku_location.stock_distribute AS sd
 			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
 				ON sd.id = sdi.stock_distribute_id
@@ -88,7 +89,7 @@ func (StockDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybil
 	return nil
 }
 
-func (StockDistributionRepository) putInStorage(order entities.DistributionOrder) error {
+func (StockDistributionRepository) putInStorage(order entities.DistributionOrder, isAutoReceipt bool) error {
 	store, has, err := PlaceRepository{}.GetStoreByCode(order.ReceiptLocationCode)
 	if err != nil {
 		return err
@@ -107,6 +108,7 @@ func (StockDistributionRepository) putInStorage(order entities.DistributionOrder
 	if order.Type == p2bConst.TypFactoryToShop {
 		data["distributionType"] = TypDirectDistribute
 	}
+	data["isAutoReceipt"] = isAutoReceipt
 
 	items := make([]map[string]interface{}, 0)
 	for _, v := range order.Items {
@@ -162,6 +164,6 @@ func (StockDistributionRepository) putInStorage(order entities.DistributionOrder
 }
 
 // PutInStorage P2Brand 入库
-func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder) error {
-	return StockDistributionRepository{}.putInStorage(order)
+func (StockDistributionRepository) PutInStorage(order entities.DistributionOrder, isAutoReceipt bool) error {
+	return StockDistributionRepository{}.putInStorage(order, isAutoReceipt)
 }
