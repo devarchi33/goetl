@@ -9,5 +9,6 @@ p2brandColleagueAPIRoot: "https://gateway.p2shop.com.cn/pangpang-common/colleagu
 autoDistributeDeadlineDays: 14
 autoTransferInDeadlineDays: 14
 
+colleagueClearanceTenantCode: "msl"
 colleagueClearanceUsername: "msl"
 colleagueClearancePassword: "1111"
