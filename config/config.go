@@ -102,12 +102,15 @@ func GetAutoTransferInDeadlineDays() int {
 	return viper.Get("autoTransferInDeadlineDays").(int)
 }
 
-// GetColleagueClearanceUsernameAndPassword 获取Clearance使用的用户名和密码
-func GetColleagueClearanceUsernameAndPassword() (string, string) {
+// GetColleagueClearanceUserInfo 获取Clearance使用的用户名的信息，租户代码，用户名，密码
+func GetColleagueClearanceUserInfo() (string, string, string) {
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
 	}
 	readConfig(*congfigEnv)
-	return viper.Get("colleagueClearanceUsername").(string), viper.Get("colleagueClearancePassword").(string)
+
+	return viper.Get("colleagueClearanceTenantCode").(string), 
+		viper.Get("colleagueClearanceUsername").(string), 
+		viper.Get("colleagueClearancePassword").(string)
 }

@@ -29,6 +29,7 @@ type userClaim struct {
 
 // TokenProxy 从colleague获取token的代理
 type TokenProxy struct {
+	TenantCode string
 	Username   string
 	Password   string
 	Token      string
@@ -41,10 +42,11 @@ var tokenProxyOnce sync.Once
 // GetInstance 创建 TokenProxy 对象实例
 func (TokenProxy) GetInstance() *TokenProxy {
 	tokenProxyOnce.Do(func() {
-		username, password := config.GetColleagueClearanceUsernameAndPassword()
+		tenantCode, username, password := config.GetColleagueClearanceUserInfo()
 		tokenProxyInstance = &TokenProxy{
-			Username: username,
-			Password: password,
+			TenantCode: tenantCode,
+			Username:   username,
+			Password:   password,
 		}
 	})
 	return tokenProxyInstance
@@ -112,7 +114,7 @@ func (proxy *TokenProxy) getToken() (string, error) {
 	}
 
 	var resp P2BrandAPIResponse
-	url := config.GetP2BrandColleagueAPIRoot() + "/sso/login-user-name?appCode=CloudPortal&tenantCode=pangpang"
+	url := config.GetP2BrandColleagueAPIRoot() + "/sso/login-user-name?appCode=CloudPortal&tenantCode=" + proxy.TenantCode
 	data := make(map[string]interface{}, 0)
 	data["username"] = proxy.Username
 	data["password"] = proxy.Password
