@@ -67,7 +67,8 @@ func createStockDistributeTable() {
 			colleague_id BIGINT(20),
 			version VARCHAR(255),
 			synced TINYINT(1),
-			last_updated_at DATETIME
+			last_updated_at DATETIME,
+			is_auto_receipt TINYINT(1) NULL DEFAULT 0
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
@@ -77,15 +78,15 @@ func createStockDistributeTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.stock_distribute 
-		(tenant_code, brand_code, box_no, waybill_no, shipment_location_code, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at) 
+		(tenant_code, brand_code, box_no, waybill_no, shipment_location_code, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at,is_auto_receipt) 
 		VALUES 
-		('pangpang', 'SA', '1010590009008', '1010590009008', 'ES', 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
-		('pangpang', 'SA', '1010590009014', '1010590009014', 'ES', 3, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
-		('pangpang', 'Q3', '1010590009009', '1010590009009', 'ES', 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43'),
-		('pangpang', 'SA', '1010590009007', '1010590009007', 'ES', 2, '2019-07-30 10:56:43', 1, NULL, true, '2019-07-30 10:56:43'),
-		('pangpang', 'SA', '1010590009015', '1010590009015', 'ES', 3, '2019-08-19 22:56:43', 1, NULL, false, '2019-08-19 10:56:43'),
-		('pangpang', 'SA', '1010590009016', '1010590009016', 'ES', 3, '2019-08-19 10:56:43', 1, NULL, false, '2019-08-19 10:56:43'),
-		('pangpang', 'SA', '20190906001', '20190906001', 'ES', 3, '2019-09-06 10:56:43', 1, NULL, false, '2019-09-06 10:56:43');
+		('pangpang', 'SA', '1010590009008', '1010590009008', 'ES', 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43',0),
+		('pangpang', 'SA', '1010590009014', '1010590009014', 'ES', 3, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43',0),
+		('pangpang', 'Q3', '1010590009009', '1010590009009', 'ES', 2, '2019-07-30 10:56:43', 1, NULL, false, '2019-07-30 10:56:43',0),
+		('pangpang', 'SA', '1010590009007', '1010590009007', 'ES', 2, '2019-07-30 10:56:43', 1, NULL, true, '2019-07-30 10:56:43',0),
+		('pangpang', 'SA', '1010590009015', '1010590009015', 'ES', 3, '2019-08-19 22:56:43', 1, NULL, false, '2019-08-19 10:56:43',0),
+		('pangpang', 'SA', '1010590009016', '1010590009016', 'ES', 3, '2019-08-19 10:56:43', 1, NULL, false, '2019-08-19 10:56:43',0),
+		('pangpang', 'SA', '20190906001', '20190906001', 'ES', 3, '2019-09-06 10:56:43', 1, NULL, false, '2019-09-06 10:56:43',0);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createStockDistributeTable error: %v", err.Error())
@@ -678,7 +679,8 @@ func createDirectDistributeTable() {
 			colleague_id BIGINT(20),
 			version VARCHAR(255),
 			synced TINYINT(1),
-			last_updated_at DATETIME
+			last_updated_at DATETIME,
+			is_auto_receipt TINYINT(1) NULL DEFAULT 0
 		);
 	`
 	if _, err := session.Exec(sql); err != nil {
@@ -688,9 +690,9 @@ func createDirectDistributeTable() {
 
 	sql = `
 		INSERT INTO pangpang_brand_sku_location.direct_distribution 
-		(tenant_code, brand_code, box_no, waybill_no, shipment_location_code, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at) 
+		(tenant_code, brand_code, box_no, waybill_no, shipment_location_code, receipt_location_id, created_at, colleague_id, version, synced, last_updated_at,is_auto_receipt) 
 		VALUES 
-		('pangpang', 'SA', '20190909001', '20190909001', 'ES', 2, '2019-09-09 10:56:43', 1, NULL, false, '2019-09-09 10:56:43');
+		('pangpang', 'SA', '20190909001', '20190909001', 'ES', 2, '2019-09-09 10:56:43', 1, NULL, false, '2019-09-09 10:56:43',0);
 	`
 	if _, err := session.Exec(sql); err != nil {
 		log.Printf("createDirectDistributeTable error: %v", err.Error())

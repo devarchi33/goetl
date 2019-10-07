@@ -4,6 +4,7 @@ import (
 	"clearance-adapter/repositories"
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -27,6 +28,8 @@ func TestAutoDistributionETL(t *testing.T) {
 				has = true
 				So(v["brand_code"], ShouldEqual, brandCode)
 				So(v["receipt_location_code"], ShouldEqual, receiptLocationCode)
+				isAutoReceipt, _ := strconv.ParseBool(v["is_auto_receipt"])
+				So(isAutoReceipt, ShouldEqual, true)
 			}
 		}
 		So(has, ShouldEqual, true)

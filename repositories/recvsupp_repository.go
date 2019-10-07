@@ -29,7 +29,6 @@ func (RecvSuppRepository) GetUnconfirmedDistributionOrdersByDeadline(deadline st
 			cslConst.StsSentOut, deadline).
 		In("RecvSuppMst.ShippingTypeCode", distributionCodes).
 		Find(&details)
-
 	if err != nil {
 		return nil, err
 	}

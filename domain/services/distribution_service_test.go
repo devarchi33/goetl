@@ -124,7 +124,7 @@ func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 
 func directSyncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	utc, _ := time.LoadLocation("")
-	startDate := time.Now().In(utc).Format("2006-01-02T15:04:05Z")
+	startDate := time.Now().Add(-2000).In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			dd.synced,

@@ -111,7 +111,7 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 		order.ReceiptLocationCode = shopCode
 
 		if order.Type == p2bConst.TypFactoryToShop {
-			err = repositories.DirectDistributionRepository{}.PutInStorage(order)
+			err = repositories.DirectDistributionRepository{}.PutInStorage(order, true)
 			if err != nil {
 				etl.saveError(order, "AutoDistributionETL.Load.【工厂直送】PutInStorage | "+err.Error())
 				continue
@@ -119,7 +119,7 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 
 			log.Printf("Clearance将【工厂直送】运单号为：%v 的运单（卖场：%v，品牌：%v）自动入库到P2Brand，需要继续等待Clearance将其同步到CSL。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 		} else {
-			err = repositories.StockDistributionRepository{}.PutInStorage(order)
+			err = repositories.StockDistributionRepository{}.PutInStorage(order, true)
 			if err != nil {
 				etl.saveError(order, "AutoDistributionETL.Load.【物流分配】PutInStorage | "+err.Error())
 				continue

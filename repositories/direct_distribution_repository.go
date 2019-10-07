@@ -23,7 +23,8 @@ func (DirectDistributionRepository) GetUnsyncedDistributionOrders() ([]map[strin
 			ddi.quantity AS qty,
 			dd.created_at AS in_date,
 			emp.emp_id AS in_emp_id,
-			'DIRECT_DISTRIBUTION' AS type
+			'DIRECT_DISTRIBUTION' AS type,
+			dd.is_auto_receipt
 		FROM pangpang_brand_sku_location.direct_distribution AS dd
 			JOIN pangpang_brand_sku_location.direct_distribution_item AS ddi
 				ON dd.id = ddi.stock_distribute_id
@@ -69,6 +70,6 @@ func (DirectDistributionRepository) MarkWaybillSynced(receiptLocationCode, waybi
 }
 
 // PutInStorage P2Brand 入库
-func (DirectDistributionRepository) PutInStorage(order entities.DistributionOrder) error {
-	return StockDistributionRepository{}.putInStorage(order)
+func (DirectDistributionRepository) PutInStorage(order entities.DistributionOrder, isAutoReceipt bool) error {
+	return StockDistributionRepository{}.putInStorage(order, isAutoReceipt)
 }
