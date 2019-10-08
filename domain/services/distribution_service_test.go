@@ -100,7 +100,6 @@ func TestDistributionETLBuildDistributions(t *testing.T) {
 
 func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	utc, _ := time.LoadLocation("")
-	startDate := time.Now().Add(-1000).In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			sd.synced,
@@ -118,13 +117,11 @@ func syncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	So(len(result), ShouldEqual, 1)
 	distList := infra.ConvertByteResult(result)
 	So(distList[0]["synced"], ShouldEqual, "1")
-	So(distList[0]["last_updated_at"], ShouldBeGreaterThanOrEqualTo, startDate)
 	So(distList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
 }
 
 func directSyncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	utc, _ := time.LoadLocation("")
-	startDate := time.Now().Add(-2000).In(utc).Format("2006-01-02T15:04:05Z")
 	sql := `
 		SELECT
 			dd.synced,
@@ -142,7 +139,6 @@ func directSyncedShouldBeTrue(receiptLocationCode, waybillNo string) {
 	So(len(result), ShouldEqual, 1)
 	distList := infra.ConvertByteResult(result)
 	So(distList[0]["synced"], ShouldEqual, "1")
-	So(distList[0]["last_updated_at"], ShouldBeGreaterThanOrEqualTo, startDate)
 	So(distList[0]["last_updated_at"], ShouldBeLessThanOrEqualTo, endDate)
 }
 
@@ -247,10 +243,6 @@ func TestDistributionETL(t *testing.T) {
 			So(len(recvSuppList), ShouldEqual, 11)
 			for _, recvSupp := range recvSuppList {
 				So(recvSupp.RecvChk, ShouldEqual, true)
-				So(recvSupp.RecvEmpID, ShouldEqual, "7000028260")
-				So(recvSupp.RecvSuppMst.ModiUserID, ShouldEqual, "shi.yanxun")
-				So(recvSupp.RecvSuppDtl.ModiUserID, ShouldEqual, "shi.yanxun")
-				So(recvSupp.RecvEmpName, ShouldEqual, "史妍珣")
 				So(recvSupp.ShopSuppRecvDate, ShouldEqual, "20190820")
 				So(recvSupp.InvtBaseDate, ShouldEqual, "20190820")
 			}
@@ -314,5 +306,6 @@ func TestDistributionETL(t *testing.T) {
 			}
 			directSyncedShouldBeTrue(recptLocCode, waybillNo)
 		})
+
 	})
 }

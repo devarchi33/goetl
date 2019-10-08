@@ -169,7 +169,11 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 			etl.saveError(order, "DistributionETL.Load.GetShopCodeByChiefShopCodeAndBrandCode | "+err.Error())
 			continue
 		}
-		err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.InEmpID)
+		if !order.IsAutoReceipt {
+			err = repositories.RecvSuppRepository{}.PutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate, order.InEmpID)
+		} else {
+			err = repositories.RecvSuppRepository{}.AutoPutInStorage(order.BrandCode, shopCode, order.WaybillNo, order.InDate)
+		}
 		if err != nil {
 			etl.saveError(order, "DistributionETL.Load.PutInStorage | "+err.Error())
 			continue
