@@ -17,6 +17,7 @@ type DistributionOrder struct {
 	InDate              string
 	InEmpID             string
 	Version             string // 在p2brand入库时候才用
+	IsAutoReceipt       bool
 	Type                p2bConst.DistributionType
 	Items               []DistributionOrderItem
 }
@@ -46,6 +47,7 @@ func (DistributionOrder) Create(data []map[string]string) (DistributionOrder, er
 	order.InDate = infra.Parse8BitsDate(orderData["in_date"], nil)
 	order.InEmpID = orderData["in_emp_id"]
 	order.Type = orderData["type"]
+	order.IsAutoReceipt, _ = strconv.ParseBool(orderData["is_auto_receipt"])
 	order.Items = make([]DistributionOrderItem, 0)
 
 	for _, item := range data {
