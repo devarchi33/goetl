@@ -1,0 +1,14 @@
+
+cslConnString: "test csl connection string"
+clrConnString: "test clearance connection string"
+p2brandConnString: "test pangpang brand connection string"
+
+p2brandSkuLocationAPIRoot: "test pangpang brand sku location api root"
+p2brandColleagueAPIRoot: "test pangpang brand colleague root"
+
+autoDistributeDeadlineDays: 7
+autoTransferInDeadlineDays: 6
+
+colleagueClearanceTenantCode: "test pangpang"
+colleagueClearanceUsername: "test.pangpang"
+colleagueClearancePassword: "2222"

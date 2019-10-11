@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
+	"strconv"
 	"github.com/spf13/viper"
 )
 
@@ -34,6 +34,11 @@ func getCurrPath() string {
 
 // GetCSLConnString CSL 数据库连接字符串
 func GetCSLConnString() string {
+	v := os.Getenv("CslConnString")
+	if v != "" {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -44,6 +49,11 @@ func GetCSLConnString() string {
 
 // GetClrConnString Clearance 数据库连接字符串
 func GetClrConnString() string {
+	v := os.Getenv("ClrConnString")
+	if v != "" {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -54,6 +64,11 @@ func GetClrConnString() string {
 
 // GetP2BrandConnString pangpang-brand 数据库连接字符串
 func GetP2BrandConnString() string {
+	v := os.Getenv("P2brandConnString")
+	if v != "" {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -64,6 +79,11 @@ func GetP2BrandConnString() string {
 
 // GetP2BrandSkuLocationAPIRoot pangpang-brand sku-location API Root
 func GetP2BrandSkuLocationAPIRoot() string {
+	v := os.Getenv("P2brandSkuLocationAPIRoot")
+	if v != "" {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -74,6 +94,11 @@ func GetP2BrandSkuLocationAPIRoot() string {
 
 // GetP2BrandColleagueAPIRoot pangpang-brand colleague API Root
 func GetP2BrandColleagueAPIRoot() string {
+	v := os.Getenv("P2brandColleagueAPIRoot")
+	if v != "" {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -84,6 +109,11 @@ func GetP2BrandColleagueAPIRoot() string {
 
 // GetAutoDistributeDeadlineDays 自动入库截止日期天数
 func GetAutoDistributeDeadlineDays() int {
+	v, err := strconv.Atoi(os.Getenv("AutoDistributeDeadlineDays"))
+	if err == nil {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -94,6 +124,11 @@ func GetAutoDistributeDeadlineDays() int {
 
 // GetAutoTransferInDeadlineDays 自动入库截止日期天数
 func GetAutoTransferInDeadlineDays() int {
+	v, err := strconv.Atoi(os.Getenv("AutoTransferInDeadlineDays"))
+	if err == nil {
+		return v
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
@@ -104,6 +139,13 @@ func GetAutoTransferInDeadlineDays() int {
 
 // GetColleagueClearanceUserInfo 获取Clearance使用的用户名的信息，租户代码，用户名，密码
 func GetColleagueClearanceUserInfo() (string, string, string) {
+	tenantCode := os.Getenv("ColleagueClearanceTenantCode")
+	username := os.Getenv("ColleagueClearanceUsername")
+	password := os.Getenv("ColleagueClearancePassword")
+	if tenantCode != "" && username != "" && password != "" {
+		return tenantCode, username, password
+	}
+
 	if *congfigEnv == "" {
 		defaultAppEnv := "mslv2-dev"
 		congfigEnv = &defaultAppEnv
