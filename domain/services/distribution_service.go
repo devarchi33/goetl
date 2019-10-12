@@ -180,6 +180,9 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 		}
 
 		if order.Type == p2bConst.TypFactoryToShop {
+
+			etl.writeDownStockMiss(order)
+			
 			// 更新状态的时候需要使用主卖场的Code
 			err = repositories.DirectDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
 			if err != nil {
