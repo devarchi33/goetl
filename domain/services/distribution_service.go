@@ -10,7 +10,6 @@ import (
 	"errors"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/pangpanglabs/goetl"
 )
@@ -272,7 +271,7 @@ func (etl DistributionETL) writeDownStockMiss(distribution entities.Distribution
 			stockMiss := StockMiss{
 				BrandCode: distribution.BrandCode,
 				ShopCode:  shopCode,
-				InDate:    time.Now().Format("20061012"),
+				InDate:    distribution.InDate,
 				WaybillNo: distribution.WaybillNo,
 				EmpID:     distribution.InEmpID,
 				SkuCode:   v.SkuCode,
