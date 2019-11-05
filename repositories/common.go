@@ -1,5 +1,10 @@
 package repositories
 
+import (
+	"clearance-adapter/config"
+)
+
 func getTenantCode() string {
-	return "pangpang"
+	v := config.GetTenantCode()
+	return v
 }

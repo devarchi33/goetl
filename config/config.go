@@ -6,8 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"strconv"
+	"strings"
+
 	"github.com/spf13/viper"
 )
 
@@ -152,7 +153,21 @@ func GetColleagueClearanceUserInfo() (string, string, string) {
 	}
 	readConfig(*congfigEnv)
 
-	return viper.Get("colleagueClearanceTenantCode").(string), 
-		viper.Get("colleagueClearanceUsername").(string), 
+	return viper.Get("colleagueClearanceTenantCode").(string),
+		viper.Get("colleagueClearanceUsername").(string),
 		viper.Get("colleagueClearancePassword").(string)
+}
+
+//GetTenantCode ...
+func GetTenantCode() string {
+	v := os.Getenv("ColleagueClearanceTenantCode")
+	if len(v) > 0 {
+		return v
+	}
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("colleagueClearanceTenantCode").(string)
 }
