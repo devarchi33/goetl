@@ -4,7 +4,6 @@ import (
 	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
-	"fmt"
 	"log"
 )
 
@@ -13,34 +12,20 @@ type ReturnToWarehouseErrorRepository struct{}
 
 // Save ...
 func (ReturnToWarehouseErrorRepository) Save(brandCode, shipmentLocationCode, waybillNo string, errMsg string) error {
-	has, rtwError, err := ReturnToWarehouseErrorRepository{}.GetByWaybillNo(brandCode, shipmentLocationCode, waybillNo)
-	if err != nil {
-		return err
-	}
-	if has {
-		return nil
-	}
-
-	rtwError.BrandCode = brandCode
-	rtwError.ShipmentLocationCode = shipmentLocationCode
-	rtwError.WaybillNo = waybillNo
-	rtwError.Type = clrConst.TypReturnToWarehouseError
-	rtwError.ErrorMessage = errMsg
-	rtwError.IsProcessed = false
-	rtwError.CreatedBy = "Clearance"
-
-	affected, err := factory.GetClrEngine().Insert(&rtwError)
+	data := make(map[string]interface{})
+	param := make(map[string]string)
+	param["brand_code"] = brandCode
+	param["shipment_location_code"] = shipmentLocationCode
+	param["waybill_no"] = waybillNo
+	param["type"] = clrConst.TypReturnToWarehouseError
+	param["error_message"] = errMsg
+	data["service"] = "clearance-adapter"
+	data["param"] = param
+	_, err := CreateErrData(data)
 	if err != nil {
 		log.Printf(err.Error())
 		return err
 	}
-
-	if affected == 0 {
-		err = fmt.Errorf("ReturnToWarehouseErrorRepository.Save failed affected is 0")
-		log.Printf(err.Error())
-		return err
-	}
-
 	return nil
 }
 

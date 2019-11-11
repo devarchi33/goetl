@@ -108,6 +108,19 @@ func GetP2BrandColleagueAPIRoot() string {
 	return viper.Get("p2brandColleagueAPIRoot").(string)
 }
 
+func GetBatchJobAPIRoot() string {
+	v := os.Getenv("BatchjobAPIRoot")
+	if v != "" {
+		return v
+	}
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("batchjobAPIRoot").(string)
+}
+
 // GetAutoDistributeDeadlineDays 自动入库截止日期天数
 func GetAutoDistributeDeadlineDays() int {
 	v, err := strconv.Atoi(os.Getenv("AutoDistributeDeadlineDays"))

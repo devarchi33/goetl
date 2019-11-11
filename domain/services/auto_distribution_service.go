@@ -36,7 +36,7 @@ func (AutoDistributionETL) New() *goetl.ETL {
 
 func (etl AutoDistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
 	log.Printf(errMsg)
-	go etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoStockDistributionError)
+	etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoStockDistributionError)
 }
 
 // Extract 获取14天未入库的出库单

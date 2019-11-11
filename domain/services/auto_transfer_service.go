@@ -36,7 +36,7 @@ func (AutoTransferETL) New() *goetl.ETL {
 
 func (etl AutoTransferETL) saveError(order entities.TransferOrder, errMsg string) {
 	log.Printf(errMsg)
-	go etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoTransferInError)
+	etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoTransferInError)
 }
 
 // Extract 获取14天未入库的出库单

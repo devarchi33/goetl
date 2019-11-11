@@ -5,6 +5,7 @@ p2brandConnString: "root:1111@tcp(localhost:3306)/pangpang_brand_sku_location?ch
 
 p2brandSkuLocationAPIRoot: "http://localhost:5000/v1"
 p2brandColleagueAPIRoot: "https://staging.p2shop.com.cn/pangpang-common/colleague-login-api/api/v1"
+batchjobAPIRoot: "https://staging.p2shop.com.cn/batchjob-api/v1/jobs"
 
 autoDistributeDeadlineDays: 14
 autoTransferInDeadlineDays: 14

@@ -5,6 +5,7 @@ p2brandConnString: "pangpang_app:Eland^123@tcp(106.14.242.171:3306)/pangpang_bra
 
 p2brandSkuLocationAPIRoot: "https://qa.p2shop.com.cn/pangpang-brand/sku-location-api/v1"
 p2brandColleagueAPIRoot: "https://qa.p2shop.com.cn/pangpang-common/colleague-login-api/api/v1"
+batchjobAPIRoot: "https://staging.p2shop.com.cn/batchjob-api/v1/jobs"
 
 autoDistributeDeadlineDays: 30
 autoTransferInDeadlineDays: 30

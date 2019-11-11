@@ -32,7 +32,7 @@ func (TransferETL) New() *goetl.ETL {
 
 func (etl TransferETL) saveError(order entities.TransferOrder, errMsg string) {
 	log.Printf(errMsg)
-	go etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypTransferError)
+	etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypTransferError)
 }
 
 func (etl TransferETL) saveErrorByTransferOrderSet(orderSet repoEntities.TransferOrderSet, errMsg string) {
