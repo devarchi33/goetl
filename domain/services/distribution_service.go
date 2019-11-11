@@ -34,7 +34,7 @@ func (DistributionETL) New() *goetl.ETL {
 
 func (etl DistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
 	log.Printf(errMsg)
-	go etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypStockDistributionError)
+	etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypStockDistributionError)
 }
 
 // Extract ...
@@ -161,7 +161,6 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 	if !ok {
 		return errors.New("Convert Failed")
 	}
-
 	for _, order := range orders {
 		shopCode, err := repositories.RecvSuppRepository{}.GetShopCodeByChiefShopCodeAndBrandCode(order.ReceiptLocationCode, order.BrandCode)
 		if err != nil {
@@ -181,7 +180,7 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 		if order.Type == p2bConst.TypFactoryToShop {
 
 			etl.writeDownStockMiss(order)
-			
+
 			// 更新状态的时候需要使用主卖场的Code
 			err = repositories.DirectDistributionRepository{}.MarkWaybillSynced(order.ReceiptLocationCode, order.WaybillNo)
 			if err != nil {

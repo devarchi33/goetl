@@ -29,7 +29,7 @@ func (ReturnToWarehouseAnytimeETL) New() *goetl.ETL {
 
 func (etl ReturnToWarehouseAnytimeETL) saveError(order entities.ReturnToWarehouseOrder, errMsg string) {
 	log.Printf(errMsg)
-	go etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.WaybillNo, errMsg)
+	etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.WaybillNo, errMsg)
 }
 
 // Extract ...

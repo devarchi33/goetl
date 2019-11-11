@@ -152,10 +152,6 @@ func (StockDistributionRepository) putInStorage(order entities.DistributionOrder
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return err
-	}
-
 	if statusCode == 201 {
 		return nil
 	}

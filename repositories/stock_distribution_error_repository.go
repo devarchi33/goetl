@@ -4,7 +4,6 @@ import (
 	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
-	"fmt"
 	"log"
 )
 
@@ -13,34 +12,20 @@ type StockDistributionErrorRepository struct{}
 
 // Save ...
 func (StockDistributionErrorRepository) Save(brandCode, receiptLocationCode, waybillNo, errMsg string, errType clrConst.ClrErrorType) error {
-	has, distError, err := StockDistributionErrorRepository{}.GetByWaybillNo(brandCode, receiptLocationCode, waybillNo)
-	if err != nil {
-		return err
-	}
-	if has {
-		return nil
-	}
-
-	distError.BrandCode = brandCode
-	distError.ReceiptLocationCode = receiptLocationCode
-	distError.WaybillNo = waybillNo
-	distError.Type = errType
-	distError.ErrorMessage = errMsg
-	distError.IsProcessed = false
-	distError.CreatedBy = "Clearance"
-
-	affected, err := factory.GetClrEngine().Insert(&distError)
+	data := make(map[string]interface{})
+	param := make(map[string]string)
+	param["brand_code"] = brandCode
+	param["receipt_location_code"] = receiptLocationCode
+	param["waybill_no"] = waybillNo
+	param["type"] = errType
+	param["error_message"] = errMsg
+	data["service"] = "clearance-adapter"
+	data["param"] = param
+	_, err := CreateErrData(data)
 	if err != nil {
 		log.Printf(err.Error())
 		return err
 	}
-
-	if affected == 0 {
-		err = fmt.Errorf("StockDistributionErrorRepository.Save failed affected is 0")
-		log.Printf(err.Error())
-		return err
-	}
-
 	return nil
 }
 
