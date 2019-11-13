@@ -5,6 +5,7 @@ import (
 	cslConst "clearance-adapter/domain/csl-constants"
 	"clearance-adapter/domain/entities"
 	p2bConst "clearance-adapter/domain/p2brand-constants"
+	"clearance-adapter/errorlog"
 	"clearance-adapter/repositories"
 	"context"
 	"errors"
@@ -17,24 +18,24 @@ import (
 // DistributionETL 入库 p2-brand -> CSL
 type DistributionETL struct {
 	ErrorRepository repositories.StockDistributionErrorRepository
+	ErrLogID        int64
 }
 
 // New 创建DistributionETL对象，从Clearance到CSL
 func (DistributionETL) New() *goetl.ETL {
+	logID, _ := errorlog.ErrorLog{}.CreateLog(clrConst.TypStockDistributionError)
 	distributionETL := DistributionETL{
 		ErrorRepository: repositories.StockDistributionErrorRepository{},
+		ErrLogID:        logID,
 	}
-
 	etl := goetl.New(distributionETL)
 	etl.Before(DistributionETL{}.buildDistributionOrders)
 	etl.Before(DistributionETL{}.filterStorableDistributions)
-
 	return etl
 }
-
 func (etl DistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
 	log.Printf(errMsg)
-	etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypStockDistributionError)
+	etl.ErrorRepository.Save(etl.ErrLogID, order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypStockDistributionError)
 }
 
 // Extract ...
@@ -201,6 +202,7 @@ func (etl DistributionETL) Load(ctx context.Context, source interface{}) error {
 			log.Printf("【物流分配】运单号为：%v 的运单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 		}
 	}
+	errorlog.ErrorLog{}.Finish(etl.ErrLogID)
 
 	return nil
 }

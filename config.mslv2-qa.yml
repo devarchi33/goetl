@@ -13,3 +13,4 @@ autoTransferInDeadlineDays: 30
 colleagueClearanceTenantCode: "pangpang"
 colleagueClearanceUsername: "qa.pangpang"
 colleagueClearancePassword: "1111"
+serverName: "clearance-adapter-qa"

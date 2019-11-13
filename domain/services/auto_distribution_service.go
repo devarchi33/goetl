@@ -4,6 +4,7 @@ import (
 	"clearance-adapter/config"
 	"clearance-adapter/domain/entities"
 	p2bConst "clearance-adapter/domain/p2brand-constants"
+	"clearance-adapter/errorlog"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
 	"clearance-adapter/repositories"
@@ -21,22 +22,23 @@ import (
 // p2-brand -> CSL 部分由DistributionETL完成
 type AutoDistributionETL struct {
 	ErrorRepository repositories.StockDistributionErrorRepository
+	ErrLogID        int64
 }
 
 // New 创建 AutoDistributionETL 对象，从Clearance到CSL
 func (AutoDistributionETL) New() *goetl.ETL {
+	logID, _ := errorlog.ErrorLog{}.CreateLog(clrConst.TypAutoStockDistributionError)
 	distETL := AutoDistributionETL{
-		ErrorRepository: repositories.StockDistributionErrorRepository{}}
-
+		ErrorRepository: repositories.StockDistributionErrorRepository{},
+		ErrLogID:        logID,
+	}
 	etl := goetl.New(distETL)
 	etl.Before(AutoDistributionETL{}.buildDistributionOrders)
-
 	return etl
 }
-
 func (etl AutoDistributionETL) saveError(order entities.DistributionOrder, errMsg string) {
 	log.Printf(errMsg)
-	etl.ErrorRepository.Save(order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoStockDistributionError)
+	etl.ErrorRepository.Save(etl.ErrLogID, order.BrandCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoStockDistributionError)
 }
 
 // Extract 获取14天未入库的出库单
@@ -128,6 +130,6 @@ func (etl AutoDistributionETL) Load(ctx context.Context, source interface{}) err
 			log.Printf("Clearance将【物流分配】运单号为：%v 的运单（卖场：%v，品牌：%v）自动入库到P2Brand，需要继续等待Clearance将其同步到CSL。", order.WaybillNo, order.ReceiptLocationCode, order.BrandCode)
 		}
 	}
-
+	errorlog.ErrorLog{}.Finish(etl.ErrLogID)
 	return nil
 }

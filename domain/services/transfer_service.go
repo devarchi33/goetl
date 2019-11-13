@@ -3,6 +3,7 @@ package services
 import (
 	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/domain/entities"
+	"clearance-adapter/errorlog"
 	"clearance-adapter/repositories"
 	repoEntities "clearance-adapter/repositories/entities"
 	"context"
@@ -18,21 +19,22 @@ import (
 // 调入之后才会同步到CSL（调出&调入），如果只有调出单，那么是不会同步到CSL的
 type TransferETL struct {
 	ErrorRepository repositories.StockRoundErrorRepository
+	ErrLogID        int64
 }
 
 // New 创建 TransferETL 对象，从Clearance到CSL
 func (TransferETL) New() *goetl.ETL {
+	logID, _ := errorlog.ErrorLog{}.CreateLog(clrConst.TypTransferError)
 	transferETL := TransferETL{
 		ErrorRepository: repositories.StockRoundErrorRepository{},
-	}
+		ErrLogID:        logID}
 	etl := goetl.New(transferETL)
-
 	return etl
 }
 
 func (etl TransferETL) saveError(order entities.TransferOrder, errMsg string) {
 	log.Printf(errMsg)
-	etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypTransferError)
+	etl.ErrorRepository.Save(etl.ErrLogID, order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypTransferError)
 }
 
 func (etl TransferETL) saveErrorByTransferOrderSet(orderSet repoEntities.TransferOrderSet, errMsg string) {
@@ -188,6 +190,7 @@ func (etl TransferETL) Load(ctx context.Context, source interface{}) error {
 
 		log.Printf("运单号为：%v 的调货单（出库卖场：%v，入库卖场：%v，品牌：%v）已经同步完成。", orderSet.WaybillNo, orderSet.ShipmentLocationCode, orderSet.ReceiptLocationCode, orderSet.BrandCode)
 	}
+	errorlog.ErrorLog{}.Finish(etl.ErrLogID)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	clrConst "clearance-adapter/domain/clr-constants"
+	"clearance-adapter/errorlog"
 	"clearance-adapter/factory"
 	"clearance-adapter/models"
 	"log"
@@ -11,21 +12,14 @@ import (
 type ReturnToWarehouseErrorRepository struct{}
 
 // Save ...
-func (ReturnToWarehouseErrorRepository) Save(brandCode, shipmentLocationCode, waybillNo string, errMsg string) error {
-	data := make(map[string]interface{})
+func (ReturnToWarehouseErrorRepository) Save(logID int64, brandCode, shipmentLocationCode, waybillNo string, errMsg string) error {
 	param := make(map[string]string)
 	param["brand_code"] = brandCode
 	param["shipment_location_code"] = shipmentLocationCode
 	param["waybill_no"] = waybillNo
 	param["type"] = clrConst.TypReturnToWarehouseError
 	param["error_message"] = errMsg
-	data["service"] = "clearance-adapter"
-	data["param"] = param
-	_, err := CreateErrData(data)
-	if err != nil {
-		log.Printf(err.Error())
-		return err
-	}
+	errorlog.ErrorLog{}.AppendLogs(logID, param)
 	return nil
 }
 

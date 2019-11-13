@@ -184,3 +184,16 @@ func GetTenantCode() string {
 	readConfig(*congfigEnv)
 	return viper.Get("colleagueClearanceTenantCode").(string)
 }
+
+func GetServerName() string {
+	v := os.Getenv("ServerName")
+	if v != "" {
+		return v
+	}
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+	return viper.Get("serverName").(string)
+}
