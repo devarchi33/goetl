@@ -13,3 +13,4 @@ autoTransferInDeadlineDays: 14
 colleagueClearanceTenantCode: "pangpang"
 colleagueClearanceUsername: "staging.pangpang"
 colleagueClearancePassword: "1111"
+serverName: "clearance-adapter-staging"

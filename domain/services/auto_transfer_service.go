@@ -4,6 +4,7 @@ import (
 	"clearance-adapter/config"
 	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/domain/entities"
+	"clearance-adapter/errorlog"
 	"clearance-adapter/infra"
 	"clearance-adapter/models"
 	"clearance-adapter/repositories"
@@ -20,23 +21,24 @@ import (
 // p2-brand -> CSL 部分由TransferETL完成
 type AutoTransferETL struct {
 	ErrorRepository repositories.StockRoundErrorRepository
+	ErrLogID        int64
 }
 
 // New 创建 AutoTransferETL 对象，从Clearance到CSL
 func (AutoTransferETL) New() *goetl.ETL {
+	logID, _ := errorlog.ErrorLog{}.CreateLog(clrConst.TypAutoTransferInError)
 	transferETL := AutoTransferETL{
 		ErrorRepository: repositories.StockRoundErrorRepository{},
+		ErrLogID:        logID,
 	}
-
 	etl := goetl.New(transferETL)
 	etl.Before(AutoTransferETL{}.buildTransferOrders)
-
 	return etl
 }
 
 func (etl AutoTransferETL) saveError(order entities.TransferOrder, errMsg string) {
 	log.Printf(errMsg)
-	etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoTransferInError)
+	etl.ErrorRepository.Save(etl.ErrLogID, order.BrandCode, order.ShipmentLocationCode, order.ReceiptLocationCode, order.WaybillNo, errMsg, clrConst.TypAutoTransferInError)
 }
 
 // Extract 获取14天未入库的出库单
@@ -130,6 +132,6 @@ func (etl AutoTransferETL) Load(ctx context.Context, source interface{}) error {
 
 		log.Printf("Clearance将运单号为：%v 的运单（从卖场：%v到卖场%v，品牌：%v）自动调货入库到P2Brand，需要继续等待Clearance将其同步到CSL。", order.WaybillNo, order.ShipmentLocationCode, order.ReceiptLocationCode, order.BrandCode)
 	}
-
+	errorlog.ErrorLog{}.Finish(etl.ErrLogID)
 	return nil
 }

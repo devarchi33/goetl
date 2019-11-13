@@ -14,3 +14,4 @@ autoTransferInDeadlineDays: 14
 colleagueClearanceTenantCode: "msl"
 colleagueClearanceUsername: "msl"
 colleagueClearancePassword: "1111"
+serverName: "clearance-adapter"

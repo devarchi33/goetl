@@ -1,7 +1,9 @@
 package services
 
 import (
+	clrConst "clearance-adapter/domain/clr-constants"
 	"clearance-adapter/domain/entities"
+	"clearance-adapter/errorlog"
 	"clearance-adapter/repositories"
 	"context"
 	"errors"
@@ -16,20 +18,21 @@ import (
 // ReturnToWarehouseAnytimeETL 随时退仓 p2-brand -> CSL
 type ReturnToWarehouseAnytimeETL struct {
 	ErrorRepository repositories.ReturnToWarehouseErrorRepository
+	ErrLogID        int64
 }
 
 // New 创建 ReturnToWarehouseAnytimeETL 对象，从Clearance到CSL
 func (ReturnToWarehouseAnytimeETL) New() *goetl.ETL {
+	logID, _ := errorlog.ErrorLog{}.CreateLog(clrConst.TypReturnToWarehouseError)
 	returnToWarehouseETL := ReturnToWarehouseAnytimeETL{
-		ErrorRepository: repositories.ReturnToWarehouseErrorRepository{}}
+		ErrorRepository: repositories.ReturnToWarehouseErrorRepository{},
+		ErrLogID:        logID}
 	etl := goetl.New(returnToWarehouseETL)
-
 	return etl
 }
-
 func (etl ReturnToWarehouseAnytimeETL) saveError(order entities.ReturnToWarehouseOrder, errMsg string) {
 	log.Printf(errMsg)
-	etl.ErrorRepository.Save(order.BrandCode, order.ShipmentLocationCode, order.WaybillNo, errMsg)
+	etl.ErrorRepository.Save(etl.ErrLogID, order.BrandCode, order.ShipmentLocationCode, order.WaybillNo, errMsg)
 }
 
 // Extract ...
@@ -124,6 +127,7 @@ func (etl ReturnToWarehouseAnytimeETL) Load(ctx context.Context, source interfac
 		}
 		log.Printf("运单号为：%v 的退仓单（卖场：%v，品牌：%v）已经同步完成。", order.WaybillNo, order.ShipmentLocationCode, order.BrandCode)
 	}
+	errorlog.ErrorLog{}.Finish(etl.ErrLogID)
 
 	return nil
 }
