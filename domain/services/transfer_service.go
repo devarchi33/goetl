@@ -58,15 +58,13 @@ func (etl TransferETL) Extract(ctx context.Context) (interface{}, error) {
 
 func (etl TransferETL) buildTransferOrders(ctx context.Context, source interface{}) (interface{}, error) {
 	data, ok := source.([]map[string]string)
-
-	// fmt.Println(len(data))
 	if !ok {
 		return nil, errors.New("Convert Failed")
 	}
 
 	items := make(map[string][]map[string]string, 0)
 	for _, item := range data {
-		key := item["brand_code"] + "-" + item["shipment_location_code"] + "-" + item["receipt_location_code"] + "-" + item["waybill_no"]
+		key := item["brand_code"] + "-" + item["shipment_location_code"] + "-" + item["receipt_location_code"] + "-" + item["waybill_no"] + "-" + item["box_no"]
 		if _, ok := items[key]; ok {
 			items[key] = append(items[key], item)
 		} else {
