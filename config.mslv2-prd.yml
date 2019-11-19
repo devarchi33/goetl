@@ -11,7 +11,7 @@ batchjobAPIRoot: "http://batchjob-api.platform:8000/v1/jobs"
 autoDistributeDeadlineDays: 14
 autoTransferInDeadlineDays: 14
 
-colleagueClearanceTenantCode: "msl"
+colleagueClearanceTenantCode: "wplace"
 colleagueClearanceUsername: "msl"
 colleagueClearancePassword: "1111"
 serverName: "clearance-adapter"
