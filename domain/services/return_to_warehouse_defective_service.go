@@ -110,7 +110,7 @@ func (etl ReturnToWarehouseDefectiveETL) Load(ctx context.Context, source interf
 		wg.Add(len(order.Items))
 		for _, v := range order.Items {
 			go func(item entities.ReturnToWarehouseOrderItem, wg *sync.WaitGroup) {
-				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseDefectiveOrderItem(order.BrandCode, shopCode, order.OutDate, recvSuppNo, item.SkuCode, "02", item.Qty, order.EmpID)
+				err := repositories.RecvSuppRepository{}.AddReturnToWarehouseDefectiveOrderItem(order.BrandCode, shopCode, order.OutDate, recvSuppNo, item.SkuCode, item.DefectiveProdReasonCode, item.Qty, order.EmpID)
 				if err != nil {
 					etl.saveError(order, "ReturnToWarehouseDefectiveETL.Load.AddReturnToWarehouseDefectiveOrderItem | "+err.Error())
 				}
