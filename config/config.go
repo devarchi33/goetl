@@ -151,26 +151,6 @@ func GetAutoTransferInDeadlineDays() int {
 	return viper.Get("autoTransferInDeadlineDays").(int)
 }
 
-// GetColleagueClearanceUserInfo 获取Clearance使用的用户名的信息，租户代码，用户名，密码
-func GetColleagueClearanceUserInfo() (string, string, string) {
-	tenantCode := os.Getenv("ColleagueClearanceTenantCode")
-	username := os.Getenv("ColleagueClearanceUsername")
-	password := os.Getenv("ColleagueClearancePassword")
-	if tenantCode != "" && username != "" && password != "" {
-		return tenantCode, username, password
-	}
-
-	if *congfigEnv == "" {
-		defaultAppEnv := "mslv2-dev"
-		congfigEnv = &defaultAppEnv
-	}
-	readConfig(*congfigEnv)
-
-	return viper.Get("colleagueClearanceTenantCode").(string),
-		viper.Get("colleagueClearanceUsername").(string),
-		viper.Get("colleagueClearancePassword").(string)
-}
-
 //GetTenantCode ...
 func GetTenantCode() string {
 	v := os.Getenv("ColleagueClearanceTenantCode")
@@ -196,4 +176,22 @@ func GetServerName() string {
 	}
 	readConfig(*congfigEnv)
 	return viper.Get("serverName").(string)
+}
+
+//GetAppInfo 获取token需要的appID和appSecretKey
+func GetAppInfo() (string, string) {
+	appID := os.Getenv("AppId")
+	appSecretKey := os.Getenv("AppSecretKey")
+	if appID != "" && appSecretKey != "" {
+		return appID, appSecretKey
+	}
+
+	if *congfigEnv == "" {
+		defaultAppEnv := "mslv2-dev"
+		congfigEnv = &defaultAppEnv
+	}
+	readConfig(*congfigEnv)
+
+	return viper.Get("appId").(string),
+		viper.Get("appSecretKey").(string)
 }

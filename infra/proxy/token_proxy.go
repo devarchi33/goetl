@@ -29,11 +29,10 @@ type userClaim struct {
 
 // TokenProxy 从colleague获取token的代理
 type TokenProxy struct {
-	TenantCode string
-	Username   string
-	Password   string
-	Token      string
-	Expiration int64
+	AppID        string
+	AppSecretKey string
+	Token        string
+	Expiration   int64
 }
 
 var tokenProxyInstance *TokenProxy
@@ -42,11 +41,10 @@ var tokenProxyOnce sync.Once
 // GetInstance 创建 TokenProxy 对象实例
 func (TokenProxy) GetInstance() *TokenProxy {
 	tokenProxyOnce.Do(func() {
-		tenantCode, username, password := config.GetColleagueClearanceUserInfo()
+		appID, appSecretKey := config.GetAppInfo()
 		tokenProxyInstance = &TokenProxy{
-			TenantCode: tenantCode,
-			Username:   username,
-			Password:   password,
+			AppID:        appID,
+			AppSecretKey: appSecretKey,
 		}
 	})
 	return tokenProxyInstance
@@ -109,15 +107,15 @@ func (proxy *TokenProxy) GetToken() (string, error) {
 }
 
 func (proxy *TokenProxy) getToken() (string, error) {
-	if proxy.Username == "" || proxy.Password == "" {
+	if proxy.AppID == "" || proxy.AppSecretKey == "" {
 		return "", errors.New("用户名或密码不能为空")
 	}
 
 	var resp P2BrandAPIResponse
-	url := config.GetP2BrandColleagueAPIRoot() + "/sso/login-user-name?appCode=CloudPortal&tenantCode=" + proxy.TenantCode
+	url := config.GetP2BrandColleagueAPIRoot() + "/sso/app-secret-key-token"
 	data := make(map[string]interface{}, 0)
-	data["username"] = proxy.Username
-	data["password"] = proxy.Password
+	data["appId"] = proxy.AppID
+	data["appSecretKey"] = proxy.AppSecretKey
 	statusCode, err := httpreq.New(http.MethodPost, url, data).
 		WithBehaviorLogContext(behaviorlog.FromCtx(nil)).
 		Call(&resp)
