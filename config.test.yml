@@ -10,6 +10,6 @@ autoDistributeDeadlineDays: 7
 autoTransferInDeadlineDays: 6
 
 colleagueClearanceTenantCode: "test pangpang"
-colleagueClearanceUsername: "test.pangpang"
-colleagueClearancePassword: "2222"
+appId: "a85f75eca2a244c79fe18559c56816fb"
+appSecretKey: "55353929661a45c6854ef2dbbfc4a807"
 serverName: "clearance-adapter-staging"
