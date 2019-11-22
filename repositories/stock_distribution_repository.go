@@ -56,6 +56,43 @@ func (StockDistributionRepository) GetUnsyncedDistributionOrders() ([]map[string
 				ON emp.colleague_id = sd.colleague_id
 		WHERE sd.tenant_code = ?
 			AND sd.synced = false
+			AND sd.is_auto_receipt = 0
+			;
+	`
+
+	result, err := factory.GetP2BrandEngine().Query(sql, getTenantCode())
+	if err != nil {
+		return nil, err
+	}
+
+	return infra.ConvertByteResult(result), nil
+}
+
+// GetUnsyncedAutoDistributionOrders 获取未同步过的分配入库数据
+func (StockDistributionRepository) GetUnsyncedAutoDistributionOrders() ([]map[string]string, error) {
+	sql := `
+		SELECT
+			sd.id AS distribution_id,
+			sdi.brand_code,
+			store.code AS receipt_location_code,
+			sd.waybill_no,
+			sd.box_no,
+			sku.code AS sku_code,
+			sdi.quantity AS qty,
+			sd.created_at AS in_date,
+			'auto' AS in_emp_id,
+			'STOCK_DISTRIBUTION' AS type,
+			sd.is_auto_receipt
+		FROM pangpang_brand_sku_location.stock_distribute AS sd
+			JOIN pangpang_brand_sku_location.stock_distribute_item AS sdi
+				ON sd.id = sdi.stock_distribute_id
+			JOIN pangpang_brand_product.sku AS sku
+				ON sku.id = sdi.sku_id
+			JOIN pangpang_brand_place_management.store AS store
+				ON store.id = sd.receipt_location_id
+		WHERE sd.tenant_code = ?
+			AND sd.synced = false
+			AND sd.is_auto_receipt = 1
 			;
 	`
 
