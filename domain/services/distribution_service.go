@@ -44,14 +44,24 @@ func (etl DistributionETL) Extract(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	resultAuto, err := repositories.StockDistributionRepository{}.GetUnsyncedAutoDistributionOrders()
+	if err != nil {
+		return nil, err
+	}
 
 	directDistResult, err := repositories.DirectDistributionRepository{}.GetUnsyncedDistributionOrders()
 	if err != nil {
 		return nil, err
 	}
 
-	result = append(result, directDistResult...)
+	directDistResultAuto, err := repositories.DirectDistributionRepository{}.GetUnsyncedAutoDistributionOrders()
+	if err != nil {
+		return nil, err
+	}
 
+	result = append(result, resultAuto...)
+	result = append(result, directDistResult...)
+	result = append(result, directDistResultAuto...)
 	return result, nil
 }
 
@@ -88,7 +98,6 @@ func (etl DistributionETL) buildDistributionOrders(ctx context.Context, source i
 		}
 		orders = append(orders, order)
 	}
-
 	return orders, nil
 }
 
@@ -121,7 +130,6 @@ func (etl DistributionETL) validateDistribution(distribution entities.Distributi
 		err = errors.New("outbound order that waybill no is " + distribution.WaybillNo + " has been put in storage")
 		return false, err
 	}
-
 	return true, nil
 }
 
